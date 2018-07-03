@@ -1,0 +1,76 @@
+How to test polybench
+=====================
+
+1. cd polybench-3.1 (IMPORTANT!!!)
+2. Ensure that LLVM_DIR is set to a valid install of llvm 4.0 with clang
+   (for example LLVM_DIR=/usr/lib/llvm-4.0)
+   You can use llvm-config --prefix
+3. Compile the benchmarks with the compile_* scripts
+5. Execute the chkval_* scripts to automatically run the benchmarks
+
+To generate a data file with the results of all the benchmarks use 
+chkval_everything.sh and pipe the output to the file. Using the other scripts
+for this purpose adds extra unnecessary table headers, misaligned columns and
+ANSI escapes, while chkval_everything.sh does not have these problems.
+
+Use run_experiment.sh to execute a standardized experiment which tests every 
+benchmark both in 32 bit and 64 bit mode, but does not collect error data.
+
+
+Options for run_experiment.sh
+-----------------------------
+
+./run_experiment.sh machine_name [n_tries]
+
+machine_name  Base name for the test files:
+              Test output: machine_name_std.txt, machine_name_64.txt
+              Build log: machine_name_build.log
+n_tries       Number of times the benchmarks are repeated. Default = 20
+
+If the NO32 environ. variable is set, no 32 bit tests are performed. Same for
+NO64 but for 64 bit tests.
+
+
+Options for the compile_* scripts (also for compile_everything.sh)
+------------------------------------------------------------------
+
+./compile_* [64bit *_DATASET --only=<x> --frac=<x> --tot=<x> 
+             --dump-option-table]
+
+64bit       Doubles the size of every fixed point value (fractional part 
+            included) and sets the floating point type to double.
+*_DATASET   Where * can be MINI, SMALL, STANDARD, LARGE, EXTRALARGE
+            Forces all benchmarks to be compiled with the specified dataset
+            size.
+--only=<x>  Build benchmark <x> only
+--frac=<x>  Force the fractional bits to <x> for all benchmarks being compiled
+--tot=<x>   Force the total fixed point bits to <x> for all benchmarks being 
+            compiled
+--dump-option-table   Does not compile anything but it dumps a LaTeX tabular
+                      table body with all the default options for compiling all
+                      the benchmarks
+--stats-only  Instead of compiling, put the statistics for each compiled
+              benchmark in the stats directory.
+            
+Example: ./compile_datamining.sh 64bit MINI_DATASET
+         Compiles the benchmarks in the datamining folder using doubles/64-bit
+         fixed point, and set the dataset size to MINI.
+            
+            
+Options for the chkval_* scripts (except for chkval_everything.sh)
+------------------------------------------------------------------
+
+./chkval_* [--norun|--noerror] [--64bit --32bit] [benchname]+
+
+benchname   Only the specified benchmark will be executed and tested
+--norun     Only checks the error using old data without rerunning the benchs.
+            By default uses the same bitness as the binary available in
+            build and compiled by ./compile_*.
+--64bit     If --norun is set, forces error calculations on the 64 bit results.
+--32bit     If --norun is set, forces error calculations on the 32 bit results.
+--noerror   Does not compute the error, but only runs the benchs and prints
+            the times.
+
+If $FORMAT is set, the specified format will be used to print every row of
+the data table. If $NOHEADER is set to a non-empty string, the header will not
+be printed.

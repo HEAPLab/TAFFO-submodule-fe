@@ -2,3 +2,5 @@ test/polybench-c-4.2.1-beta/build
 test/polybench-c-4.2.1-beta/stats
 test/polybench-c-4.2.1-beta/output-data-32
 test/polybench-c-4.2.1-beta/output-data-64
+build
+*~

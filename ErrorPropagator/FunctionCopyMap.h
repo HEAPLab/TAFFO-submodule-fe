@@ -1,4 +1,4 @@
-//===-- RangeErrorMap.h - Range and Error Maps ------------------*- C++ -*-===//
+//===-- FunctionCopyMap.h - Function Clones Management ----------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -7,9 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// \file TODO
-/// This file contains classes that map Instructions and other Values
-/// to the corresponding computed ranges and errors.
+/// \file
+/// This file contains a class that creates and keeps track
+/// of function clones, in which loops are unrolled.
 ///
 //===----------------------------------------------------------------------===//
 
@@ -38,8 +38,10 @@ public:
 
   FunctionCopyManager(unsigned MaxRecursionCount,
 		      unsigned DefaultUnrollCount,
+		      bool NoLoopUnroll,
 		      TargetLibraryInfo &TLI)
     : MaxRecursionCount(MaxRecursionCount),
+      NoLoopUnroll(NoLoopUnroll),
       DefaultUnrollCount(DefaultUnrollCount),
       TLI(TLI) {}
 
@@ -96,6 +98,7 @@ protected:
 
   unsigned MaxRecursionCount;
   unsigned DefaultUnrollCount;
+  bool NoLoopUnroll;
   TargetLibraryInfo &TLI;
 
   FunctionCopyCount *prepareFunctionData(Function *F);

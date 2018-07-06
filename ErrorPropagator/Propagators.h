@@ -59,6 +59,9 @@ void propagateRet(RangeErrorMap &RMap, Instruction &I);
 /// Associate the error of the called function to I.
 void propagateCall(RangeErrorMap &RMap, Instruction &I);
 
+/// Associate the error of the source pointer to I.
+void propagateGetElementPtr(RangeErrorMap &RMap, Instruction &I);
+
 } // end of namespace ErrorProp
 
 #endif

@@ -25,6 +25,9 @@ cl::opt<unsigned> DefaultUnrollCount("dunroll",
 				     cl::desc("Default loop unroll count"),
 				     cl::value_desc("count"),
 				     cl::init(1U));
+cl::opt<bool> NoLoopUnroll("nounroll",
+			   cl::desc("Never unroll loops"),
+			   cl::init(false));
 cl::opt<unsigned> CmpErrorThreshold("cmpthresh",
 				    cl::desc("CMP errors are signaled"
 					     "only if error is above perc %"),
@@ -92,7 +95,8 @@ bool ErrorPropagator::runOnModule(Module &M) {
   }
 
   TargetLibraryInfo &TLI = getAnalysis<TargetLibraryInfoWrapperPass>().getTLI();
-  FunctionCopyManager FCMap(MaxRecursionCount, DefaultUnrollCount, TLI);
+  FunctionCopyManager FCMap(MaxRecursionCount, DefaultUnrollCount,
+			    NoLoopUnroll, TLI);
 
   // Iterate over all functions in this Module,
   // and propagate errors for pending input intervals for all of them.
@@ -185,12 +189,6 @@ void ErrorPropagator::dispatchInstruction(Instruction &I,
 					  RangeErrorMap &RMap,
 					  CmpErrorMap &CmpMap,
 					  FunctionCopyManager &FCMap) {
-  if (!(I.getType()->isIntegerTy() || I.getType()->isVoidTy())) {
-    DEBUG(dbgs() << "Unhandled non-Integer " << I.getOpcodeName()
-	  << " instruction: " << I.getName() << "\n");
-    return;
-  }
-
   if (I.isBinaryOp()) {
     propagateBinaryOp(RMap, I);
     return;
@@ -226,6 +224,9 @@ void ErrorPropagator::dispatchInstruction(Instruction &I,
     case Instruction::Call:
       prepareErrorsForCall(RMap, CmpMap, FCMap, I);
       propagateCall(RMap, I);
+      break;
+    case Instruction::GetElementPtr:
+      propagateGetElementPtr(RMap, I);
       break;
     default:
       DEBUG(dbgs() << "Unhandled " << I.getOpcodeName()

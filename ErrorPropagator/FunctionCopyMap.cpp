@@ -62,7 +62,7 @@ FunctionCopyCount *FunctionCopyManager::prepareFunctionData(Function *F) {
     FunctionCopyCount &FCC = FCMap[F];
     FCC.Copy = CloneFunction(F, FCC.VMap);
 
-    if (FCC.Copy != nullptr)
+    if (FCC.Copy != nullptr && !NoLoopUnroll)
       UnrollLoops(*FCC.Copy, DefaultUnrollCount, TLI);
 
     return &FCC;

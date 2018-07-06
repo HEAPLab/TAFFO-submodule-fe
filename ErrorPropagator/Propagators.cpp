@@ -91,21 +91,11 @@ propagateShr(const AffineForm<inter_t> &E1, const FPInterval &ResR) {
   return E1 + AffineForm<inter_t>(0, ResR.getRoundingError());
 }
 
-const std::pair<FPInterval, AffineForm<inter_t> >*
-getOperandRangeError(RangeErrorMap &RMap, Instruction &I, Value *V) {
-  assert(V != nullptr);
+const RangeErrorMap::RangeError *
+getConstantRangeError(RangeErrorMap &RMap, Instruction &I, ConstantInt *VInt) {
 
-  // First, check if Range and Error have already been computed.
-  auto *RE = RMap.getRangeError(V);
-  if (RE != nullptr)
-    return RE;
-
-  // If V is a Constant we extract its value.
-  ConstantInt *VInt = dyn_cast<ConstantInt>(V);
-  if (VInt == nullptr)
-    return nullptr;
-
-  // We interpret its value with the same fractional bits and sign of the result.
+  // We interpret the value of VInt with the same
+  // fractional bits and sign of the result.
   const FPInterval *RInfo = RMap.getRange(&I);
   if (RInfo == nullptr)
     return nullptr;
@@ -115,10 +105,27 @@ getOperandRangeError(RangeErrorMap &RMap, Instruction &I, Value *V) {
 					   nullptr, VInt, VInt);
   FPInterval VRange = VFPRange->getInterval();
 
+#if 1
   // We use the rounding error of this format as the only error.
-  RMap.setRangeError(V,
-		     std::make_pair(VRange,
-				    AffineForm<inter_t>(0, VRange.getRoundingError())));
+  AffineForm<inter_t> Error(0, VRange.getRoundingError());
+#else
+  AffineForm<inter_t> Error;
+#endif
+
+  RMap.setRangeError(VInt, std::make_pair(VRange, Error));
+  return RMap.getRangeError(VInt);
+}
+
+const std::pair<FPInterval, AffineForm<inter_t> >*
+getOperandRangeError(RangeErrorMap &RMap, Instruction &I, Value *V) {
+  assert(V != nullptr);
+
+  // If V is a Constant extract its value.
+  ConstantInt *VInt = dyn_cast<ConstantInt>(V);
+  if (VInt != nullptr)
+    return getConstantRangeError(RMap, I, VInt);
+
+  // Otherwise, check if Range and Error have already been computed.
   return RMap.getRangeError(V);
 }
 
@@ -325,13 +332,19 @@ void propagatePhi(RangeErrorMap &RMap, Instruction &I) {
   DEBUG(dbgs() << "Propagating error for PHI node " << I.getName() << "... ");
 
   // Iterate over values and choose the largest absolute error.
-  inter_t AbsErr = 0.0;
+  inter_t AbsErr = -1.0;
   for (const Use &IVal : PHI.incoming_values()) {
     auto *RE = getOperandRangeError(RMap, I, IVal);
     if (RE == nullptr) {
       continue;
     }
     AbsErr = std::max(AbsErr, RE->second.noiseTermsAbsSum());
+  }
+
+  if (AbsErr < 0.0) {
+    // If no incoming value has an error, skip this instruction.
+    DEBUG(dbgs() << "ignored (no data).\n");
+    return;
   }
 
   AffineForm<inter_t> ERes(0, AbsErr);
@@ -461,6 +474,25 @@ void propagateCall(RangeErrorMap &RMap, Instruction &I) {
   RMap.setError(&I, ErrorCopy);
 
   DEBUG(dbgs() << static_cast<double>(ErrorCopy.noiseTermsAbsSum()) << ".\n");
+}
+
+void propagateGetElementPtr(RangeErrorMap &RMap, Instruction &I) {
+  GetElementPtrInst &GEPI = cast<GetElementPtrInst>(I);
+
+  DEBUG(dbgs() << "Propagating error for GetElementPtr instruction "
+	<< GEPI.getName() << "... ");
+
+  const RangeErrorMap::RangeError *RE =
+    RMap.getRangeError(GEPI.getPointerOperand());
+  if (RE == nullptr) {
+    DEBUG(dbgs() << "ignored (no data).\n");
+    return;
+  }
+
+  RangeErrorMap::RangeError RECopy = *RE;
+  RMap.setRangeError(&GEPI, RECopy);
+
+  DEBUG(dbgs() << static_cast<double>(RECopy.second.noiseTermsAbsSum()) << ".\n");
 }
 
 } // end of namespace ErrorProp

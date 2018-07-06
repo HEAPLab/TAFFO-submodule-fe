@@ -4,8 +4,8 @@ target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
 ; CHECK: %a.addr.03 = phi i32 [ %a, %for.body.lr.ph ], [ %add, %for.body ], !errorprop.abserror !5
-; CHECK: %i.02 = phi i32 [ 0, %for.body.lr.ph ], [ %inc, %for.body ], !errorprop.abserror !6
-; CHECK: %add = add nsw i32 %a.addr.03, %a.addr.03, !errorprop.range !7, !errorprop.abserror !8
+; CHECK: %add = add nsw i32 %a.addr.03, %a.addr.03, !errorprop.range !6, !errorprop.abserror !7
+; CHECK: %mul = mul nsw i32 %a.addr.0.lcssa, %a.addr.0.lcssa, !errorprop.range !8, !errorprop.abserror !9
 ; Function Attrs: noinline uwtable
 define i32 @foo(i32 %a, i32 %b) #0 !errorprop.argsrange !2 {
 entry:
@@ -44,5 +44,5 @@ for.end:                                          ; preds = %for.cond.for.end_cr
 !5 = !{double 1.250000e-02}
 !6 = !{i32 -4, i32 400, i32 576}
 !7 = !{i32 -4, i32 160000, i32 331776}
-; CHECK: !8 = !{double 2.500000e-02}
-; CHECK: !10 = !{double 0x3F447AE147AE147C}
+; CHECK: !7 = !{double 2.500000e-02}
+; CHECK: !9 = !{double 0x3F447AE147AE147C}

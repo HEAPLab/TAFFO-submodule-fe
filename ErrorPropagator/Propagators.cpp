@@ -306,7 +306,7 @@ void propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
   SmallVector<const RangeErrorMap::RangeError *, DEFAULT_RE_COUNT> REs;
   findMemSSAError(RMap, MemSSA, &I, MemSSA.getMemoryAccess(&I), Visited, REs);
 
-  // Klooge for when AliasAnalysis fails (i.e. almost always).
+  // Kludje for when AliasAnalysis fails (i.e. almost always).
   findLOEError(RMap, &I, REs);
 
   if (REs.size() == 1U && REs.front() != nullptr) {

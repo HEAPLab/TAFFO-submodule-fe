@@ -79,7 +79,8 @@ getArgErrorFromMetadata(const MDNode &ErrMD) {
 
 std::pair<FPInterval, AffineForm<inter_t> >
 getArgRangeErrorFromMetadata(const MDNode &ArgMD) {
-  assert(ArgMD.getNumOperands() >= 2 && "Too few subnodes.");
+  assert(ArgMD.getNumOperands() >= 2
+	 && "Range and Error must be supplied for each argument.");
 
   std::unique_ptr<FixedPointValue> FPVRange =
     FixedPointValue::createFromMDNode(nullptr,

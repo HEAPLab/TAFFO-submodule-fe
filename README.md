@@ -1,5 +1,6 @@
-# Error Propagator for Fixed Point Computations
-## Code Transformation and Optimization Course Project
+# PACO
+## floating Point to fixed Point Automatic Conversion & Optimization
+### Error Propagator for Fixed Point Computations
 
 An LLVM opt pass that computes errors propagated in programs containing fixed point computations.
 

@@ -8,11 +8,15 @@ target triple = "x86_64-unknown-linux-gnu"
 
 ; CHECK: %0 = load i32, i32* @a, align 4, !errorprop.abserror !2
 ; CHECK: %add = add nsw i32 %c, %0, !errorprop.range !9, !errorprop.abserror !5
+; CHECK: store i32 %add, i32* @a, align 4, !errorprop.abserror !5
 ; CHECK: %1 = load i32, i32* @b, align 4, !errorprop.abserror !5
 ; CHECK: %mul = mul nsw i32 %c, %1, !errorprop.range !10, !errorprop.abserror !11
+; CHECK: store i32 %mul, i32* @b, align 4, !errorprop.abserror !11
 ; CHECK: %2 = load i32, i32* @a, align 4, !errorprop.abserror !5
 ; CHECK: %3 = load i32, i32* @b, align 4, !errorprop.abserror !11
 ; CHECK: %add1 = add nsw i32 %2, %3, !errorprop.range !12, !errorprop.abserror !13
+; CHECK: ret i32 %add1, !errorprop.abserror !13
+
 ; Function Attrs: noinline nounwind uwtable
 define i32 @foo(i32 %c) !errorprop.argsrange !6 {
 entry:
@@ -41,5 +45,6 @@ entry:
 !10 = !{i32 5, i32 192, i32 288}
 !11 = !{i32 5, i32 18432, i32 33792}
 !12 = !{i32 5, i32 18624, i32 34080}
-; CHECK: !11 = !{double 1.702000e-01}
-; CHECK: !13 = !{double 1.902000e-01}
+
+; CHECK: !11 = !{double 0x3FAED288CE703AFC}
+; CHECK: !13 = !{double 0x3FB487FCB923A29D}

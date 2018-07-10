@@ -8,6 +8,7 @@
 #include "llvm/IR/InstIterator.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Analysis/MemorySSA.h"
 
 #include "llvm/Transforms/ErrorPropagator/AffineForms.h"
 #include "llvm/Transforms/ErrorPropagator/Metadata.h"
@@ -59,13 +60,14 @@ protected:
   void computeErrors(Function &F, RangeErrorMap &RMap,
 		     CmpErrorMap &CMpMap,
 		     FunctionCopyManager &FCMap,
+		     MemorySSA &MemSSA,
 		     SmallVectorImpl<Value *> *ArgErrs);
 
   void computeErrors(Instruction &, RangeErrorMap &, CmpErrorMap &,
-		     FunctionCopyManager &FCMap);
+		     FunctionCopyManager &FCMap, MemorySSA &MemSSA);
 
   void dispatchInstruction(Instruction &, RangeErrorMap &, CmpErrorMap &,
-			   FunctionCopyManager &FCMap);
+			   FunctionCopyManager &FCMap, MemorySSA &MemSSA);
 
   void prepareErrorsForCall(RangeErrorMap &RMap,
 			    CmpErrorMap &CmpMap,
@@ -138,7 +140,9 @@ void ErrorPropagator::computeErrorsWithCopy(Function &F, RangeErrorMap &RMap,
   // Reset the error associated to this function.
   LocalRMap.erase(CFP);
 
-  computeErrors(CF, LocalRMap, CmpMap, FCMap, Args);
+  MemorySSA &MemSSA = this->getAnalysis<MemorySSAWrapperPass>(CF).getMSSA();
+
+  computeErrors(CF, LocalRMap, CmpMap, FCMap, MemSSA, Args);
 
   if (GenMetadata) {
     // Put error metadata in original function.
@@ -167,28 +171,31 @@ void ErrorPropagator::computeErrorsWithCopy(Function &F, RangeErrorMap &RMap,
 void ErrorPropagator::computeErrors(Function &F, RangeErrorMap &RMap,
 				    CmpErrorMap &CmpMap,
 				    FunctionCopyManager &FCMap,
+				    MemorySSA &MemSSA,
 				    SmallVectorImpl<Value *> *ArgErrs) {
   RMap.retrieveRangeErrors(F);
   RMap.applyArgumentErrors(F, ArgErrs);
 
   // Compute errors for all instructions in the function
   for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I) {
-    computeErrors(*I, RMap, CmpMap, FCMap);
+    computeErrors(*I, RMap, CmpMap, FCMap, MemSSA);
   }
 }
 
 void ErrorPropagator::computeErrors(Instruction &I, RangeErrorMap &RMap,
 				    CmpErrorMap &CmpMap,
-				    FunctionCopyManager &FCMap) {
+				    FunctionCopyManager &FCMap,
+				    MemorySSA &MemSSA) {
   RMap.retrieveRange(&I);
 
-  dispatchInstruction(I, RMap, CmpMap, FCMap);
+  dispatchInstruction(I, RMap, CmpMap, FCMap, MemSSA);
 }
 
 void ErrorPropagator::dispatchInstruction(Instruction &I,
 					  RangeErrorMap &RMap,
 					  CmpErrorMap &CmpMap,
-					  FunctionCopyManager &FCMap) {
+					  FunctionCopyManager &FCMap,
+					  MemorySSA &MemSSA) {
   if (I.isBinaryOp()) {
     propagateBinaryOp(RMap, I);
     return;
@@ -199,7 +206,7 @@ void ErrorPropagator::dispatchInstruction(Instruction &I,
       propagateStore(RMap, I);
       break;
     case Instruction::Load:
-      propagateLoad(RMap, I);
+      propagateLoad(RMap, MemSSA, I);
       break;
     case Instruction::SExt:
       // Fall-through.
@@ -225,9 +232,9 @@ void ErrorPropagator::dispatchInstruction(Instruction &I,
       prepareErrorsForCall(RMap, CmpMap, FCMap, I);
       propagateCall(RMap, I);
       break;
-    case Instruction::GetElementPtr:
-      propagateGetElementPtr(RMap, I);
-      break;
+    // case Instruction::GetElementPtr:
+    //   propagateGetElementPtr(RMap, I);
+    //   break;
     default:
       DEBUG(dbgs() << "Unhandled " << I.getOpcodeName()
 	    << " instruction: " << I.getName() << "\n");
@@ -279,6 +286,7 @@ void ErrorPropagator::attachErrorMetadata(Function &F,
 void ErrorPropagator::getAnalysisUsage(AnalysisUsage &AU) const {
   AU.setPreservesAll();
   AU.addRequiredTransitive<TargetLibraryInfoWrapperPass>();
+  AU.addRequiredTransitive<MemorySSAWrapperPass>();
 }
 
 void ErrorPropagator::checkCommandLine() {

@@ -17,6 +17,10 @@
 #define ERRORPROPAGATOR_PROPAGATORS_H
 
 #include "llvm/IR/Instruction.h"
+#include "llvm/Analysis/MemorySSA.h"
+#include "llvm/Analysis/MemoryDependenceAnalysis.h"
+#include "llvm/ADT/SmallSet.h"
+#include "llvm/ADT/SmallVector.h"
 #include "RangeErrorMap.h"
 
 namespace ErrorProp {
@@ -30,7 +34,7 @@ void propagateStore(RangeErrorMap &, Instruction &);
 
 /// Propagate the errors for a Load instruction
 /// by associating the errors of the source to it.
-void propagateLoad(RangeErrorMap &, Instruction &);
+void propagateLoad(RangeErrorMap &, MemorySSA &, Instruction &);
 
 /// Propagate the errors for an Int Extend instruction
 /// by associating the errors of the source to it.
@@ -61,6 +65,13 @@ void propagateCall(RangeErrorMap &RMap, Instruction &I);
 
 /// Associate the error of the source pointer to I.
 void propagateGetElementPtr(RangeErrorMap &RMap, Instruction &I);
+
+#define DEFAULT_RE_COUNT 8U
+
+void findMemSSAError(RangeErrorMap &RMap, MemorySSA &MemSSA,
+		     Instruction *I, MemoryAccess *MA,
+		     SmallSet<MemoryAccess *, DEFAULT_RE_COUNT> &Visited,
+		     SmallVectorImpl<const RangeErrorMap::RangeError *> &Res);
 
 } // end of namespace ErrorProp
 

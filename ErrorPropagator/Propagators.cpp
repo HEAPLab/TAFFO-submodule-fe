@@ -213,50 +213,138 @@ void propagateStore(RangeErrorMap &RMap, Instruction &I) {
     return;
   }
 
-  Value *IDest = SI.getPointerOperand();
-  assert(IDest != nullptr && "Store with null Pointer Operand.\n");
+  // Value *IDest = SI.getPointerOperand();
+  // assert(IDest != nullptr && "Store with null Pointer Operand.\n");
 
-  // Associate the propagated error to the pointer instruction.
+  // // Associate the propagated error to the pointer instruction.
+  // RangeErrorMap::RangeError SrcRECopy = *SrcRE;
+  // RMap.setRangeError(IDest, SrcRECopy);
+
+  // Associate the source error to this store instruction.
   RangeErrorMap::RangeError SrcRECopy = *SrcRE;
-  RMap.setRangeError(IDest, SrcRECopy);
+  RMap.setRangeError(&SI, SrcRECopy);
 
   DEBUG(dbgs() << static_cast<double>(SrcRECopy.second.noiseTermsAbsSum()) << ".\n");
 }
 
-void propagateLoad(RangeErrorMap &RMap, Instruction &I) {
+void findLOEError(RangeErrorMap &RMap, Instruction *I,
+		  SmallVectorImpl<const RangeErrorMap::RangeError *> &Res) {
+  Value *Pointer;
+  switch(I->getOpcode()) {
+    case Instruction::Load:
+      Pointer = (cast<LoadInst>(I))->getPointerOperand();
+      break;
+    case Instruction::GetElementPtr:
+      Pointer = (cast<GetElementPtrInst>(I))->getPointerOperand();
+      break;
+    default:
+      return;
+  }
+  const RangeErrorMap::RangeError *RE = RMap.getRangeError(Pointer);
+  if (RE != nullptr)
+    Res.push_back(RE);
+  else {
+    Instruction *PI = dyn_cast<Instruction>(Pointer);
+    if (PI != nullptr)
+      findLOEError(RMap, PI, Res);
+  }
+}
+
+void findMemDefError(RangeErrorMap &RMap, const MemoryDef *MD,
+		     SmallVectorImpl<const RangeErrorMap::RangeError *> &Res) {
+  assert(MD != nullptr && "MD is null.");
+
+  Res.push_back(RMap.getRangeError(MD->getMemoryInst()));
+}
+
+void findMemPhiError(RangeErrorMap &RMap,
+		     MemorySSA &MemSSA,
+		     Instruction *I,
+		     MemoryPhi *MPhi,
+		     SmallSet<MemoryAccess *, DEFAULT_RE_COUNT> &Visited,
+		     SmallVectorImpl<const RangeErrorMap::RangeError *> &Res) {
+  assert(MPhi != nullptr && "MPhi is null.");
+
+  for (Use &MU : MPhi->incoming_values()) {
+    MemoryAccess *MA = cast<MemoryAccess>(&MU);
+    findMemSSAError(RMap, MemSSA, I, MA, Visited, Res);
+  }
+}
+
+void findMemSSAError(RangeErrorMap &RMap, MemorySSA &MemSSA,
+		     Instruction *I, MemoryAccess *MA,
+		     SmallSet<MemoryAccess *, DEFAULT_RE_COUNT> &Visited,
+		     SmallVectorImpl<const RangeErrorMap::RangeError *> &Res) {
+  if (!Visited.insert(MA).second)
+    return;
+
+  if (MemSSA.isLiveOnEntryDef(MA))
+    findLOEError(RMap, I, Res);
+  else if (isa<MemoryUse>(MA)) {
+    MemorySSAWalker *MSSAWalker = MemSSA.getWalker();
+    assert(MSSAWalker != nullptr && "Null MemorySSAWalker.");
+    findMemSSAError(RMap, MemSSA, I,
+		    MSSAWalker->getClobberingMemoryAccess(MA),
+		    Visited, Res);
+  }
+  else if (isa<MemoryDef>(MA))
+    findMemDefError(RMap, cast<MemoryDef>(MA), Res);
+  else {
+    assert(isa<MemoryPhi>(MA));
+    findMemPhiError(RMap, MemSSA, I, cast<MemoryPhi>(MA), Visited, Res);
+  }
+}
+
+void propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
   assert(I.getOpcode() == Instruction::Load && "Must be Load.");
   LoadInst &LI = cast<LoadInst>(I);
 
   DEBUG(dbgs() << "Propagating error for Load instruction " << I.getName() << "... ");
 
-  Value *VSrc = LI.getPointerOperand();
-  const RangeErrorMap::RangeError *SrcRE =
-    RMap.getRangeError(VSrc);
-  if (SrcRE == nullptr) {
-    // There is no data associated with this source address
-    // We use metadata, if there are any
-    const FPInterval *SrcR = RMap.getRange(&I);
-    if (SrcR == nullptr) {
-      DEBUG(dbgs() << " ignored (no metadata).\n");
-      return;
-    }
-    // We just add the rounding error
-    AffineForm<inter_t> RErr(0, SrcR->getRoundingError());
-    RMap.setError(&I, RErr);
+  // Look for range and error in the defining instructions with MemorySSA
+  SmallSet<MemoryAccess *, DEFAULT_RE_COUNT> Visited;
+  SmallVector<const RangeErrorMap::RangeError *, DEFAULT_RE_COUNT> REs;
+  findMemSSAError(RMap, MemSSA, &I, MemSSA.getMemoryAccess(&I), Visited, REs);
 
-    DEBUG(dbgs() << static_cast<double>(RErr.noiseTermsAbsSum()) << ".\n");
+  // Klooge for when AliasAnalysis fails (i.e. almost always).
+  findLOEError(RMap, &I, REs);
+
+  if (REs.size() == 1U && REs.front() != nullptr) {
+    // If we found only one defining instruction, we just use its data.
+    RangeErrorMap::RangeError RECopy = *REs.front();
+    RMap.setRangeError(&I, RECopy);
+    DEBUG(dbgs() << static_cast<double>(RECopy.second.noiseTermsAbsSum()) << ".\n");
     return;
   }
-  // If there are range and error associated
-  // to the source address we propagate them.
-  // (We need to copy it because the pointer is invalidated by setRangeError.)
-  RangeErrorMap::RangeError RECopy = *SrcRE;
-  RMap.setRangeError(&I, RECopy);
 
-  // Add computed error metadata to the instruction.
-  // setErrorMetadata(I, SrcRE->second);
+  // Otherwise, we take the maximum error.
+  inter_t MaxAbsErr = -1.0;
+  for (const RangeErrorMap::RangeError *RE : REs)
+    if (RE != nullptr)
+      MaxAbsErr = std::max(MaxAbsErr, RE->second.noiseTermsAbsSum());
 
-  DEBUG(dbgs() << static_cast<double>(RECopy.second.noiseTermsAbsSum()) << ".\n");
+  // We also take the range from metadata attached to LI (if any).
+  const FPInterval *SrcR = RMap.getRange(&I);
+
+  if (MaxAbsErr >= 0) {
+    AffineForm<inter_t> Error(0, MaxAbsErr);
+    if (SrcR != nullptr)
+      RMap.setRangeError(&I, std::make_pair(*SrcR, Error));
+    else
+      RMap.setError(&I, Error);
+
+    DEBUG(dbgs() << static_cast<double>(Error.noiseTermsAbsSum()) << ".\n");
+    return;
+  }
+
+  if (SrcR != nullptr) {
+    // If we have no other error info, we take the rounding error.
+    AffineForm<inter_t> Error(0, SrcR->getRoundingError());
+    RMap.setRangeError(&I, std::make_pair(*SrcR, Error));
+    DEBUG(dbgs() << static_cast<double>(Error.noiseTermsAbsSum()) << ".\n");
+  }
+
+  DEBUG(dbgs() << "ignored (no data).\n");
 }
 
 void unOpErrorPassThrough(RangeErrorMap &RMap, Instruction &I) {

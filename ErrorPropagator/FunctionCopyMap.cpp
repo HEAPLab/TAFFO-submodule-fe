@@ -8,7 +8,7 @@
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
 #include "llvm/Transforms/Utils/UnrollLoop.h"
 #include "llvm/Support/Debug.h"
-
+#include "llvm/Transforms/ErrorPropagator/Metadata.h"
 
 namespace ErrorProp {
 
@@ -60,6 +60,10 @@ FunctionCopyCount *FunctionCopyManager::prepareFunctionData(Function *F) {
     // If no copy of F has already been made, create one, so loop transformations
     // do not change original code.
     FunctionCopyCount &FCC = FCMap[F];
+
+    if ((FCC.MaxRecCount = retrieveMaxRecursionCount(*F)) == 0U)
+      FCC.MaxRecCount = MaxRecursionCount;
+
     FCC.Copy = CloneFunction(F, FCC.VMap);
 
     if (FCC.Copy != nullptr && !NoLoopUnroll)

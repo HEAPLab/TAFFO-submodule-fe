@@ -29,6 +29,7 @@
 #define FUNCTION_ARGS_METADATA "errorprop.argsrange"
 #define WRONG_CMP_METADATA     "errorprop.wrongcmptol"
 #define GLOBAL_VAR_METADATA    "errorprop.globalre"
+#define MAX_REC_METADATA       "errorprop.maxrec"
 
 namespace ErrorProp {
 
@@ -65,6 +66,15 @@ bool hasGlobalVariableMetadata(const llvm::GlobalObject &V);
 /// Retrieve Range and Error from metadata attached to global object V.
 std::pair<FPInterval, AffineForm<inter_t> >
 retrieveGlobalVariableRangeError(const llvm::GlobalObject &V);
+
+/// Attach MaxRecursionCount to the given function.
+void
+setMaxRecursionCountMetadata(llvm::Function &F, unsigned MaxRecursionCount);
+
+/// Read the MaxRecursionCount from metadata attached to function F.
+/// Returns 0 if no metadata have been found.
+unsigned
+retrieveMaxRecursionCount(const llvm::Function &F);
 
 }
 

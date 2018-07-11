@@ -27,7 +27,8 @@ using namespace llvm;
 struct FunctionCopyCount {
   Function *Copy = nullptr;
   ValueToValueMapTy VMap;
-  unsigned RecCount = 0;
+  unsigned RecCount = 0U;
+  unsigned MaxRecCount = 1U;
 };
 
 void UnrollLoops(Function &F, unsigned DefaultUnrollCount,
@@ -60,6 +61,14 @@ public:
     return FCData->second.RecCount;
   }
 
+  unsigned getMaxRecursionCount(Function *F) {
+    auto FCData = FCMap.find(F);
+    if (FCData == FCMap.end())
+      return MaxRecursionCount;
+
+    return FCData->second.MaxRecCount;
+  }
+
   void setRecursionCount(Function *F, unsigned Count) {
     FunctionCopyCount *FCData = prepareFunctionData(F);
     assert(FCData != nullptr);
@@ -78,7 +87,11 @@ public:
   }
 
   bool maxRecursionCountReached(Function *F) {
-    return getRecursionCount(F) >= MaxRecursionCount;
+    auto FCData = FCMap.find(F);
+    if (FCData == FCMap.end())
+      return false;
+
+    return FCData->second.RecCount >= FCData->second.MaxRecCount;
   }
 
   ValueToValueMapTy *getValueToValueMap(Function *F) {

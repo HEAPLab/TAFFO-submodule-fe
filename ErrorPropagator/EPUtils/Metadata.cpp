@@ -153,4 +153,26 @@ retrieveGlobalVariableRangeError(const GlobalObject &V) {
   return getArgRangeErrorFromMetadata(*MD);
 }
 
+void
+setMaxRecursionCountMetadata(Function &F, unsigned MaxRecursionCount) {
+  ConstantInt *CIRC = ConstantInt::get(Type::getInt32Ty(F.getContext()),
+				       MaxRecursionCount,
+				       false);
+  ConstantAsMetadata *CMRC = ConstantAsMetadata::get(CIRC);
+  MDNode *RCNode = MDNode::get(F.getContext(), CMRC);
+  F.setMetadata(MAX_REC_METADATA, RCNode);
+}
+
+unsigned
+retrieveMaxRecursionCount(const Function &F) {
+  MDNode *RecC = F.getMetadata(MAX_REC_METADATA);
+  if (RecC == nullptr)
+    return 0U;
+
+  assert(RecC->getNumOperands() > 0 && "Must contain the recursion count.");
+  ConstantAsMetadata *CMRC = cast<ConstantAsMetadata>(RecC->getOperand(0U));
+  ConstantInt *CIRC = cast<ConstantInt>(CMRC->getValue());
+  return CIRC->getZExtValue();
+}
+
 }

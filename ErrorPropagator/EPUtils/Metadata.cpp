@@ -175,4 +175,42 @@ retrieveMaxRecursionCount(const Function &F) {
   return CIRC->getZExtValue();
 }
 
+void
+setLoopUnrollCountMetadata(Loop &L, unsigned UnrollCount) {
+  // Get Loop header terminating instruction
+  BasicBlock *Header = L.getHeader();
+  assert(Header && "Loop with no header.");
+
+  TerminatorInst *HTI = Header->getTerminator();
+  assert(HTI && "Block with no terminator");
+
+  // Prepare MD Node
+  ConstantInt *CIUC = ConstantInt::get(Type::getInt32Ty(HTI->getContext()),
+				       UnrollCount,
+				       false);
+  ConstantAsMetadata *CMUC = ConstantAsMetadata::get(CIUC);
+  MDNode *UCNode = MDNode::get(HTI->getContext(), CMUC);
+
+  HTI->setMetadata(UNROLL_COUNT_METADATA, UCNode);
+}
+
+Optional<unsigned>
+retrieveLoopUnrollCount(const Loop &L) {
+  // Get Loop header terminating instruction
+  BasicBlock *Header = L.getHeader();
+  assert(Header && "Loop with no header.");
+
+  TerminatorInst *HTI = Header->getTerminator();
+  assert(HTI && "Block with no terminator");
+
+  MDNode *UCNode = HTI->getMetadata(UNROLL_COUNT_METADATA);
+  if (UCNode == nullptr)
+    return NoneType();
+
+  assert(UCNode->getNumOperands() > 0 && "Must contain the unroll count.");
+  ConstantAsMetadata *CMUC = cast<ConstantAsMetadata>(UCNode->getOperand(0U));
+  ConstantInt *CIUC = cast<ConstantInt>(CMUC->getValue());
+  return CIUC->getZExtValue();
+}
+
 }

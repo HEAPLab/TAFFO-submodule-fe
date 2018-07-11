@@ -29,27 +29,35 @@ void UnrollLoops(Function &F, unsigned DefaultUnrollCount,
   for (Loop *L : LInfo) {
     // Compute loop trip count
     unsigned TripCount = SE.getSmallConstantTripCount(L);
-    // If no trip count can be computed, unroll by default amount
-    unsigned UnrollCount = (TripCount == 0) ? DefaultUnrollCount : TripCount;
+    // Get user supplied unroll count
+    Optional<unsigned> OUC = retrieveLoopUnrollCount(*L);
+    unsigned UnrollCount = DefaultUnrollCount;
+    if (OUC.hasValue())
+      if (TripCount != 0 && OUC.getValue() > TripCount)
+	UnrollCount = TripCount;
+      else
+	UnrollCount = OUC.getValue();
+    else if (TripCount != 0)
+      UnrollCount = TripCount;
 
     DEBUG(dbgs() << "Trying to unroll loop by " << UnrollCount << "... ");
 
     // Actually unroll loop
     LoopUnrollResult URes = UnrollLoop(L, UnrollCount, TripCount,
-				       true, false, true, false, false,
-				       SE.getSmallConstantTripMultiple(L), 0U,
-				       false, &LInfo, &SE, &DomTree,
-				       &AssC, &ORE, true);
+    				       true, false, true, false, false,
+    				       SE.getSmallConstantTripMultiple(L), 0U,
+    				       false, &LInfo, &SE, &DomTree,
+    				       &AssC, &ORE, true);
     switch (URes) {
       case LoopUnrollResult::Unmodified:
-	DEBUG(dbgs() << "unmodified.\n");
-	break;
+    	DEBUG(dbgs() << "unmodified.\n");
+    	break;
       case LoopUnrollResult::PartiallyUnrolled:
-	DEBUG(dbgs() << "unrolled partially.\n");
-	break;
+    	DEBUG(dbgs() << "unrolled partially.\n");
+    	break;
       case LoopUnrollResult::FullyUnrolled:
-	DEBUG(dbgs() << "done.\n");
-	break;
+    	DEBUG(dbgs() << "done.\n");
+    	break;
     }
   }
 }

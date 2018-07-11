@@ -21,7 +21,9 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Function.h"
+#include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/GlobalObject.h"
+#include "llvm/ADT/Optional.h"
 #include "llvm/Transforms/ErrorPropagator/AffineForms.h"
 #include "llvm/Transforms/ErrorPropagator/FixedPoint.h"
 
@@ -30,6 +32,7 @@
 #define WRONG_CMP_METADATA     "errorprop.wrongcmptol"
 #define GLOBAL_VAR_METADATA    "errorprop.globalre"
 #define MAX_REC_METADATA       "errorprop.maxrec"
+#define UNROLL_COUNT_METADATA  "errorprop.unroll"
 
 namespace ErrorProp {
 
@@ -75,6 +78,14 @@ setMaxRecursionCountMetadata(llvm::Function &F, unsigned MaxRecursionCount);
 /// Returns 0 if no metadata have been found.
 unsigned
 retrieveMaxRecursionCount(const llvm::Function &F);
+
+/// Attach unroll count metadata to loop L.
+/// Attaches loop unroll metadata to the terminator of the loop header.
+void
+setLoopUnrollCountMetadata(llvm::Loop &L, unsigned UnrollCount);
+
+/// Read loop unroll count from metadata attached to the header of L.
+llvm::Optional<unsigned> retrieveLoopUnrollCount(const llvm::Loop &L);
 
 }
 

@@ -16,6 +16,7 @@
 #include "Propagators.h"
 
 #include <cassert>
+#include <algorithm>
 #include "llvm/Support/Debug.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/InstrTypes.h"
@@ -308,6 +309,9 @@ void propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
 
   // Kludje for when AliasAnalysis fails (i.e. almost always).
   findLOEError(RMap, &I, REs);
+
+  std::sort(REs.begin(), REs.end());
+  std::unique(REs.begin(), REs.end());
 
   if (REs.size() == 1U && REs.front() != nullptr) {
     // If we found only one defining instruction, we just use its data.

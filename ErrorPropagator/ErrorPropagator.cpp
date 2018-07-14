@@ -9,6 +9,7 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Analysis/MemorySSA.h"
+#include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 
 #include "llvm/Transforms/ErrorPropagator/AffineForms.h"
 #include "llvm/Transforms/ErrorPropagator/Metadata.h"
@@ -139,6 +140,11 @@ void ErrorPropagator::computeErrorsWithCopy(Function &F, RangeErrorMap &RMap,
   RangeErrorMap LocalRMap = RMap;
   // Reset the error associated to this function.
   LocalRMap.erase(CFP);
+
+  CFLSteensAAWrapperPass *CFLSAA =
+    this->getAnalysisIfAvailable<CFLSteensAAWrapperPass>();
+  if (CFLSAA != nullptr)
+    CFLSAA->getResult().scan(CFP);
 
   MemorySSA &MemSSA = this->getAnalysis<MemorySSAWrapperPass>(CF).getMSSA();
 
@@ -284,9 +290,9 @@ void ErrorPropagator::attachErrorMetadata(Function &F,
 }
 
 void ErrorPropagator::getAnalysisUsage(AnalysisUsage &AU) const {
-  AU.setPreservesAll();
   AU.addRequiredTransitive<TargetLibraryInfoWrapperPass>();
   AU.addRequiredTransitive<MemorySSAWrapperPass>();
+  AU.setPreservesAll();
 }
 
 void ErrorPropagator::checkCommandLine() {

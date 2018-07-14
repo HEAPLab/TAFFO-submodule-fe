@@ -30,8 +30,8 @@ fi
 CLANG=$LLVM_DIR/bin/clang
 OPT=$LLVM_DIR/bin/opt
 LLC=$LLVM_DIR/bin/llc
-PASSLIB="$ROOT/../../build/LLVMFloatToFixed/Debug/LLVMFloatToFixed.$SOEXT"
-INSTCNT="$ROOT/../../build/tool/Debug/istr_type"
+#PASSLIB="$ROOT/../../build/LLVMFloatToFixed/Debug/LLVMFloatToFixed.$SOEXT"
+#INSTCNT="$ROOT/../../build/tool/Debug/istr_type"
 if [ ! -e "$PASSLIB" ]; then
   PASSLIB="$ROOT/../../build/LLVMFloatToFixed/LLVMFloatToFixed.$SOEXT";
   INSTCNT="$ROOT/../../build/tool/istr_type"

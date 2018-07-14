@@ -1,86 +1,33 @@
+//===-- ErrorPropagator.cpp - Error Propagator ------------------*- C++ -*-===//
+//
+//                     The LLVM Compiler Infrastructure
+//
+// This file is distributed under the University of Illinois Open Source
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+///
+/// \file
+/// This LLVM opt pass propagates errors in fixed point computations.
+///
+//===----------------------------------------------------------------------===//
+
+#include "ErrorPropagator.h"
+
 #include <cassert>
 #include <utility>
-#include <map>
 
-#include "llvm/Pass.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Function.h"
 #include "llvm/IR/InstIterator.h"
 #include "llvm/Support/Debug.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Analysis/MemorySSA.h"
 #include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 
 #include "llvm/Transforms/ErrorPropagator/AffineForms.h"
 #include "llvm/Transforms/ErrorPropagator/Metadata.h"
-#include "RangeErrorMap.h"
-#include "FunctionCopyMap.h"
 #include "Propagators.h"
-
-using namespace llvm;
 
 namespace ErrorProp {
 
 #define DEBUG_TYPE "errorprop"
-
-cl::opt<unsigned> DefaultUnrollCount("dunroll",
-				     cl::desc("Default loop unroll count"),
-				     cl::value_desc("count"),
-				     cl::init(1U));
-cl::opt<bool> NoLoopUnroll("nounroll",
-			   cl::desc("Never unroll loops"),
-			   cl::init(false));
-cl::opt<unsigned> CmpErrorThreshold("cmpthresh",
-				    cl::desc("CMP errors are signaled"
-					     "only if error is above perc %"),
-				    cl::value_desc("perc"),
-				    cl::init(0U));
-cl::opt<unsigned> MaxRecursionCount("recur",
-				    cl::desc("Default number of recursive calls"
-					     "to the same function."),
-				    cl::value_desc("count"),
-				    cl::init(1U));
-
-class ErrorPropagator : public ModulePass {
-public:
-  static char ID;
-  ErrorPropagator() : ModulePass(ID) {}
-
-  bool runOnModule(Module &) override;
-
-  void getAnalysisUsage(AnalysisUsage &) const override;
-
-protected:
-  void retrieveGlobalVariablesRangeError(const Module &M, RangeErrorMap &RMap);
-
-  void computeErrorsWithCopy(Function &F, RangeErrorMap &RMap,
-			     FunctionCopyManager &FCMap,
-			     SmallVectorImpl<Value *> *Args = nullptr,
-			     bool GenMetadata = false);
-
-  void computeErrors(Function &F, RangeErrorMap &RMap,
-		     CmpErrorMap &CMpMap,
-		     FunctionCopyManager &FCMap,
-		     MemorySSA &MemSSA,
-		     SmallVectorImpl<Value *> *ArgErrs);
-
-  void computeErrors(Instruction &, RangeErrorMap &, CmpErrorMap &,
-		     FunctionCopyManager &FCMap, MemorySSA &MemSSA);
-
-  void dispatchInstruction(Instruction &, RangeErrorMap &, CmpErrorMap &,
-			   FunctionCopyManager &FCMap, MemorySSA &MemSSA);
-
-  void prepareErrorsForCall(RangeErrorMap &RMap,
-			    CmpErrorMap &CmpMap,
-			    FunctionCopyManager &FCMap,
-			    Instruction &I);
-
-  void attachErrorMetadata(Function &, const RangeErrorMap &,
-			   const CmpErrorMap &, ValueToValueMapTy &);
-
-  void checkCommandLine();
-}; // end of class ErrorPropagator
-
 
 bool ErrorPropagator::runOnModule(Module &M) {
   checkCommandLine();
@@ -320,8 +267,7 @@ void ErrorPropagator::checkCommandLine() {
 
 char ErrorProp::ErrorPropagator::ID = 0;
 
-
-static RegisterPass<ErrorProp::ErrorPropagator>
+static llvm::RegisterPass<ErrorProp::ErrorPropagator>
 X("errorprop", "Fixed-Point Arithmetic Error Propagator",
   false /* Only looks at CFG */,
   false /* Analysis Pass */);

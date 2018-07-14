@@ -222,10 +222,9 @@ void propagateStore(RangeErrorMap &RMap, Instruction &I) {
   // RMap.setRangeError(IDest, SrcRECopy);
 
   // Associate the source error to this store instruction.
-  RangeErrorMap::RangeError SrcRECopy = *SrcRE;
-  RMap.setRangeError(&SI, SrcRECopy);
+  RMap.setRangeError(&SI, *SrcRE);
 
-  DEBUG(dbgs() << static_cast<double>(SrcRECopy.second.noiseTermsAbsSum()) << ".\n");
+  DEBUG(dbgs() << static_cast<double>(SrcRE->second.noiseTermsAbsSum()) << ".\n");
 }
 
 void findLOEError(RangeErrorMap &RMap, Instruction *I,
@@ -321,9 +320,9 @@ void propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
 
   if (REs.size() == 1U && REs.front() != nullptr) {
     // If we found only one defining instruction, we just use its data.
-    RangeErrorMap::RangeError RECopy = *REs.front();
-    RMap.setRangeError(&I, RECopy);
-    DEBUG(dbgs() << static_cast<double>(RECopy.second.noiseTermsAbsSum()) << ".\n");
+    const RangeErrorMap::RangeError *RE = REs.front();
+    RMap.setRangeError(&I, *RE);
+    DEBUG(dbgs() << static_cast<double>(RE->second.noiseTermsAbsSum()) << ".\n");
     return;
   }
 
@@ -530,21 +529,21 @@ void propagateRet(RangeErrorMap &RMap, Instruction &I) {
     DEBUG(dbgs() << "unchanged (no data).\n");
     return;
   }
-  AffineForm<inter_t> RetErrCopy = *RetErr;
+
   // Associate RetErr to the ret instruction.
-  RMap.setError(&I, RetErrCopy);
+  RMap.setError(&I, *RetErr);
 
   // Get error already associated to this function
   Function *F = RI.getFunction();
   const AffineForm<inter_t> *FunErr = RMap.getError(F);
 
   if (FunErr == nullptr
-      || RetErrCopy.noiseTermsAbsSum() > FunErr->noiseTermsAbsSum()) {
+      || RetErr->noiseTermsAbsSum() > FunErr->noiseTermsAbsSum()) {
     // If no error had already been attached to this function,
     // or if RetErr is larger than the previous one, associate RetErr to it.
-    RMap.setError(F, RetErrCopy.flattenNoiseTerms());
+    RMap.setError(F, RetErr->flattenNoiseTerms());
 
-    DEBUG(dbgs() << static_cast<double>(RetErrCopy.noiseTermsAbsSum()) << ".\n");
+    DEBUG(dbgs() << static_cast<double>(RetErr->noiseTermsAbsSum()) << ".\n");
   }
   else {
     DEBUG(dbgs() << "unchanged (smaller than previous).\n");
@@ -592,10 +591,9 @@ void propagateGetElementPtr(RangeErrorMap &RMap, Instruction &I) {
     return;
   }
 
-  RangeErrorMap::RangeError RECopy = *RE;
-  RMap.setRangeError(&GEPI, RECopy);
+  RMap.setRangeError(&GEPI, *RE);
 
-  DEBUG(dbgs() << static_cast<double>(RECopy.second.noiseTermsAbsSum()) << ".\n");
+  DEBUG(dbgs() << static_cast<double>(RE->second.noiseTermsAbsSum()) << ".\n");
 }
 
 } // end of namespace ErrorProp

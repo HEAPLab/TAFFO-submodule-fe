@@ -16,6 +16,7 @@
 #ifndef ERRORPROPAGATOR_RANGEERRORMAP_H
 #define ERRORPROPAGATOR_RANGEERRORMAP_H
 
+#include <map>
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Function.h"
 #include "llvm/ADT/DenseMap.h"
@@ -30,7 +31,7 @@ class RangeErrorMap {
 public:
   typedef std::pair<FPInterval, AffineForm<inter_t> > RangeError;
 
-  RangeErrorMap() : REMap(4U) {}
+  RangeErrorMap() : REMap() {}
 
   const FPInterval *getRange(const Value *) const;
 
@@ -67,7 +68,7 @@ public:
   void retrieveRangeError(const GlobalObject &V);
 
 protected:
-  DenseMap<const Value *, RangeError> REMap;
+  std::map<const Value *, RangeError> REMap;
 
 }; // end class RangeErrorMap
 

@@ -46,5 +46,5 @@ entry:
 !11 = !{i32 5, i32 18432, i32 33792}
 !12 = !{i32 5, i32 18624, i32 34080}
 
-; CHECK: !11 = !{double 0x3FAED288CE703AFC}
-; CHECK: !13 = !{double 0x3FB487FCB923A29D}
+; CHECK: !11 = !{double 1.702000e-01}
+; CHECK: !13 = !{double 1.902000e-01}

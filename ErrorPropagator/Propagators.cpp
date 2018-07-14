@@ -308,10 +308,11 @@ void propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
   findMemSSAError(RMap, MemSSA, &I, MemSSA.getMemoryAccess(&I), Visited, REs);
 
   // Kludje for when AliasAnalysis fails (i.e. almost always).
-  findLOEError(RMap, &I, REs);
+  // findLOEError(RMap, &I, REs);
 
   std::sort(REs.begin(), REs.end());
-  std::unique(REs.begin(), REs.end());
+  auto NewEnd = std::unique(REs.begin(), REs.end());
+  REs.resize(NewEnd - REs.begin());
 
   if (REs.size() == 1U && REs.front() != nullptr) {
     // If we found only one defining instruction, we just use its data.
@@ -324,31 +325,29 @@ void propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
   // Otherwise, we take the maximum error.
   inter_t MaxAbsErr = -1.0;
   for (const RangeErrorMap::RangeError *RE : REs)
-    if (RE != nullptr)
+    if (RE != nullptr) {
       MaxAbsErr = std::max(MaxAbsErr, RE->second.noiseTermsAbsSum());
+    }
 
   // We also take the range from metadata attached to LI (if any).
   const FPInterval *SrcR = RMap.getRange(&I);
+  if (SrcR == nullptr) {
+    DEBUG(dbgs() << "ignored (no data).\n");
+    return;
+  }
 
   if (MaxAbsErr >= 0) {
     AffineForm<inter_t> Error(0, MaxAbsErr);
-    if (SrcR != nullptr)
-      RMap.setRangeError(&I, std::make_pair(*SrcR, Error));
-    else
-      RMap.setError(&I, Error);
+    RMap.setRangeError(&I, std::make_pair(*SrcR, Error));
 
     DEBUG(dbgs() << static_cast<double>(Error.noiseTermsAbsSum()) << ".\n");
     return;
   }
 
-  if (SrcR != nullptr) {
-    // If we have no other error info, we take the rounding error.
-    AffineForm<inter_t> Error(0, SrcR->getRoundingError());
-    RMap.setRangeError(&I, std::make_pair(*SrcR, Error));
-    DEBUG(dbgs() << static_cast<double>(Error.noiseTermsAbsSum()) << ".\n");
-  }
-
-  DEBUG(dbgs() << "ignored (no data).\n");
+  // If we have no other error info, we take the rounding error.
+  AffineForm<inter_t> Error(0, SrcR->getRoundingError());
+  RMap.setRangeError(&I, std::make_pair(*SrcR, Error));
+  DEBUG(dbgs() << static_cast<double>(Error.noiseTermsAbsSum()) << ".\n");
 }
 
 void unOpErrorPassThrough(RangeErrorMap &RMap, Instruction &I) {

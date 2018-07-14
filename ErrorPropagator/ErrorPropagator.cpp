@@ -268,6 +268,9 @@ void ErrorPropagator::prepareErrorsForCall(RangeErrorMap &RMap,
 
   // Now propagate the errors for this call.
   computeErrorsWithCopy(*CalledF, RMap, FCMap, &Args, false);
+
+  // Restore MemorySSA
+  this->getAnalysis<MemorySSAWrapperPass>(*I.getFunction());
 }
 
 void ErrorPropagator::attachErrorMetadata(Function &F,

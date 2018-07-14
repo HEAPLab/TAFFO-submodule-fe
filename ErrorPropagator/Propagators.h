@@ -61,6 +61,7 @@ void checkICmp(RangeErrorMap &, CmpErrorMap &, Instruction &);
 void propagateRet(RangeErrorMap &RMap, Instruction &I);
 
 /// Associate the error of the called function to I.
+/// Works woth both CallInst and InvokeInst.
 void propagateCall(RangeErrorMap &RMap, Instruction &I);
 
 /// Associate the error of the source pointer to I.

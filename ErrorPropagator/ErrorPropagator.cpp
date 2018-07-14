@@ -238,6 +238,10 @@ void ErrorPropagator::dispatchInstruction(Instruction &I,
       prepareErrorsForCall(RMap, CmpMap, FCMap, I);
       propagateCall(RMap, I);
       break;
+    case Instruction::Invoke:
+      prepareErrorsForCall(RMap, CmpMap, FCMap, I);
+      propagateCall(RMap, I);
+      break;
     // case Instruction::GetElementPtr:
     //   propagateGetElementPtr(RMap, I);
     //   break;
@@ -252,15 +256,24 @@ void ErrorPropagator::prepareErrorsForCall(RangeErrorMap &RMap,
 					   CmpErrorMap &CmpMap,
 					   FunctionCopyManager &FCMap,
 					   Instruction &I) {
-  CallInst &CI = cast<CallInst>(I);
+  Function *CalledF = nullptr;
+  SmallVector<Value *, 0U> Args;
+  if (isa<CallInst>(I)) {
+    CallInst &CI = cast<CallInst>(I);
+    CalledF = CI.getCalledFunction();
+    Args.append(CI.arg_begin(), CI.arg_end());
+  }
+  else if (isa<InvokeInst>(I)) {
+    InvokeInst &II = cast<InvokeInst>(I);
+    CalledF = II.getCalledFunction();
+    Args.append(II.arg_begin(), II.arg_end());
+  }
 
-  Function *CalledF = CI.getCalledFunction();
   if (CalledF == nullptr)
     return;
 
-  DEBUG(dbgs() << "Preparing errors for function call " << CI.getName() << "...\n");
-
-  SmallVector<Value *, 0U> Args(CI.arg_operands());
+  DEBUG(dbgs() << "Preparing errors for function call/invoke "
+	<< I.getName() << "...\n");
 
   // Stop if we have reached the maximum recursion count.
   if (FCMap.maxRecursionCountReached(CalledF))

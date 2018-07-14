@@ -276,6 +276,11 @@ void findMemSSAError(RangeErrorMap &RMap, MemorySSA &MemSSA,
 		     Instruction *I, MemoryAccess *MA,
 		     SmallSet<MemoryAccess *, DEFAULT_RE_COUNT> &Visited,
 		     SmallVectorImpl<const RangeErrorMap::RangeError *> &Res) {
+  if (MA == nullptr) {
+    DEBUG(dbgs() << "WARNING: nullptr MemoryAccess passed to findMemSSAError!\n");
+    return;
+  }
+
   if (!Visited.insert(MA).second)
     return;
 
@@ -547,12 +552,19 @@ void propagateRet(RangeErrorMap &RMap, Instruction &I) {
 }
 
 void propagateCall(RangeErrorMap &RMap, Instruction &I) {
-  CallInst &CI = cast<CallInst>(I);
+  Value *F = nullptr;
+  if (isa<CallInst>(I)) {
+    F = cast<CallInst>(I).getCalledValue();
+    DEBUG(dbgs() << "Propagating error for Call instruction "
+	  << I.getName() << "... ");
+  }
+  else {
+    assert(isa<InvokeInst>(I));
+    F = cast<InvokeInst>(I).getCalledValue();
+    DEBUG(dbgs() << "Propagating error for Invoke instruction "
+	  << I.getName() << "... ");
+  }
 
-  DEBUG(dbgs() << "Propagating error for Call instruction "
-	<< CI.getName() << "... ");
-
-  Value *F = CI.getCalledValue();
   const AffineForm<inter_t> *Error = RMap.getError(F);
   AffineForm<inter_t> ErrorCopy(0U);
   if (Error == nullptr) {

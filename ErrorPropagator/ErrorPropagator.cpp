@@ -17,9 +17,13 @@
 #include <cassert>
 #include <utility>
 
-#include "llvm/IR/InstIterator.h"
 #include "llvm/Support/Debug.h"
-#include "llvm/Analysis/CFLSteensAliasAnalysis.h"
+#include "llvm/IR/Dominators.h"
+#include "llvm/Analysis/LoopInfo.h"
+#include "llvm/Analysis/AssumptionCache.h"
+#include "llvm/Analysis/ScalarEvolution.h"
+#include "llvm/Analysis/OptimizationRemarkEmitter.h"
+#include "llvm/Analysis/MemorySSA.h"
 
 #include "llvm/Transforms/ErrorPropagator/AffineForms.h"
 #include "llvm/Transforms/ErrorPropagator/Metadata.h"
@@ -45,9 +49,8 @@ bool ErrorPropagator::runOnModule(Module &M) {
     Functions.push_back(&F);
   }
 
-  TargetLibraryInfo &TLI = getAnalysis<TargetLibraryInfoWrapperPass>().getTLI();
-  FunctionCopyManager FCMap(MaxRecursionCount, DefaultUnrollCount,
-			    NoLoopUnroll, TLI);
+  FunctionCopyManager FCMap(*this, MaxRecursionCount, DefaultUnrollCount,
+			    NoLoopUnroll);
 
   // Iterate over all functions in this Module,
   // and propagate errors for pending input intervals for all of them.
@@ -67,7 +70,11 @@ void ErrorPropagator::retrieveGlobalVariablesRangeError(const Module &M,
 }
 
 void ErrorPropagator::getAnalysisUsage(AnalysisUsage &AU) const {
-  AU.addRequiredTransitive<TargetLibraryInfoWrapperPass>();
+  AU.addRequiredTransitive<DominatorTreeWrapperPass>();
+  AU.addRequiredTransitive<LoopInfoWrapperPass>();
+  AU.addRequiredTransitive<AssumptionCacheTracker>();
+  AU.addRequiredTransitive<ScalarEvolutionWrapperPass>();
+  AU.addRequiredTransitive<OptimizationRemarkEmitterWrapperPass>();
   AU.addRequiredTransitive<MemorySSAWrapperPass>();
   AU.setPreservesAll();
 }

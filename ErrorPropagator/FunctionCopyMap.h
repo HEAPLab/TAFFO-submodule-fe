@@ -31,20 +31,19 @@ struct FunctionCopyCount {
   unsigned MaxRecCount = 1U;
 };
 
-void UnrollLoops(Function &F, unsigned DefaultUnrollCount,
-		 TargetLibraryInfo &TLI);
+void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount);
 
 class FunctionCopyManager {
 public:
 
-  FunctionCopyManager(unsigned MaxRecursionCount,
+  FunctionCopyManager(Pass &P,
+		      unsigned MaxRecursionCount,
 		      unsigned DefaultUnrollCount,
-		      bool NoLoopUnroll,
-		      TargetLibraryInfo &TLI)
-    : MaxRecursionCount(MaxRecursionCount),
+		      bool NoLoopUnroll)
+    : P(P),
+      MaxRecursionCount(MaxRecursionCount),
       NoLoopUnroll(NoLoopUnroll),
-      DefaultUnrollCount(DefaultUnrollCount),
-      TLI(TLI) {}
+      DefaultUnrollCount(DefaultUnrollCount) {}
 
   Function *getFunctionCopy(Function *F) {
     FunctionCopyCount *FCData = prepareFunctionData(F);
@@ -109,10 +108,10 @@ protected:
 
   FunctionCopyMap FCMap;
 
+  Pass &P;
   unsigned MaxRecursionCount;
   unsigned DefaultUnrollCount;
   bool NoLoopUnroll;
-  TargetLibraryInfo &TLI;
 
   FunctionCopyCount *prepareFunctionData(Function *F);
 };

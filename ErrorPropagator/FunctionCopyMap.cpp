@@ -3,7 +3,6 @@
 #include "llvm/IR/Dominators.h"
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Analysis/AssumptionCache.h"
-#include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
 #include "llvm/Transforms/Utils/UnrollLoop.h"
@@ -14,16 +13,18 @@ namespace ErrorProp {
 
 #define DEBUG_TYPE "errorprop"
 
-void UnrollLoops(Function &F, unsigned DefaultUnrollCount,
-		 TargetLibraryInfo &TLI) {
-  // Prepare LoopInfo
-  DominatorTree DomTree(F);
-  LoopInfo LInfo(DomTree);
-
-  // Prepare ScalarEvolution
-  AssumptionCache AssC(F);
-  ScalarEvolution SE(F, TLI, AssC, DomTree, LInfo);
-  OptimizationRemarkEmitter ORE(&F);
+void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
+  // Prepare required analyses
+  DominatorTree &DomTree =
+    P.getAnalysis<DominatorTreeWrapperPass>(F).getDomTree();
+  LoopInfo &LInfo =
+    P.getAnalysis<LoopInfoWrapperPass>(F).getLoopInfo();
+  AssumptionCache &AssC =
+    P.getAnalysis<AssumptionCacheTracker>().getAssumptionCache(F);
+  ScalarEvolution &SE =
+    P.getAnalysis<ScalarEvolutionWrapperPass>(F).getSE();
+  OptimizationRemarkEmitter &ORE =
+    P.getAnalysis<OptimizationRemarkEmitterWrapperPass>(F).getORE();
 
   // Now try to unroll all loops
   for (Loop *L : LInfo) {
@@ -76,7 +77,7 @@ FunctionCopyCount *FunctionCopyManager::prepareFunctionData(Function *F) {
       FCC.Copy = CloneFunction(F, FCC.VMap);
 
     if (FCC.Copy != nullptr && !NoLoopUnroll)
-      UnrollLoops(*FCC.Copy, DefaultUnrollCount, TLI);
+      UnrollLoops(P, *FCC.Copy, DefaultUnrollCount);
 
     return &FCC;
   }

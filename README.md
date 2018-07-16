@@ -6,7 +6,7 @@ An LLVM opt pass that computes errors propagated in programs containing fixed po
 
 ### Build and run
 
-This pass requires LLVM 6.0.0 to be built and installed.
+This pass requires LLVM 6.0.1 to be built and installed.
 Build with:
 ```
 $ cd paco-error

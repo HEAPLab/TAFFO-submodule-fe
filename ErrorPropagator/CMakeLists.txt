@@ -1,5 +1,6 @@
 add_library(LLVMErrorPropagator
   ErrorPropagator.cpp
+  FunctionErrorPropagator.cpp
   RangeErrorMap.cpp
   FunctionCopyMap.cpp
   Propagators.cpp

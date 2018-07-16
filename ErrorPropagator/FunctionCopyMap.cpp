@@ -72,7 +72,8 @@ FunctionCopyCount *FunctionCopyManager::prepareFunctionData(Function *F) {
     if ((FCC.MaxRecCount = retrieveMaxRecursionCount(*F)) == 0U)
       FCC.MaxRecCount = MaxRecursionCount;
 
-    FCC.Copy = CloneFunction(F, FCC.VMap);
+    if (!F->empty())
+      FCC.Copy = CloneFunction(F, FCC.VMap);
 
     if (FCC.Copy != nullptr && !NoLoopUnroll)
       UnrollLoops(*FCC.Copy, DefaultUnrollCount, TLI);
@@ -84,7 +85,8 @@ FunctionCopyCount *FunctionCopyManager::prepareFunctionData(Function *F) {
 
 FunctionCopyManager::~FunctionCopyManager() {
   for (auto &FCC : FCMap) {
-    FCC.second.Copy->eraseFromParent();
+    if (FCC.second.Copy != nullptr)
+      FCC.second.Copy->eraseFromParent();
   }
 }
 

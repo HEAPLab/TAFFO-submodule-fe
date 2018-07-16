@@ -23,6 +23,7 @@
 
 #include "llvm/Transforms/ErrorPropagator/AffineForms.h"
 #include "llvm/Transforms/ErrorPropagator/Metadata.h"
+#include "FunctionErrorPropagator.h"
 #include "Propagators.h"
 
 namespace ErrorProp {
@@ -51,7 +52,8 @@ bool ErrorPropagator::runOnModule(Module &M) {
   // Iterate over all functions in this Module,
   // and propagate errors for pending input intervals for all of them.
   for (Function *F : Functions) {
-    computeErrorsWithCopy(*F, GlobalRMap, FCMap, nullptr, true);
+    FunctionErrorPropagator FEP(*this, *F, FCMap);
+    FEP.computeErrorsWithCopy(GlobalRMap, nullptr, true);
   }
 
   return false;
@@ -61,194 +63,6 @@ void ErrorPropagator::retrieveGlobalVariablesRangeError(const Module &M,
 							RangeErrorMap &RMap) {
   for (const GlobalVariable &GV : M.globals()) {
     RMap.retrieveRangeError(GV);
-  }
-}
-
-void ErrorPropagator::computeErrorsWithCopy(Function &F, RangeErrorMap &RMap,
-					    FunctionCopyManager &FCMap,
-					    SmallVectorImpl<Value *> *Args,
-					    bool GenMetadata) {
-  if (F.empty() || !propagateFunction(F))
-    return;
-
-  Function *CFP = FCMap.getFunctionCopy(&F);
-  if (CFP == nullptr)
-    return;
-
-  // Increase count of consecutive recursive calls.
-  unsigned OldRecCount = FCMap.incRecursionCount(&F);
-
-  Function &CF = *CFP;
-
-  DEBUG(dbgs() << "Processing function " << CF.getName()
-	<< " (iteration " << OldRecCount + 1 << ")...\n");
-
-  CmpErrorMap CmpMap(CMPERRORMAP_NUMINITBUCKETS);
-  RangeErrorMap LocalRMap = RMap;
-  // Reset the error associated to this function.
-  LocalRMap.erase(CFP);
-
-  CFLSteensAAWrapperPass *CFLSAA =
-    this->getAnalysisIfAvailable<CFLSteensAAWrapperPass>();
-  if (CFLSAA != nullptr)
-    CFLSAA->getResult().scan(CFP);
-
-  MemorySSA &MemSSA = this->getAnalysis<MemorySSAWrapperPass>(CF).getMSSA();
-
-  computeErrors(CF, LocalRMap, CmpMap, FCMap, MemSSA, Args);
-
-  if (GenMetadata) {
-    // Put error metadata in original function.
-    ValueToValueMapTy *VMap = FCMap.getValueToValueMap(&F);
-    assert(VMap != nullptr);
-    attachErrorMetadata(F, LocalRMap, CmpMap, *VMap);
-  }
-
-  // Associate computed errors to global variables.
-  for (const GlobalVariable &GV : F.getParent()->globals()) {
-    const AffineForm<inter_t> *GVErr = LocalRMap.getError(&GV);
-    if (GVErr == nullptr)
-      continue;
-    RMap.setError(&GV, *GVErr);
-  }
-
-  // Associate computed error to the original function.
-  auto FErr = LocalRMap.getError(CFP);
-  if (FErr != nullptr)
-    RMap.setError(&F, AffineForm<inter_t>(*FErr));
-
-  // Restore original recursion count.
-  FCMap.setRecursionCount(&F, OldRecCount);
-}
-
-void ErrorPropagator::computeErrors(Function &F, RangeErrorMap &RMap,
-				    CmpErrorMap &CmpMap,
-				    FunctionCopyManager &FCMap,
-				    MemorySSA &MemSSA,
-				    SmallVectorImpl<Value *> *ArgErrs) {
-  RMap.retrieveRangeErrors(F);
-  RMap.applyArgumentErrors(F, ArgErrs);
-
-  // Compute errors for all instructions in the function
-  for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I) {
-    computeErrors(*I, RMap, CmpMap, FCMap, MemSSA);
-  }
-}
-
-void ErrorPropagator::computeErrors(Instruction &I, RangeErrorMap &RMap,
-				    CmpErrorMap &CmpMap,
-				    FunctionCopyManager &FCMap,
-				    MemorySSA &MemSSA) {
-  RMap.retrieveRange(&I);
-
-  dispatchInstruction(I, RMap, CmpMap, FCMap, MemSSA);
-}
-
-void ErrorPropagator::dispatchInstruction(Instruction &I,
-					  RangeErrorMap &RMap,
-					  CmpErrorMap &CmpMap,
-					  FunctionCopyManager &FCMap,
-					  MemorySSA &MemSSA) {
-  if (I.isBinaryOp()) {
-    propagateBinaryOp(RMap, I);
-    return;
-  }
-
-  switch (I.getOpcode()) {
-    case Instruction::Store:
-      propagateStore(RMap, I);
-      break;
-    case Instruction::Load:
-      propagateLoad(RMap, MemSSA, I);
-      break;
-    case Instruction::SExt:
-      // Fall-through.
-    case Instruction::ZExt:
-      propagateIExt(RMap, I);
-      break;
-    case Instruction::Trunc:
-      propagateTrunc(RMap, I);
-      break;
-    case Instruction::Select:
-      propagateSelect(RMap, I);
-      break;
-    case Instruction::PHI:
-      propagatePhi(RMap, I);
-      break;
-    case Instruction::ICmp:
-      checkICmp(RMap, CmpMap, I);
-      break;
-    case Instruction::Ret:
-      propagateRet(RMap, I);
-      break;
-    case Instruction::Call:
-      prepareErrorsForCall(RMap, CmpMap, FCMap, I);
-      propagateCall(RMap, I);
-      break;
-    case Instruction::Invoke:
-      prepareErrorsForCall(RMap, CmpMap, FCMap, I);
-      propagateCall(RMap, I);
-      break;
-    // case Instruction::GetElementPtr:
-    //   propagateGetElementPtr(RMap, I);
-    //   break;
-    default:
-      DEBUG(dbgs() << "Unhandled " << I.getOpcodeName()
-	    << " instruction: " << I.getName() << "\n");
-      break;
-  }
-}
-
-void ErrorPropagator::prepareErrorsForCall(RangeErrorMap &RMap,
-					   CmpErrorMap &CmpMap,
-					   FunctionCopyManager &FCMap,
-					   Instruction &I) {
-  Function *CalledF = nullptr;
-  SmallVector<Value *, 0U> Args;
-  if (isa<CallInst>(I)) {
-    CallInst &CI = cast<CallInst>(I);
-    CalledF = CI.getCalledFunction();
-    Args.append(CI.arg_begin(), CI.arg_end());
-  }
-  else if (isa<InvokeInst>(I)) {
-    InvokeInst &II = cast<InvokeInst>(I);
-    CalledF = II.getCalledFunction();
-    Args.append(II.arg_begin(), II.arg_end());
-  }
-
-  if (CalledF == nullptr)
-    return;
-
-  DEBUG(dbgs() << "Preparing errors for function call/invoke "
-	<< I.getName() << "...\n");
-
-  // Stop if we have reached the maximum recursion count.
-  if (FCMap.maxRecursionCountReached(CalledF))
-    return;
-
-  // Now propagate the errors for this call.
-  computeErrorsWithCopy(*CalledF, RMap, FCMap, &Args, false);
-
-  // Restore MemorySSA
-  this->getAnalysis<MemorySSAWrapperPass>(*I.getFunction());
-}
-
-void ErrorPropagator::attachErrorMetadata(Function &F,
-					  const RangeErrorMap &RMap,
-					  const CmpErrorMap &CmpMap,
-					  ValueToValueMapTy &VMap) {
-  for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I) {
-    Value *InstCopy = VMap[cast<Value>(&*I)];
-    if (InstCopy == nullptr)
-      continue;
-
-    const AffineForm<inter_t> *Error = RMap.getError(InstCopy);
-    if (Error != nullptr)
-      setErrorMetadata(*I, *Error);
-
-    CmpErrorMap::const_iterator CmpErr = CmpMap.find(InstCopy);
-    if (CmpErr != CmpMap.end())
-      setCmpErrorMetadata(*I, CmpErr->second);
   }
 }
 

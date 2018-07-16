@@ -17,7 +17,6 @@ config.substitutions.append(('%errorproplib',
                                           'libLLVMErrorPropagator@CMAKE_SHARED_LIBRARY_SUFFIX@')))
 config.substitutions.append(('%eputilslib',
                              os.path.join('@CMAKE_BINARY_DIR@',
-                                          'ErrorPropagator',
                                           'EPUtils',
                                           'libLLVMEPUtils@CMAKE_SHARED_LIBRARY_SUFFIX@')))
 config.substitutions.append(('opt', os.path.join('@LLVM_TOOLS_BINARY_DIR@',

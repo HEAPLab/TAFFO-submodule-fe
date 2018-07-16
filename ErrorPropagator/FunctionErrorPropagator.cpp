@@ -12,14 +12,14 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "FunctionErrorPropagator.h"
+#include "ErrorPropagator/FunctionErrorPropagator.h"
 
 #include "llvm/IR/InstIterator.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 
-#include "Propagators.h"
-#include "llvm/Transforms/ErrorPropagator/Metadata.h"
+#include "ErrorPropagator/Propagators.h"
+#include "EPUtils/Metadata.h"
 
 namespace ErrorProp {
 

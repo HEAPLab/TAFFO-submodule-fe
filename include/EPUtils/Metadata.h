@@ -24,8 +24,8 @@
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/GlobalObject.h"
 #include "llvm/ADT/Optional.h"
-#include "llvm/Transforms/ErrorPropagator/AffineForms.h"
-#include "llvm/Transforms/ErrorPropagator/FixedPoint.h"
+#include "EPUtils/AffineForms.h"
+#include "EPUtils/FixedPoint.h"
 
 #define COMP_ERROR_METADATA    "errorprop.abserror"
 #define FUNCTION_ARGS_METADATA "errorprop.argsrange"

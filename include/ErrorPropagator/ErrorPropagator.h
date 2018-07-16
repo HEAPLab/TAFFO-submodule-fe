@@ -20,8 +20,8 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Function.h"
 
-#include "RangeErrorMap.h"
-#include "FunctionCopyMap.h"
+#include "ErrorPropagator/RangeErrorMap.h"
+#include "ErrorPropagator/FunctionCopyMap.h"
 
 namespace ErrorProp {
 

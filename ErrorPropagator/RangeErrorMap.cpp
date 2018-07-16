@@ -14,11 +14,11 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "RangeErrorMap.h"
+#include "ErrorPropagator/RangeErrorMap.h"
 
 #include <utility>
 #include "llvm/Support/Debug.h"
-#include "llvm/Transforms/ErrorPropagator/Metadata.h"
+#include "EPUtils/Metadata.h"
 
 namespace ErrorProp {
 

@@ -22,7 +22,7 @@
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Metadata.h"
-#include "llvm/Transforms/ErrorPropagator/AffineForms.h"
+#include "EPUtils/AffineForms.h"
 
 namespace ErrorProp {
 

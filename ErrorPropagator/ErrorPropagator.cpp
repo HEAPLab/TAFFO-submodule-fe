@@ -12,7 +12,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "ErrorPropagator.h"
+#include "ErrorPropagator/ErrorPropagator.h"
 
 #include <cassert>
 #include <utility>
@@ -25,10 +25,10 @@
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
 #include "llvm/Analysis/MemorySSA.h"
 
-#include "llvm/Transforms/ErrorPropagator/AffineForms.h"
-#include "llvm/Transforms/ErrorPropagator/Metadata.h"
-#include "FunctionErrorPropagator.h"
-#include "Propagators.h"
+#include "EPUtils/AffineForms.h"
+#include "EPUtils/Metadata.h"
+#include "ErrorPropagator/FunctionErrorPropagator.h"
+#include "ErrorPropagator/Propagators.h"
 
 namespace ErrorProp {
 

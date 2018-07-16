@@ -1,4 +1,4 @@
-#include "FunctionCopyMap.h"
+#include "ErrorPropagator/FunctionCopyMap.h"
 
 #include "llvm/IR/Dominators.h"
 #include "llvm/Analysis/LoopInfo.h"
@@ -7,7 +7,7 @@
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
 #include "llvm/Transforms/Utils/UnrollLoop.h"
 #include "llvm/Support/Debug.h"
-#include "llvm/Transforms/ErrorPropagator/Metadata.h"
+#include "EPUtils/Metadata.h"
 
 namespace ErrorProp {
 

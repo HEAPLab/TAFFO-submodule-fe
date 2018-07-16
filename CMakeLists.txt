@@ -7,4 +7,5 @@ include_directories(${LLVM_INCLUDE_DIRS}
 link_directories(${LLVM_LIBRARY_DIRS})
 
 add_subdirectory(ErrorPropagator)
+add_subdirectory(EPUtils)
 add_subdirectory(test)

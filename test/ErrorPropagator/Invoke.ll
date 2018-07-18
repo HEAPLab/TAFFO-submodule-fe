@@ -29,14 +29,12 @@ entry:
 ; CHECK: %0 = load i64, i64* %a.addr, align 8, !errorprop.abserror !11
 ; CHECK: %1 = load i64, i64* %b.addr, align 8, !errorprop.abserror !14
 ; CHECK: %mul = mul nsw i64 %0, %1, !errorprop.range !15, !errorprop.abserror !16
-; CHECK: to label %invoke.cont unwind label %lpad, !errorprop.abserror !17
+; CHECK: to label %invoke.cont unwind label %lpad, !errorprop.range !6, !errorprop.abserror !17
 ; CHECK: store i64 %call, i64* %retval, align 8, !errorprop.abserror !17
-; CHECK: %5 = call i8* @__cxa_begin_catch(i8* %exn) #3, !errorprop.abserror !18
 ; CHECK: %6 = load i64, i64* %a.addr, align 8, !errorprop.abserror !11
 ; CHECK: %7 = load i64, i64* %b.addr, align 8, !errorprop.abserror !14
 ; CHECK: %mul1 = mul nsw i64 %6, %7, !errorprop.range !15, !errorprop.abserror !16
 ; CHECK: store i64 %mul1, i64* %retval, align 8, !errorprop.abserror !16
-; CHECK: call void @__cxa_end_catch(), !errorprop.abserror !18
 
 ; Function Attrs: noinline optnone uwtable
 define i64 @_Z3fooll(i64 %a, i64 %b) #1 personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*) !errorprop.argsrange !6 {
@@ -52,7 +50,7 @@ entry:
   %1 = load i64, i64* %b.addr, align 8
   %mul = mul nsw i64 %0, %1, !errorprop.range !13
   %call = invoke i64 @_Z3barl(i64 %mul)
-          to label %invoke.cont unwind label %lpad
+          to label %invoke.cont unwind label %lpad, !errorprop.range !5
 
 invoke.cont:                                      ; preds = %entry
   store i64 %call, i64* %retval, align 8
@@ -119,4 +117,3 @@ attributes #3 = { nounwind }
 ; CHECK: !7 = !{double 0x3E837D08B4F58035}
 ; CHECK: !16 = !{double 0x3E4BEAD35941E10C}
 ; CHECK: !17 = !{double 0x3ED3CAFCD82CAC6E}
-; CHECK: !18 = !{double 0.000000e+00}

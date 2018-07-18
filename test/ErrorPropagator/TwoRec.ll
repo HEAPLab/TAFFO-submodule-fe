@@ -14,8 +14,8 @@ entry:
 }
 
 ; CHECK: %mul = mul nsw i32 %x, %x, !errorprop.range !6, !errorprop.abserror !10
-; CHECK: %call = call i32 @foo(i32 %mul, i32 %x), !errorprop.argsrange !11, !errorprop.abserror !12
-; CHECK: %retval.0 = phi i32 [ %call, %if.then ], [ %x, %if.else ], !errorprop.abserror !12
+; CHECK: %call = call i32 @foo(i32 %mul, i32 %x), !errorprop.range !11, !errorprop.abserror !12
+; CHECK: %retval.0 = phi i32 [ %call, %if.then ], [ %x, %if.else ], !errorprop.range !6, !errorprop.abserror !12
 
 define i32 @bar(i32 %x) !errorprop.argsrange !6 {
 entry:
@@ -24,14 +24,14 @@ entry:
 
 if.then:                                          ; preds = %entry
   %mul = mul nsw i32 %x, %x, !errorprop.range !5
-  %call = call i32 @foo(i32 %mul, i32 %x), !errorprop.argsrange !8
+  %call = call i32 @foo(i32 %mul, i32 %x), !errorprop.range !8
   br label %return
 
 if.else:                                          ; preds = %entry
   br label %return
 
 return:                                           ; preds = %if.else, %if.then
-  %retval.0 = phi i32 [ %call, %if.then ], [ %x, %if.else ]
+  %retval.0 = phi i32 [ %call, %if.then ], [ %x, %if.else ], !errorprop.range !5
   ret i32 %retval.0
 }
 

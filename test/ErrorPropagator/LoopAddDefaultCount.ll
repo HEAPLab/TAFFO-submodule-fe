@@ -3,7 +3,7 @@
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
-; CHECK: %a.addr.03 = phi i32 [ %a, %for.body.lr.ph ], [ %add, %for.body ], !errorprop.abserror !5
+; CHECK: %a.addr.03 = phi i32 [ %a, %for.body.lr.ph ], [ %add, %for.body ], !errorprop.range !6, !errorprop.abserror !5
 ; CHECK: %add = add nsw i32 %a.addr.03, %a.addr.03, !errorprop.range !6, !errorprop.abserror !7
 ; CHECK: %split = phi i32 [ %add, %for.body ], !errorprop.range !6, !errorprop.abserror !8
 ; CHECK: %a.addr.0.lcssa = phi i32 [ %split, %for.cond.for.end_crit_edge ], [ %a, %entry ], !errorprop.range !6, !errorprop.abserror !8
@@ -20,7 +20,7 @@ for.body.lr.ph:                                   ; preds = %entry
   br label %for.body
 
 for.body:                                         ; preds = %for.body.lr.ph, %for.body
-  %a.addr.03 = phi i32 [ %a, %for.body.lr.ph ], [ %add, %for.body ]
+  %a.addr.03 = phi i32 [ %a, %for.body.lr.ph ], [ %add, %for.body ], !errorprop.range !6
   %i.02 = phi i32 [ 0, %for.body.lr.ph ], [ %inc, %for.body ]
   %add = add nsw i32 %a.addr.03, %a.addr.03, !errorprop.range !6
   %inc = add nuw nsw i32 %i.02, 1

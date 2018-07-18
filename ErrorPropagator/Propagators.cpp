@@ -426,6 +426,11 @@ void propagatePhi(RangeErrorMap &RMap, Instruction &I) {
 
   DEBUG(dbgs() << "Propagating error for PHI node " << I.getName() << "... ");
 
+  if (RMap.getRangeError(&I) == nullptr) {
+    DEBUG(dbgs() << "ignored (no range data).\n");
+    return;
+  }
+
   // Iterate over values and choose the largest absolute error.
   inter_t AbsErr = -1.0;
   for (const Use &IVal : PHI.incoming_values()) {
@@ -438,7 +443,7 @@ void propagatePhi(RangeErrorMap &RMap, Instruction &I) {
 
   if (AbsErr < 0.0) {
     // If no incoming value has an error, skip this instruction.
-    DEBUG(dbgs() << "ignored (no data).\n");
+    DEBUG(dbgs() << "ignored (no error data).\n");
     return;
   }
 
@@ -562,6 +567,11 @@ void propagateCall(RangeErrorMap &RMap, Instruction &I) {
     F = cast<InvokeInst>(I).getCalledValue();
     DEBUG(dbgs() << "Propagating error for Invoke instruction "
 	  << I.getName() << "... ");
+  }
+
+  if (RMap.getRangeError(&I) == nullptr) {
+    DEBUG(dbgs() << "ignored (no range data).\n");
+    return;
   }
 
   const AffineForm<inter_t> *Error = RMap.getError(F);

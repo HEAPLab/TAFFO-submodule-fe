@@ -18,7 +18,10 @@
 #include "llvm/Pass.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instruction.h"
+#include "llvm/IR/BasicBlock.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/SmallSet.h"
+#include <vector>
 #include "llvm/Analysis/MemorySSA.h"
 
 #include "RangeErrorMap.h"
@@ -73,6 +76,43 @@ protected:
   RangeErrorMap RMap;
   CmpErrorMap CmpMap;
   MemorySSA *MemSSA;
+};
+
+/// Schedules basic blocks of a function so that all BBs
+/// that could be executed before another BB come before it in the ordering.
+/// This is a sort of topological ordering that takes loops into account.
+class BBScheduler {
+public:
+  typedef std::vector<BasicBlock *> queue_type;
+  typedef queue_type::reverse_iterator iterator;
+
+  BBScheduler(Function &F) {
+    Queue.reserve(F.size());
+    enqueueChildren(&F.getEntryBlock());
+  }
+
+  bool empty() const {
+    return Queue.empty();
+  }
+
+  iterator begin() {
+    return Queue.rbegin();
+  }
+
+  iterator end() {
+    return Queue.rend();
+  }
+
+protected:
+  queue_type Queue;
+  SmallSet<BasicBlock *, 8U> Set;
+
+  /// Put BB and all of its successors in the queue.
+  void enqueueChildren(BasicBlock *BB);
+  /// Put only unvisited successors of BBin the queue.
+  void enqueueUnvisitedChildren(BasicBlock *BB);
+  /// True if BB has unvisited successors.
+  bool hasUnvisitedChildren(BasicBlock *BB) const;
 };
 
 } // end namespace ErrorProp

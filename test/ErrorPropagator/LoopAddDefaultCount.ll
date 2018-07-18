@@ -5,7 +5,11 @@ target triple = "x86_64-unknown-linux-gnu"
 
 ; CHECK: %a.addr.03 = phi i32 [ %a, %for.body.lr.ph ], [ %add, %for.body ], !errorprop.abserror !5
 ; CHECK: %add = add nsw i32 %a.addr.03, %a.addr.03, !errorprop.range !6, !errorprop.abserror !7
-; CHECK: %mul = mul nsw i32 %a.addr.0.lcssa, %a.addr.0.lcssa, !errorprop.range !8, !errorprop.abserror !9
+; CHECK: %split = phi i32 [ %add, %for.body ], !errorprop.range !6, !errorprop.abserror !8
+; CHECK: %a.addr.0.lcssa = phi i32 [ %split, %for.cond.for.end_crit_edge ], [ %a, %entry ], !errorprop.range !6, !errorprop.abserror !8
+; CHECK: %mul = mul nsw i32 %a.addr.0.lcssa, %a.addr.0.lcssa, !errorprop.range !9, !errorprop.abserror !10
+; CHECK: ret i32 %mul, !errorprop.abserror !10
+
 ; Function Attrs: noinline uwtable
 define i32 @foo(i32 %a, i32 %b) #0 !errorprop.argsrange !2 {
 entry:
@@ -24,11 +28,11 @@ for.body:                                         ; preds = %for.body.lr.ph, %fo
   br i1 %exitcond, label %for.body, label %for.cond.for.end_crit_edge
 
 for.cond.for.end_crit_edge:                       ; preds = %for.body
-  %split = phi i32 [ %add, %for.body ]
+  %split = phi i32 [ %add, %for.body ], !errorprop.range !6
   br label %for.end
 
 for.end:                                          ; preds = %for.cond.for.end_crit_edge, %entry
-  %a.addr.0.lcssa = phi i32 [ %split, %for.cond.for.end_crit_edge ], [ %a, %entry ]
+  %a.addr.0.lcssa = phi i32 [ %split, %for.cond.for.end_crit_edge ], [ %a, %entry ], !errorprop.range !6
   %mul = mul nsw i32 %a.addr.0.lcssa, %a.addr.0.lcssa, !errorprop.range !7
   ret i32 %mul
 }
@@ -44,5 +48,8 @@ for.end:                                          ; preds = %for.cond.for.end_cr
 !5 = !{double 1.250000e-02}
 !6 = !{i32 -4, i32 400, i32 576}
 !7 = !{i32 -4, i32 160000, i32 331776}
+
 ; CHECK: !7 = !{double 2.500000e-02}
-; CHECK: !9 = !{double 0x3F447AE147AE147C}
+; CHECK: !8 = !{double 4.000000e-01}
+; CHECK: !10 = !{double 2.896000e+01}
+

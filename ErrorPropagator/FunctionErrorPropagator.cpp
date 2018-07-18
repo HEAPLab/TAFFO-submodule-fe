@@ -88,11 +88,10 @@ FunctionErrorPropagator::computeFunctionErrors(SmallVectorImpl<Value *> *ArgErrs
   SmallSet<Loop *, 8U> Processed;
 
   // Compute errors for all instructions in the function
-  for (BasicBlock &BB : *FCopy) {
-    for (Instruction &I : BB) {
+  BBScheduler BBSched(*FCopy);
+  for (BasicBlock *BB : BBSched)
+    for (Instruction &I : *BB)
       computeInstructionErrors(I);
-    }
-  }
 }
 
 void
@@ -203,6 +202,48 @@ FunctionErrorPropagator::attachErrorMetadata() {
     if (CmpErr != CmpMap.end())
       setCmpErrorMetadata(*I, CmpErr->second);
   }
+}
+
+void BBScheduler::enqueueChildren(BasicBlock *BB) {
+  assert(BB != nullptr && "Null basic block.");
+
+  DEBUG(dbgs() << "Scheduling " << BB->getName() << ".\n");
+
+  Set.insert(BB);
+
+  TerminatorInst *TI = BB->getTerminator();
+  if (TI != nullptr) {
+    for (BasicBlock *DestBB : TI->successors())
+      if (!Set.count(DestBB))
+	enqueueChildren(DestBB);
+      else if (hasUnvisitedChildren(DestBB))
+	enqueueUnvisitedChildren(DestBB);
+  }
+  Queue.push_back(BB);
+}
+
+void BBScheduler::enqueueUnvisitedChildren(BasicBlock *BB) {
+  assert(BB != nullptr && "Null basic block.");
+
+  DEBUG(dbgs() << "Scheduling " << BB->getName() << ".\n");
+
+  TerminatorInst *TI = BB->getTerminator();
+  if (TI != nullptr) {
+    for (BasicBlock *DestBB : TI->successors())
+      if (!Set.count(DestBB))
+	enqueueChildren(DestBB);
+  }
+  // Queue.push_back(BB);
+}
+
+bool BBScheduler::hasUnvisitedChildren(BasicBlock *BB) const {
+  TerminatorInst *TI = BB->getTerminator();
+  if (TI != nullptr) {
+    for (BasicBlock *DestBB : TI->successors())
+      if (!Set.count(DestBB))
+	return true;
+  }
+  return false;
 }
 
 } // end namespace ErrorProp

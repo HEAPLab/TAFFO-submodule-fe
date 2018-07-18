@@ -6,7 +6,7 @@ target triple = "x86_64-unknown-linux-gnu"
 ; CHECK: %cmp = icmp slt i32 %a, %b, !errorprop.wrongcmptol !5
 ; CHECK: %sub = sub nsw i32 %b, %a, !errorprop.range !8, !errorprop.abserror !9
 ; CHECK: %sub1 = sub nsw i32 %a, %b, !errorprop.range !10, !errorprop.abserror !9
-; CHECK: %c.0 = phi i32 [ %sub, %if.then ], [ %sub1, %if.else ], !errorprop.abserror !9
+; CHECK: %c.0 = phi i32 [ %sub, %if.then ], [ %sub1, %if.else ], !errorprop.range !11, !errorprop.abserror !9
 ; Function Attrs: noinline uwtable
 define i32 @bar(i32 %a, i32 %b) !errorprop.argsrange !2 {
 entry:
@@ -22,7 +22,7 @@ if.else:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.else, %if.then
-  %c.0 = phi i32 [ %sub, %if.then ], [ %sub1, %if.else ]
+  %c.0 = phi i32 [ %sub, %if.then ], [ %sub1, %if.else ], !errorprop.range !10
   ret i32 %c.0
 }
 
@@ -39,6 +39,7 @@ if.end:                                           ; preds = %if.else, %if.then
 !7 = !{i32 -5, i32 192, i32 224}
 !8 = !{i32 -5, i32 64, i32 64}
 !9 = !{i32 -5, i32 -64, i32 -64}
+!10 = !{i32 -5, i32 -64, i32 64}
 
 ; CHECK: !5 = !{double 1.000000e+00}
 ; CHECK: !9 = !{double 2.000000e+00}

@@ -87,4 +87,3 @@ declare i32 @printf(i8*, ...)
 ; CHECK: !11 = !{double 2.812500e-01}
 ; CHECK: !13 = !{double 0x3FD2F40000000000}
 ; CHECK: !15 = !{double 0x3FE065121211F59A}
-; CHECK: !16 = !{double 0.000000e+00}

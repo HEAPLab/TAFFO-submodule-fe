@@ -85,9 +85,13 @@ FunctionErrorPropagator::computeFunctionErrors(SmallVectorImpl<Value *> *ArgErrs
   RMap.retrieveRangeErrors(*FCopy);
   RMap.applyArgumentErrors(*FCopy, ArgErrs);
 
+  SmallSet<Loop *, 8U> Processed;
+
   // Compute errors for all instructions in the function
-  for (inst_iterator I = inst_begin(FCopy), E = inst_end(FCopy); I != E; ++I) {
-    computeInstructionErrors(*I);
+  for (BasicBlock &BB : *FCopy) {
+    for (Instruction &I : BB) {
+      computeInstructionErrors(I);
+    }
   }
 }
 

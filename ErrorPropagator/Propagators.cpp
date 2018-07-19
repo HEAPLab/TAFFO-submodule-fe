@@ -147,6 +147,11 @@ void propagateBinaryOp(RangeErrorMap &RMap, Instruction &I) {
   DEBUG(dbgs() << "Computing error for " << BI.getOpcodeName()
 	<< " instruction " << I.getName() << "... ");
 
+  if (RMap.getRangeError(&I) == nullptr) {
+    DEBUG(dbgs() << "ignored (no range data).\n");
+    return;
+  }
+
   auto *O1 = getOperandRangeError(RMap, BI, 0U);
   auto *O2 = getOperandRangeError(RMap, BI, 1U);
   if (O1 == nullptr || O2 == nullptr) {
@@ -363,14 +368,16 @@ void unOpErrorPassThrough(RangeErrorMap &RMap, Instruction &I) {
     return;
   }
 
-  // Add error to RMap.
-  AffineForm<inter_t> OpErr = OpRE->second;
-  RMap.setError(&I, OpErr);
+  if (RMap.getRangeError(&I) == nullptr) {
+    // Add operand range and error to RMap.
+    RMap.setRangeError(&I, *OpRE);
+  }
+  else {
+    // Add only error to RMap.
+    RMap.setError(&I, OpRE->second);
+  }
 
-  // Add computed error metadata to the instruction.
-  // setErrorMetadata(I, OpRE->second);
-
-  DEBUG(dbgs() << static_cast<double>(OpErr.noiseTermsAbsSum()) << ".\n");
+  DEBUG(dbgs() << static_cast<double>(OpRE->second.noiseTermsAbsSum()) << ".\n");
 }
 
 void propagateIExt(RangeErrorMap &RMap, Instruction &I) {
@@ -397,6 +404,11 @@ void propagateSelect(RangeErrorMap &RMap, Instruction &I) {
   SelectInst &SI = cast<SelectInst>(I);
 
   DEBUG(dbgs() << "Propagating error for Select instruction " << I.getName() << "... ");
+
+  if (RMap.getRangeError(&I) == nullptr) {
+    DEBUG(dbgs() << "ignored (no range data).\n");
+    return;
+  }
 
   auto *TV = getOperandRangeError(RMap, I, SI.getTrueValue());
   auto *FV = getOperandRangeError(RMap, I, SI.getFalseValue());

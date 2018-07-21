@@ -1,9 +1,13 @@
 #include "ErrorPropagator/Lipschitz.h"
 
+#include "llvm/Support/Debug.h"
+
 namespace ErrorProp {
 
-void LipschitzLoopPropagator::populateLoopStructure() {
-  if (L.isInvalid() || L.empty()) {
+#define DEBUG_TYPE "errorprop"
+
+void LipschitzLoopPropagator::populateLoopStructure(DominatorTree& DT) {
+  if (L.isInvalid()) {
     DEBUG(dbgs() << "Lipschitz: ignoring loop (invalid).\n");
     IsValid = false;
     return;
@@ -72,6 +76,32 @@ void LipschitzLoopPropagator::populateLoopStructure() {
   }
 
   assert(S.check());
+}
+
+void LipschitzLoopPropagator::reconstructExitingExpressions
+(SmallVectorImpl<std::unique_ptr<EPExpr> > &Exprs) const {
+  for (PHINode &PHI : S.Exit->phis()) {
+    DEBUG(dbgs() << "Reconstructing expression for PHINode "
+	  << PHI.getName() << ": ");
+
+    std::unique_ptr<EPExpr> Expr = EPExpr::BuildEPExprFromLCSSA(S, PHI);
+
+    if (Expr == nullptr) {
+      DEBUG(dbgs() << "failed.\n");
+      continue;
+    }
+
+    DEBUG(dbgs() << Expr->toString() << ".\n");
+
+    Exprs.push_back(std::move(Expr));
+  }
+}
+
+void LipschitzLoopPropagator::computeErrors(unsigned TripCount) {
+  SmallVector<std::unique_ptr<EPExpr>, 8U> Exprs;
+  reconstructExitingExpressions(Exprs);
+
+  dbgs() << "End.\n";
 }
 
 } // end namespace ErrorProp

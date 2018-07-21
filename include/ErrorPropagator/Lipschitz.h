@@ -1,4 +1,14 @@
 
+#include "llvm/Analysis/LoopInfo.h"
+#include "llvm/IR/Dominators.h"
+#include "llvm/ADT/SmallVector.h"
+#include "ErrorPropagator/RangeErrorMap.h"
+#include "ErrorPropagator/EPExpr.h"
+
+namespace ErrorProp {
+
+using namespace llvm;
+
 struct LipschitzLoopStructure {
   BasicBlock *Predecessor = nullptr;
   BasicBlock *Body = nullptr;
@@ -10,13 +20,11 @@ struct LipschitzLoopStructure {
   }
 };
 
-namespace ErrorProp {
-
 class LipschitzLoopPropagator {
 public:
   LipschitzLoopPropagator(const Loop &L, RangeErrorMap &RMap, DominatorTree &DT)
     : L(L), RMap(RMap), IsValid(true), S() {
-    populateLoopStructure();
+    populateLoopStructure(DT);
   }
 
   bool isValid() {
@@ -32,9 +40,10 @@ protected:
   bool IsValid;
   LipschitzLoopStructure S;
 
-  void populateLoopStructure();
+  void populateLoopStructure(DominatorTree& DT);
 
-  void reconstructExitingExpressions(SmallVectorImpl<EPExpr> &Exprs) const;
+  void reconstructExitingExpressions
+  (SmallVectorImpl<std::unique_ptr<EPExpr> > &Exprs) const;
 };
 
 } // end namespace ErrorProp

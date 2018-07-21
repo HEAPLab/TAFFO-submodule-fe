@@ -4,6 +4,8 @@ add_library(LLVMErrorPropagator
   RangeErrorMap.cpp
   FunctionCopyMap.cpp
   Propagators.cpp
+  Lipschitz.cpp
+  EPExpr.cpp
   )
 
 

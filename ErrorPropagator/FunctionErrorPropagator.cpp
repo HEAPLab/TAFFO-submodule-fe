@@ -19,6 +19,7 @@
 #include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 
 #include "ErrorPropagator/Propagators.h"
+#include "ErrorPropagator/Lipschitz.h"
 #include "EPUtils/Metadata.h"
 
 namespace ErrorProp {
@@ -85,13 +86,26 @@ FunctionErrorPropagator::computeFunctionErrors(SmallVectorImpl<Value *> *ArgErrs
   RMap.retrieveRangeErrors(*FCopy);
   RMap.applyArgumentErrors(*FCopy, ArgErrs);
 
+  DominatorTree &DomTree =
+    EPPass.getAnalysis<DominatorTreeWrapperPass>(*FCopy).getDomTree();
+  LoopInfo &LInfo =
+    EPPass.getAnalysis<LoopInfoWrapperPass>(*FCopy).getLoopInfo();
   SmallSet<Loop *, 8U> Processed;
 
   // Compute errors for all instructions in the function
   BBScheduler BBSched(*FCopy);
-  for (BasicBlock *BB : BBSched)
+  for (BasicBlock *BB : BBSched) {
+    Loop *L = LInfo.getLoopFor(BB);
+    if (L != nullptr) {
+      LipschitzLoopPropagator LLP(*L, RMap, DomTree);
+      if (LLP.isValid()) {
+	LLP.computeErrors(0U); // TODO: retrieve tripcount
+      }
+    }
+
     for (Instruction &I : *BB)
       computeInstructionErrors(I);
+  }
 }
 
 void

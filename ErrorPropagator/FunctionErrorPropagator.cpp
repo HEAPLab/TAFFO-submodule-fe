@@ -188,7 +188,7 @@ FunctionErrorPropagator::attachErrorMetadata() {
   assert(VMap != nullptr);
 
   for (inst_iterator I = inst_begin(F), E = inst_end(F); I != E; ++I) {
-    Value *InstCopy = (*VMap)[cast<Value>(&*I)];
+    Value *InstCopy = (Cloned) ? (*VMap)[cast<Value>(&*I)] : &*I;
     if (InstCopy == nullptr)
       continue;
 

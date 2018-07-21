@@ -39,7 +39,13 @@ public:
 			  FunctionCopyManager &FCMap)
     : EPPass(EPPass), F(F), FCMap(FCMap),
       FCopy(FCMap.getFunctionCopy(&F)), RMap(),
-      CmpMap(CMPERRORMAP_NUMINITBUCKETS), MemSSA(nullptr) {}
+      CmpMap(CMPERRORMAP_NUMINITBUCKETS), MemSSA(nullptr),
+      Cloned(true) {
+    if (FCopy == nullptr) {
+      FCopy = &F;
+      Cloned = false;
+    }
+  }
 
   /// Propagate errors, cloning the function if code modifications are required.
   /// GlobRMap maps global variables and functions to their errors,
@@ -76,6 +82,7 @@ protected:
   RangeErrorMap RMap;
   CmpErrorMap CmpMap;
   MemorySSA *MemSSA;
+  bool Cloned;
 };
 
 /// Schedules basic blocks of a function so that all BBs

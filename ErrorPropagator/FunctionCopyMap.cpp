@@ -64,6 +64,8 @@ void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
 }
 
 FunctionCopyCount *FunctionCopyManager::prepareFunctionData(Function *F) {
+  assert(F != nullptr);
+
   auto FCData = FCMap.find(F);
   if (FCData == FCMap.end()) {
     // If no copy of F has already been made, create one, so loop transformations
@@ -73,12 +75,17 @@ FunctionCopyCount *FunctionCopyManager::prepareFunctionData(Function *F) {
     if ((FCC.MaxRecCount = retrieveMaxRecursionCount(*F)) == 0U)
       FCC.MaxRecCount = MaxRecursionCount;
 
-    if (!F->empty())
-      FCC.Copy = CloneFunction(F, FCC.VMap);
+    // Check if we really need to clone the function
+    if (!NoLoopUnroll && !F->empty()) {
+      LoopInfo &LInfo =
+	P.getAnalysis<LoopInfoWrapperPass>(*F).getLoopInfo();
+      if (!LInfo.empty()) {
+	FCC.Copy = CloneFunction(F, FCC.VMap);
 
-    if (FCC.Copy != nullptr && !NoLoopUnroll)
-      UnrollLoops(P, *FCC.Copy, DefaultUnrollCount);
-
+	if (FCC.Copy != nullptr)
+	  UnrollLoops(P, *FCC.Copy, DefaultUnrollCount);
+      }
+    }
     return &FCC;
   }
   return &FCData->second;

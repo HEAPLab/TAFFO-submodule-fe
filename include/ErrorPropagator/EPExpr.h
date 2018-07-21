@@ -7,6 +7,7 @@
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Value.h"
+#include "llvm/ADT/DenseMap.h"
 #include <memory>
 #include <string>
 
@@ -21,11 +22,13 @@ public:
 
   virtual std::string toString() const = 0;
 
-  static std::unique_ptr<EPExpr>
-  BuildEPExprFromLCSSA(const LipschitzLoopStructure &L, PHINode &PHI);
+  static Value *
+  BuildEPExprFromLCSSA(const LipschitzLoopStructure &L, PHINode &PHI,
+		       DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs);
 
   static std::unique_ptr<EPExpr>
-  BuildEPExprFromBodyValue(const LipschitzLoopStructure &L, Value &V);
+  BuildEPExprFromBodyValue(const LipschitzLoopStructure &L, Value &V,
+			   DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs);
 
   enum EPExprKind {
     K_EPBin,
@@ -58,6 +61,10 @@ public:
 
   std::string toString() const override;
 
+  static std::unique_ptr<EPExpr>
+  BuildExternalEPLeaf(Value *V,
+		      DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs);
+
   static bool classof(const EPExpr *E) { return E->getKind() == K_EPLeaf; }
 
 protected:
@@ -81,7 +88,8 @@ public:
   std::string toString() const override;
 
   static std::unique_ptr<EPExpr>
-  BuildEPBin(const LipschitzLoopStructure &L, BinaryOperator &BO);
+  BuildEPBin(const LipschitzLoopStructure &L, BinaryOperator &BO,
+	     DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs);
 
   static bool classof(const EPExpr *E) { return E->getKind() == K_EPBin; }
 

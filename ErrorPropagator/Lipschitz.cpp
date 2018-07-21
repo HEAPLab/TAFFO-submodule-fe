@@ -79,29 +79,23 @@ void LipschitzLoopPropagator::populateLoopStructure(DominatorTree& DT) {
 }
 
 void LipschitzLoopPropagator::reconstructExitingExpressions
-(SmallVectorImpl<std::unique_ptr<EPExpr> > &Exprs) const {
-  for (PHINode &PHI : S.Exit->phis()) {
+(DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs) const {
+  for (PHINode &PHI : S.Cond->phis()) {
     DEBUG(dbgs() << "Reconstructing expression for PHINode "
-	  << PHI.getName() << ": ");
+	  << PHI.getName() << "...\n");
 
-    std::unique_ptr<EPExpr> Expr = EPExpr::BuildEPExprFromLCSSA(S, PHI);
+    EPExpr::BuildEPExprFromLCSSA(S, PHI, Exprs);
+  }
 
-    if (Expr == nullptr) {
-      DEBUG(dbgs() << "failed.\n");
-      continue;
-    }
-
-    DEBUG(dbgs() << Expr->toString() << ".\n");
-
-    Exprs.push_back(std::move(Expr));
+  for (auto &Expr : Exprs) {
+    DEBUG(dbgs() << Expr.first->getName() << " = "
+	  << Expr.second->toString() << "\n");
   }
 }
 
 void LipschitzLoopPropagator::computeErrors(unsigned TripCount) {
-  SmallVector<std::unique_ptr<EPExpr>, 8U> Exprs;
+  DenseMap<Value *, std::unique_ptr<EPExpr> > Exprs;
   reconstructExitingExpressions(Exprs);
-
-  dbgs() << "End.\n";
 }
 
 } // end namespace ErrorProp

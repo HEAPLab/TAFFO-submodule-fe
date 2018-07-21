@@ -3,27 +3,18 @@
 
 namespace ErrorProp {
 
-std::unique_ptr<EPExpr>
-EPExpr::BuildEPExprFromLCSSA(const LipschitzLoopStructure &L, PHINode &PHI) {
-  Value *BV = PHI.getIncomingValueForBlock(L.Cond);
+Value *
+EPExpr::BuildEPExprFromLCSSA(const LipschitzLoopStructure &L, PHINode &PHI,
+			     DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs) {
+  Value *BV = PHI.getIncomingValueForBlock(L.Body);
 
-  if (isa<PHINode>(BV)) {
-  // The incoming value for PHI is another PHINode from the Cond block.
-  PHINode *CondPHI = dyn_cast<PHINode>(BV);
-  if (CondPHI == nullptr)
-    return nullptr;
-
-  // Now we take the incoming value from the loop body.
-  BV = CondPHI->getIncomingValueForBlock(L.Body);
-  if (BV == nullptr)
-    return nullptr;
-  }
-
-  return BuildEPExprFromBodyValue(L, *BV);
+  Exprs.insert(std::make_pair(BV, BuildEPExprFromBodyValue(L, *BV, Exprs)));
+  return BV;
 }
 
 std::unique_ptr<EPExpr>
-EPExpr::BuildEPExprFromBodyValue(const LipschitzLoopStructure &L, Value &V) {
+EPExpr::BuildEPExprFromBodyValue(const LipschitzLoopStructure &L, Value &V,
+				 DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs) {
   if (!V.getType()->isIntegerTy())
       return nullptr;
 
@@ -31,13 +22,13 @@ EPExpr::BuildEPExprFromBodyValue(const LipschitzLoopStructure &L, Value &V) {
     Instruction &I = cast<Instruction>(V);
 
     // If this instruction is outside of the loop,
-    // we do not build its expression.
+    // we do not build its expression, but we add it as a single variable.
     if (I.getParent() != L.Body
 	&& I.getParent() != L.Cond)
-      return std::unique_ptr<EPLeaf>(new EPLeaf(&I));
+      return EPLeaf::BuildExternalEPLeaf(&I, Exprs);
 
     if (I.isBinaryOp()) {
-      return EPBin::BuildEPBin(L, cast<BinaryOperator>(I));
+      return EPBin::BuildEPBin(L, cast<BinaryOperator>(I), Exprs);
     }
 
     if (I.isLogicalShift()
@@ -47,7 +38,7 @@ EPExpr::BuildEPExprFromBodyValue(const LipschitzLoopStructure &L, Value &V) {
 	|| I.getOpcode() == Instruction::ZExt) {
       Value *Op = I.getOperand(0U);
       if (Op != nullptr)
-	return BuildEPExprFromBodyValue(L, *Op);
+	return BuildEPExprFromBodyValue(L, *Op, Exprs);
     }
 
     if (isa<PHINode>(I)) {
@@ -63,7 +54,7 @@ EPExpr::BuildEPExprFromBodyValue(const LipschitzLoopStructure &L, Value &V) {
 	return std::unique_ptr<EPLeaf>(new EPLeaf(External, BodyVar));
 
       if (External != nullptr)
-	return std::unique_ptr<EPLeaf>(new EPLeaf(External));
+	return EPLeaf::BuildExternalEPLeaf(External, Exprs);
 
       return nullptr;
     }
@@ -72,14 +63,25 @@ EPExpr::BuildEPExprFromBodyValue(const LipschitzLoopStructure &L, Value &V) {
     return nullptr;
   }
 
-  if (isa<Argument>(V) || isa<Constant>(V))
+  if (isa<Constant>(V))
     return std::unique_ptr<EPLeaf>(new EPLeaf(&V));
+
+  if (isa<Argument>(V))
+    return EPLeaf::BuildExternalEPLeaf(&V, Exprs);
 
   return nullptr;
 }
 
 std::unique_ptr<EPExpr>
-EPBin::BuildEPBin(const LipschitzLoopStructure &L, BinaryOperator &BO) {
+EPLeaf::BuildExternalEPLeaf(Value *V,
+			    DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs) {
+  Exprs.insert(std::make_pair(V, std::unique_ptr<EPLeaf>(new EPLeaf(V))));
+  return std::unique_ptr<EPLeaf>(new EPLeaf(V));
+}
+
+std::unique_ptr<EPExpr>
+EPBin::BuildEPBin(const LipschitzLoopStructure &L, BinaryOperator &BO,
+		  DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs) {
   // Check if this is a supported binary operator.
   unsigned OpCode = BO.getOpcode();
   if (!(OpCode == Instruction::Add
@@ -94,8 +96,10 @@ EPBin::BuildEPBin(const LipschitzLoopStructure &L, BinaryOperator &BO) {
   if (LeftOp == nullptr || RightOp == nullptr)
     return nullptr;
 
-  std::unique_ptr<EPExpr> Left = EPExpr::BuildEPExprFromBodyValue(L, *LeftOp);
-  std::unique_ptr<EPExpr> Right = EPExpr::BuildEPExprFromBodyValue(L, *RightOp);
+  std::unique_ptr<EPExpr> Left =
+    EPExpr::BuildEPExprFromBodyValue(L, *LeftOp, Exprs);
+  std::unique_ptr<EPExpr> Right =
+    EPExpr::BuildEPExprFromBodyValue(L, *RightOp, Exprs);
   if (Left == nullptr || Right == nullptr)
     return nullptr;
 

@@ -43,7 +43,7 @@ protected:
   void populateLoopStructure(DominatorTree& DT);
 
   void reconstructExitingExpressions
-  (SmallVectorImpl<std::unique_ptr<EPExpr> > &Exprs) const;
+  (DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs) const;
 };
 
 } // end namespace ErrorProp

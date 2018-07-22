@@ -10,6 +10,9 @@
 #include "llvm/ADT/DenseMap.h"
 #include <memory>
 #include <string>
+#include <ginac/ginac.h>
+
+#include "EPUtils/FixedPoint.h"
 
 namespace ErrorProp {
 
@@ -22,17 +25,22 @@ public:
 
   virtual std::string toString() const = 0;
 
+  virtual GiNaC::ex
+  toSymbolicEx(const MapVector<Value *, GiNaC::symbol> &Symbols) const = 0;
+
   static Value *
   BuildEPExprFromLCSSA(const LipschitzLoopStructure &L, PHINode &PHI,
 		       DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs);
 
   static std::unique_ptr<EPExpr>
   BuildEPExprFromBodyValue(const LipschitzLoopStructure &L, Value &V,
-			   DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs);
+			   DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs,
+			   Instruction *Parent = nullptr);
 
   enum EPExprKind {
     K_EPBin,
-    K_EPLeaf
+    K_EPLeaf,
+    K_EPConst
   };
 
   EPExprKind getKind() const { return Kind; }
@@ -58,6 +66,17 @@ public:
   }
 
   bool isLoopVariant() const { return Internal != nullptr; }
+
+  bool isConstant() const {
+    return !isLoopVariant() && isa<ConstantInt>(External);
+  }
+
+  Value *getExternal() const { return External; }
+
+  Value *getInternal() const { return Internal; }
+
+  GiNaC::ex
+  toSymbolicEx(const MapVector<Value *, GiNaC::symbol> &Symbols) const override;
 
   std::string toString() const override;
 
@@ -85,7 +104,14 @@ public:
 
   unsigned getOperation() const { return Operation; }
 
+  EPExpr *getLeft() const { return Left.get(); }
+
+  EPExpr *getRight() const { return Right.get(); }
+
   std::string toString() const override;
+
+  GiNaC::ex
+  toSymbolicEx(const MapVector<Value *, GiNaC::symbol> &Symbols) const override;
 
   static std::unique_ptr<EPExpr>
   BuildEPBin(const LipschitzLoopStructure &L, BinaryOperator &BO,
@@ -97,6 +123,27 @@ protected:
   const unsigned Operation;
   std::unique_ptr<EPExpr> Left;
   std::unique_ptr<EPExpr> Right;
+};
+
+class EPConst : public EPExpr {
+public:
+  EPConst() : EPExpr(K_EPConst), Val(0) {}
+  EPConst(inter_t V) : EPExpr(K_EPConst), Val(V) {}
+
+  inter_t getValue() const { return Val; }
+
+  std::string toString() const override;
+
+  GiNaC::ex
+  toSymbolicEx(const MapVector<Value *, GiNaC::symbol> &Symbols) const override;
+
+  static std::unique_ptr<EPExpr>
+  BuildEPConst(const ConstantInt &CI, const Instruction &I);
+
+  static bool classof(const EPExpr *E) { return E->getKind() == K_EPConst; }
+
+protected:
+  inter_t Val;
 };
 
 } // end namespace ErrorProp

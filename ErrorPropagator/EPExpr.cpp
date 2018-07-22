@@ -14,7 +14,8 @@ EPExpr::BuildEPExprFromLCSSA(const LipschitzLoopStructure &L, PHINode &PHI,
 
 std::unique_ptr<EPExpr>
 EPExpr::BuildEPExprFromBodyValue(const LipschitzLoopStructure &L, Value &V,
-				 DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs) {
+				 DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs,
+				 Instruction *Parent) {
   if (!V.getType()->isIntegerTy())
       return nullptr;
 
@@ -63,8 +64,8 @@ EPExpr::BuildEPExprFromBodyValue(const LipschitzLoopStructure &L, Value &V,
     return nullptr;
   }
 
-  if (isa<Constant>(V))
-    return std::unique_ptr<EPLeaf>(new EPLeaf(&V));
+  if (isa<ConstantInt>(V) && Parent != nullptr)
+    return EPConst::BuildEPConst(cast<ConstantInt>(V), *Parent);
 
   if (isa<Argument>(V))
     return EPLeaf::BuildExternalEPLeaf(&V, Exprs);
@@ -97,32 +98,40 @@ EPBin::BuildEPBin(const LipschitzLoopStructure &L, BinaryOperator &BO,
     return nullptr;
 
   std::unique_ptr<EPExpr> Left =
-    EPExpr::BuildEPExprFromBodyValue(L, *LeftOp, Exprs);
+    EPExpr::BuildEPExprFromBodyValue(L, *LeftOp, Exprs, &BO);
   std::unique_ptr<EPExpr> Right =
-    EPExpr::BuildEPExprFromBodyValue(L, *RightOp, Exprs);
+    EPExpr::BuildEPExprFromBodyValue(L, *RightOp, Exprs, &BO);
   if (Left == nullptr || Right == nullptr)
     return nullptr;
 
   return std::unique_ptr<EPBin>(new EPBin(OpCode, std::move(Left), std::move(Right)));
 }
 
-std::string
-valueToString(Value *V) {
-  assert(V != nullptr);
+std::unique_ptr<EPExpr>
+EPConst::BuildEPConst(const ConstantInt &CI, const Instruction &I) {
+  std::unique_ptr<FixedPointValue> FPRange =
+    FixedPointValue::createFromMetadata(I);
+  if (FPRange == nullptr)
+    return nullptr;
 
-  ConstantInt *CI = dyn_cast<ConstantInt>(V);
-  if (CI != nullptr)
-    return std::to_string(CI->getSExtValue());
+  int SPrec = (FPRange->isSigned()) ?
+    -FPRange->getPointPos() : FPRange->getPointPos();
+  std::unique_ptr<FixedPointValue> VFPRange =
+    FixedPointValue::createFromConstantInt(SPrec, nullptr, &CI, &CI);
+  if (VFPRange == nullptr)
+    return nullptr;
 
-  return V->getName();
+  FPInterval VRange = VFPRange->getInterval();
+
+  return std::unique_ptr<EPExpr>(new EPConst(VRange.Max));
 }
 
 std::string
 EPLeaf::toString() const {
   if (this->isLoopVariant())
-    return valueToString(Internal);
+    return Internal->getName();
   else
-    return valueToString(External);
+    return External->getName();
 }
 
 std::string
@@ -146,6 +155,52 @@ EPBin::toString() const {
       Op = " ? ";
   }
   return "(" + Left->toString() + Op + Right->toString() + ")";
+}
+
+std::string EPConst::toString() const {
+  return std::to_string(Val);
+}
+
+GiNaC::ex
+EPLeaf::toSymbolicEx(const DenseMap<Value *, GiNaC::symbol> &Symbols) const {
+  if (this->isLoopVariant()) {
+    auto VSym = Symbols.find(Internal);
+    if (VSym == Symbols.end())
+      return GiNaC::ex();
+
+    return VSym->second;
+  }
+  else {
+    auto VSym = Symbols.find(External);
+    if (VSym == Symbols.end())
+      return GiNaC::ex();
+
+    return VSym->second;
+  }
+}
+
+GiNaC::ex
+EPBin::toSymbolicEx(const DenseMap<Value *, GiNaC::symbol> &Symbols) const {
+  GiNaC::ex LeftEx = this->Left->toSymbolicEx(Symbols);
+  GiNaC::ex RightEx = this->Right->toSymbolicEx(Symbols);
+
+  switch (Operation) {
+    case Instruction::Add:
+      return LeftEx + RightEx;
+    case Instruction::Sub:
+      return LeftEx - RightEx;
+    case Instruction::Mul:
+      return LeftEx * RightEx;
+    case Instruction::SDiv:
+    case Instruction::UDiv:
+      return LeftEx / RightEx;
+  }
+  llvm_unreachable("Invalid operation.");
+}
+
+GiNaC::ex
+EPConst::toSymbolicEx(const DenseMap<Value *, GiNaC::symbol> &Symbols) const {
+  return GiNaC::ex(static_cast<double>(Val));
 }
 
 } // end namespace ErrorProp

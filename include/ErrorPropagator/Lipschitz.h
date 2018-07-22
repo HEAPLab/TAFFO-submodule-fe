@@ -42,8 +42,15 @@ protected:
 
   void populateLoopStructure(DominatorTree& DT);
 
-  void reconstructExitingExpressions
+  void reconstructLoopExpressions
   (DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs) const;
+
+  void makeSymbols(const DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs,
+		   DenseMap<Value *, GiNaC::symbol> &Symbols);
+
+  void makeSymExprs(const DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs,
+		    const DenseMap<Value *, GiNaC::symbol> &Symbols,
+		    DenseMap<Value *, GiNaC::ex> &SymExprs);
 };
 
 } // end namespace ErrorProp

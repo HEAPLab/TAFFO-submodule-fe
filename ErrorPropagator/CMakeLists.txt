@@ -6,6 +6,7 @@ add_library(LLVMErrorPropagator
   Propagators.cpp
   Lipschitz.cpp
   EPExpr.cpp
+  IntervalVisitor.cpp
   )
 
 

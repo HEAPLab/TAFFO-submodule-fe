@@ -2,6 +2,7 @@
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/MapVector.h"
 #include "ErrorPropagator/RangeErrorMap.h"
 #include "ErrorPropagator/EPExpr.h"
 
@@ -46,11 +47,28 @@ protected:
   (DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs) const;
 
   void makeSymbols(const DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs,
-		   DenseMap<Value *, GiNaC::symbol> &Symbols);
+		   MapVector<Value *, GiNaC::symbol> &ValToSym,
+		   std::map<GiNaC::symbol, Value *, GiNaC::ex_is_less> &SymToVal);
 
   void makeSymExprs(const DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs,
-		    const DenseMap<Value *, GiNaC::symbol> &Symbols,
+		    const MapVector<Value *, GiNaC::symbol> &ValToSym,
 		    DenseMap<Value *, GiNaC::ex> &SymExprs);
+
+  void buildLipschitzMatrix(const MapVector<Value *, GiNaC::symbol> &ValToSym,
+			    const std::map<GiNaC::symbol, Value *, GiNaC::ex_is_less> &SymToVal,
+			    const DenseMap<Value *, GiNaC::ex> &SymExprs,
+			    GiNaC::matrix &Res);
+
+  GiNaC::ex
+  evaluateExpression(const std::map<GiNaC::symbol, Value *, GiNaC::ex_is_less> &SymToVal,
+		     const GiNaC::ex &Expr);
+
+  GiNaC::matrix
+  computeRoundoffErrorMatrix(const GiNaC::matrix &K, const GiNaC::matrix &Kk, unsigned k);
+
+  GiNaC::matrix
+  getInitialErrors(MapVector<Value *, GiNaC::symbol> &ValToSym,
+		   DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs);
 };
 
 } // end namespace ErrorProp

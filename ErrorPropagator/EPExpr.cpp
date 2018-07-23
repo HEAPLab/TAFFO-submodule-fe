@@ -162,7 +162,7 @@ std::string EPConst::toString() const {
 }
 
 GiNaC::ex
-EPLeaf::toSymbolicEx(const DenseMap<Value *, GiNaC::symbol> &Symbols) const {
+EPLeaf::toSymbolicEx(const MapVector<Value *, GiNaC::symbol> &Symbols) const {
   if (this->isLoopVariant()) {
     auto VSym = Symbols.find(Internal);
     if (VSym == Symbols.end())
@@ -180,7 +180,7 @@ EPLeaf::toSymbolicEx(const DenseMap<Value *, GiNaC::symbol> &Symbols) const {
 }
 
 GiNaC::ex
-EPBin::toSymbolicEx(const DenseMap<Value *, GiNaC::symbol> &Symbols) const {
+EPBin::toSymbolicEx(const MapVector<Value *, GiNaC::symbol> &Symbols) const {
   GiNaC::ex LeftEx = this->Left->toSymbolicEx(Symbols);
   GiNaC::ex RightEx = this->Right->toSymbolicEx(Symbols);
 
@@ -199,7 +199,7 @@ EPBin::toSymbolicEx(const DenseMap<Value *, GiNaC::symbol> &Symbols) const {
 }
 
 GiNaC::ex
-EPConst::toSymbolicEx(const DenseMap<Value *, GiNaC::symbol> &Symbols) const {
+EPConst::toSymbolicEx(const MapVector<Value *, GiNaC::symbol> &Symbols) const {
   return GiNaC::ex(static_cast<double>(Val));
 }
 

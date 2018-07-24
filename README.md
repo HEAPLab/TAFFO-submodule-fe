@@ -1,6 +1,4 @@
-# PACO
-## floating Point to fixed Point Automatic Conversion & Optimization
-### Error Propagator for Fixed Point Computations
+# TAFFO Error Propagator for Fixed Point Computations
 
 An LLVM opt pass that computes errors propagated in programs containing fixed point computations.
 

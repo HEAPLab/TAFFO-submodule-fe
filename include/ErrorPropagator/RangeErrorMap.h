@@ -53,6 +53,9 @@ public:
     REMap.erase(V);
   }
 
+  /// Set all errors to 0 (but keep range untouched).
+  void resetErrors();
+
   /// Retrieve range for instruction I from metadata.
   void retrieveRange(Instruction *I);
 

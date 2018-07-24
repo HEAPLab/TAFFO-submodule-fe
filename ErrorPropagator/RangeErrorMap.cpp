@@ -59,6 +59,11 @@ void RangeErrorMap::setRangeError(const Value *I,
   REMap[I] = RE;
 }
 
+void RangeErrorMap::resetErrors() {
+  for (auto &RE : REMap)
+    RE.second.second = AffineForm<inter_t>();
+}
+
 void RangeErrorMap::retrieveRange(Instruction *I) {
   if (I == nullptr)
     return;

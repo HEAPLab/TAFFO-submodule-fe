@@ -1,6 +1,7 @@
 #include "ErrorPropagator/Lipschitz.h"
 
 #include "ErrorPropagator/IntervalVisitor.h"
+#include "ErrorPropagator/Propagators.h"
 #include "llvm/Support/Debug.h"
 #include <sstream>
 #include <ginac/ginac.h>
@@ -133,13 +134,16 @@ void LipschitzLoopPropagator::computeErrors(unsigned TripCount) {
   GiNaC::matrix InitErrs = getInitialErrors(ValToSym, Exprs);
 
   // Retrieve roundoff errors
-  // TODO!
+  GiNaC::matrix RoundoffErrors = getRoundoffErrors(ValToSym);
 
   // Compute error vector
-  GiNaC::matrix Errors = LipscK.mul(InitErrs);
+  GiNaC::ex Errors = GiNaC::ex(LipscK) * InitErrs + RoundErrM * RoundoffErrors;
+  Errors = Errors.evalm();
+  DEBUG(dbgs() << "Total Lipschitz errors: "
+	<< GiNaCexToString(Errors) << "\n");
 
   // Associate errors to exiting values
-  // TODO
+  setInstructionErrors(ValToSym, ex_to<GiNaC::matrix>(Errors));
 }
 
 void
@@ -243,16 +247,18 @@ getInitialErrors(MapVector<Value *, GiNaC::symbol> &ValToSym,
     if (isa<EPLeaf>(Expr)) {
       EPLeaf *Leaf = cast<EPLeaf>(Expr);
       Value *Ext = Leaf->getExternal();
-      if (Ext != nullptr)
+      if (Ext != nullptr) {
 	InitialValues.insert(std::make_pair(VExpr.first, Ext));
+      }
     }
   }
 
   for (PHINode &PHI : S.Cond->phis()) {
     Value *BV = PHI.getIncomingValueForBlock(S.Body);
     Value *EV = PHI.getIncomingValueForBlock(S.Predecessor);
-    if (BV != nullptr && EV != nullptr)
+    if (BV != nullptr && EV != nullptr) {
       InitialValues.insert(std::make_pair(BV, EV));
+    }
   }
 
   GiNaC::matrix InitialErrors(ValToSym.size(), 1);
@@ -263,14 +269,141 @@ getInitialErrors(MapVector<Value *, GiNaC::symbol> &ValToSym,
       const AffineForm<inter_t> *Err = RMap.getError(InitVal->second);
       if (Err != nullptr) {
 	InitialErrors(i, 0) = static_cast<double>(Err->noiseTermsAbsSum());
+	++i;
 	continue;
       }
     }
       InitialErrors(i, 0) = 0;
+      ++i;
       DEBUG(dbgs() << "Initial error for " << ValSym.first->getName() << " not found.\n");
   }
 
+  DEBUG(dbgs() << "Initial errors: " << GiNaCexToString(InitialErrors) << "\n");
   return std::move(InitialErrors);
+}
+
+GiNaC::matrix LipschitzLoopPropagator::
+getRoundoffErrors(MapVector<Value *, GiNaC::symbol> &ValToSym) {
+  RoundoffErrorPropagator REP(RMap);
+  REP.computeBasicBlockErrors(S.Cond);
+  if (S.Body != S.Cond)
+    REP.computeBasicBlockErrors(S.Body);
+  RangeErrorMap &RoundRMap = REP.getRMap();
+
+  GiNaC::matrix RoundoffErrors(ValToSym.size(), 1);
+  unsigned i = 0U;
+  for (auto &VS : ValToSym) {
+    const AffineForm<inter_t> *Error = RoundRMap.getError(VS.first);
+    if (Error != nullptr)
+      RoundoffErrors(i, 0) = static_cast<double>(Error->noiseTermsAbsSum());
+    else
+      RoundoffErrors(i, 0) = 0.0;
+
+    ++i;
+  }
+
+  DEBUG(dbgs() << "Roundoff errors: "
+	<< GiNaCexToString(RoundoffErrors) << "\n");
+  return std::move(RoundoffErrors);
+}
+
+void LipschitzLoopPropagator::
+setInstructionErrors(const MapVector<Value *, GiNaC::symbol> &ValToSym,
+		     const GiNaC::matrix &Errors) {
+  // Associate errors to internal instructions
+  DenseMap<Value *, unsigned> ValIdx(ValToSym.size());
+  unsigned i = 0U;
+  for (auto &VS : ValToSym) {
+    ValIdx.insert(std::make_pair(VS.first, i));
+
+    Instruction *I = dyn_cast<Instruction>(VS.first);
+    if (I != nullptr
+	&& (I->getParent() == S.Cond || I->getParent() == S.Body)) {
+      AffineForm<inter_t> Err(0.0, ex_to<GiNaC::numeric>(Errors(i, 0)).to_double());
+      RMap.setError(VS.first, Err);
+    }
+      ++i;
+  }
+
+  // Associate errors to exiting PHIS
+  for (PHINode &PHI : S.Exit->phis()) {
+    Value *ErrSource = nullptr;
+
+    unsigned CondIdx = PHI.getBasicBlockIndex(S.Cond);
+    if (CondIdx == -1)
+      continue;
+
+    Value *CondVal = PHI.getIncomingBlock(CondIdx);
+    if (isa<PHINode>(CondVal)) {
+      PHINode *CondPHI = cast<PHINode>(CondVal);
+      unsigned BodyIdx = CondPHI->getBasicBlockIndex(S.Body);
+      if (BodyIdx == -1)
+	continue;
+
+      ErrSource = CondPHI->getIncomingBlock(BodyIdx);
+    }
+    else {
+      ErrSource = CondVal;
+    }
+
+    auto VIdx = ValIdx.find(ErrSource);
+    if (VIdx == ValIdx.end())
+      continue;
+
+    AffineForm<inter_t> Err(0.0, ex_to<GiNaC::numeric>(Errors(VIdx->second, 0))
+			    .to_double());
+    RMap.setError(&PHI, Err);
+  }
+}
+
+void RoundoffErrorPropagator::computeBasicBlockErrors(BasicBlock *BB) {
+  assert(BB != nullptr);
+
+  DEBUG(dbgs() << "Computing Roundoff Errors for BasicBlock "
+	<< BB->getName() << "...\n");
+
+  for (Instruction &I : *BB) {
+    RMap.retrieveRange(&I);
+    dispatchInstruction(I);
+  }
+}
+
+void
+RoundoffErrorPropagator::dispatchInstruction(Instruction &I) {
+  // assert(MemSSA != nullptr); // TODO: support load/store
+
+  if (I.isBinaryOp()) {
+    propagateBinaryOp(RMap, I);
+    return;
+  }
+
+  switch (I.getOpcode()) {
+    case Instruction::SExt:
+      // Fall-through.
+    case Instruction::ZExt:
+      propagateIExt(RMap, I);
+      break;
+    case Instruction::Trunc:
+      propagateTrunc(RMap, I);
+      break;
+    case Instruction::Select:
+      propagateSelect(RMap, I);
+      break;
+    case Instruction::PHI:
+      propagatePhi(RMap, I);
+      break;
+    case Instruction::Store:
+      // propagateStore(RMap, I);
+      // break;
+    case Instruction::Load:
+      // propagateLoad(RMap, *MemSSA, I);
+    case Instruction::Call:
+    case Instruction::Invoke:
+    default:
+      DEBUG(dbgs() << "Unhandled " << I.getOpcodeName()
+	    << " instruction: " << I.getName() << "\n");
+      break;
+  }
 }
 
 } // end namespace ErrorProp

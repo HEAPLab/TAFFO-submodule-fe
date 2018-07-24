@@ -100,6 +100,7 @@ FunctionErrorPropagator::computeFunctionErrors(SmallVectorImpl<Value *> *ArgErrs
       LipschitzLoopPropagator LLP(*L, RMap, DomTree);
       if (LLP.isValid()) {
 	LLP.computeErrors(10U); // TODO: retrieve tripcount
+	continue;
       }
     }
 

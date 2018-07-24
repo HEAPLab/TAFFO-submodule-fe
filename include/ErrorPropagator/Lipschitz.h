@@ -69,6 +69,32 @@ protected:
   GiNaC::matrix
   getInitialErrors(MapVector<Value *, GiNaC::symbol> &ValToSym,
 		   DenseMap<Value *, std::unique_ptr<EPExpr> > &Exprs);
+
+  GiNaC::matrix
+  getRoundoffErrors(MapVector<Value *, GiNaC::symbol> &ValToSym);
+
+  void
+  setInstructionErrors(const MapVector<Value *, GiNaC::symbol> &ValToSym,
+		       const GiNaC::matrix &Errors);
+};
+
+class RoundoffErrorPropagator {
+public:
+  RoundoffErrorPropagator(const RangeErrorMap &InRMap)
+    : RMap(InRMap) {
+    RMap.resetErrors();
+  }
+
+  void computeBasicBlockErrors(BasicBlock *BB);
+
+  RangeErrorMap &getRMap() {
+    return RMap;
+  }
+
+protected:
+  RangeErrorMap RMap;
+
+  void dispatchInstruction(Instruction &I);
 };
 
 } // end namespace ErrorProp

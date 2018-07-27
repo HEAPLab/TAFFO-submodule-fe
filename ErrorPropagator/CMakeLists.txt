@@ -4,6 +4,11 @@ add_llvm_loadable_module(LLVMErrorPropagator
   RangeErrorMap.cpp
   FunctionCopyMap.cpp
   Propagators.cpp
+  ../include/ErrorPropagator/ErrorPropagator.h
+  ../include/ErrorPropagator/FunctionCopyMap.h
+  ../include/ErrorPropagator/FunctionErrorPropagator.h
+  ../include/ErrorPropagator/Propagators.h
+  ../include/ErrorPropagator/RangeErrorMap.h
 
   PLUGIN_TOOL
   opt

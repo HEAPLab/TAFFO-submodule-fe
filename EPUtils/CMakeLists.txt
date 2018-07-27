@@ -2,6 +2,9 @@ add_llvm_loadable_module(LLVMEPUtils
   AffineForms.cpp
   FixedPoint.cpp
   Metadata.cpp
+  ../include/EPUtils/AffineForms.h
+  ../include/EPUtils/FixedPoint.h
+  ../include/EPUtils/Metadata.h
 
   PLUGIN_TOOL
   opt

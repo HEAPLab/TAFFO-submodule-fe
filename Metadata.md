@@ -26,7 +26,12 @@ And, at the end of the file,
 !5 = !{i32 32, i32 5, double 2.0e+01, double 1.0e+2}
 ```
 Related functions:
-TO BE WRITTEN
+```
+#include "EPUtils/Metadata.h"
+llvm::Optional<FPInterval> retrieveRangeFromMetadata(llvm::Instruction &I);
+void setRangeMetadata(llvm::Instruction &I, const FPInterval &FPI);
+```
+(See Doxygen comments for details.)
 
 ### Global variable name
 A pair whose first element is the range and the second is the initial error.
@@ -52,7 +57,6 @@ bool hasGlobalVariableMetadata(const llvm::GlobalObject &V);
 std::pair<FPInterval, AffineForm<inter_t> >
 retrieveGlobalVariableRangeError(const llvm::GlobalObject &V);
 ```
-(See Doxygen comments for details.)
 
 ### Function Arguments Range and Initial Error
 A list of a range/error pair for each argument in the order they appear,

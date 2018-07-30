@@ -12,7 +12,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "EPUtils/Metadata.h"
+#include "ErrorPropagator/EPUtils/Metadata.h"
 
 namespace ErrorProp {
 

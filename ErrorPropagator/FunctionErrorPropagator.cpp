@@ -19,7 +19,7 @@
 #include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 
 #include "ErrorPropagator/Propagators.h"
-#include "EPUtils/Metadata.h"
+#include "ErrorPropagator/EPUtils/Metadata.h"
 
 namespace ErrorProp {
 

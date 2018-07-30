@@ -1,3 +1,5 @@
+add_subdirectory(EPUtils)
+
 add_llvm_loadable_module(LLVMErrorPropagator
   ErrorPropagator.cpp
   FunctionErrorPropagator.cpp
@@ -21,3 +23,5 @@ endif()
 
 set_property(TARGET LLVMErrorPropagator PROPERTY CXX_STANDARD 11)
 set_property(TARGET LLVMErrorPropagator PROPERTY CXX_STANDARD_REQUIRED ON)
+
+target_link_libraries(LLVMErrorPropagator LLVMEPUtils)

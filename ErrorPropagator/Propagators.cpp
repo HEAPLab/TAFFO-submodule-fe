@@ -21,8 +21,8 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Argument.h"
-#include "EPUtils/AffineForms.h"
-#include "EPUtils/Metadata.h"
+#include "ErrorPropagator/EPUtils/AffineForms.h"
+#include "ErrorPropagator/EPUtils/Metadata.h"
 
 namespace ErrorProp {
 

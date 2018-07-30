@@ -25,8 +25,8 @@
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
 #include "llvm/Analysis/MemorySSA.h"
 
-#include "EPUtils/AffineForms.h"
-#include "EPUtils/Metadata.h"
+#include "ErrorPropagator/EPUtils/AffineForms.h"
+#include "ErrorPropagator/EPUtils/Metadata.h"
 #include "ErrorPropagator/FunctionErrorPropagator.h"
 #include "ErrorPropagator/Propagators.h"
 

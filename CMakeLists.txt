@@ -9,5 +9,4 @@ list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 include(AddLLVM)
 
 add_subdirectory(ErrorPropagator)
-add_subdirectory(EPUtils)
 add_subdirectory(test)

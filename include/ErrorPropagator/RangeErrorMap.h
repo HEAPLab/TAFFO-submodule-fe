@@ -20,8 +20,8 @@
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Function.h"
 #include "llvm/ADT/DenseMap.h"
-#include "EPUtils/FixedPoint.h"
-#include "EPUtils/AffineForms.h"
+#include "ErrorPropagator/EPUtils/FixedPoint.h"
+#include "ErrorPropagator/EPUtils/AffineForms.h"
 
 namespace ErrorProp {
 

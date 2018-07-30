@@ -18,7 +18,7 @@
 
 #include <utility>
 #include "llvm/Support/Debug.h"
-#include "EPUtils/Metadata.h"
+#include "ErrorPropagator/EPUtils/Metadata.h"
 
 namespace ErrorProp {
 

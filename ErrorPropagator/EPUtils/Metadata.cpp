@@ -32,7 +32,7 @@ Optional<FPInterval> retrieveRangeFromMetadata(MDNode *MDN) {
 
   unsigned PointPos;
   Metadata *PMD = MDN->getOperand(1U).get();
-  ConstantAsMetadata *PCMD = cast<ConstantAsMetadata>(WMD);
+  ConstantAsMetadata *PCMD = cast<ConstantAsMetadata>(PMD);
   ConstantInt *PCI = cast<ConstantInt>(PCMD->getValue());
   PointPos = PCI->getZExtValue();
 

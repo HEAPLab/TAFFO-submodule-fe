@@ -41,6 +41,9 @@ namespace ErrorProp {
 llvm::Optional<FPInterval> retrieveRangeFromMetadata(llvm::Instruction &I);
 
 /// Attach range info contained in FPI to I as metadata.
+/// Example:
+/// setRangeMetadata(I, FPInterval(FPType(Width, PointPos, isSigned),
+///                                Interval<inter_t>(LowerBound, UpperBound)));
 void setRangeMetadata(llvm::Instruction &I, const FPInterval &FPI);
 
 /// Attach metadata containing the computed error to the given instruction.

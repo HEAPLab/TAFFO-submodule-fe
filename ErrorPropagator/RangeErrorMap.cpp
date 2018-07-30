@@ -63,12 +63,11 @@ void RangeErrorMap::retrieveRange(Instruction *I) {
   if (I == nullptr)
     return;
 
-  std::unique_ptr<FixedPointValue> FPRange =
-    FixedPointValue::createFromMetadata(*I);
-  if (FPRange == nullptr)
+  Optional<FPInterval> FPI = retrieveRangeFromMetadata(*I);
+  if (!FPI.hasValue())
     return;
 
-  REMap[I] = std::make_pair(FPRange->getInterval(), AffineForm<inter_t>());
+  REMap[I] = std::make_pair(FPI.getValue(), AffineForm<inter_t>());
 }
 
 void RangeErrorMap::retrieveRangeErrors(const Function &F) {

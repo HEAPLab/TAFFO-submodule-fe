@@ -24,7 +24,7 @@ using namespace llvm;
 
 inter_t FPInterval::getRoundingError() const {
   return std::ldexp(static_cast<inter_t>(1.0),
-		    -std::abs(this->PointPos));
+		    -this->getPointPos());
 }
 
 namespace {

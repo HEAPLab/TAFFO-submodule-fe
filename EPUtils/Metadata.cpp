@@ -18,6 +18,74 @@ namespace ErrorProp {
 
 using namespace llvm;
 
+Optional<FPInterval> retrieveRangeFromMetadata(MDNode *MDN) {
+  if (MDN == nullptr)
+    return NoneType();
+  assert(MDN->getNumOperands() == 4U
+	 && "Must contain width, point pos. and bounds.");
+
+  int Width;
+  Metadata *WMD = MDN->getOperand(0U).get();
+  ConstantAsMetadata *WCMD = cast<ConstantAsMetadata>(WMD);
+  ConstantInt *WCI = cast<ConstantInt>(WCMD->getValue());
+  Width = WCI->getSExtValue();
+
+  unsigned PointPos;
+  Metadata *PMD = MDN->getOperand(1U).get();
+  ConstantAsMetadata *PCMD = cast<ConstantAsMetadata>(WMD);
+  ConstantInt *PCI = cast<ConstantInt>(PCMD->getValue());
+  PointPos = PCI->getZExtValue();
+
+  inter_t Min;
+  Metadata *MiMD = MDN->getOperand(2U).get();
+  ConstantAsMetadata *MiCMD = cast<ConstantAsMetadata>(MiMD);
+  ConstantFP *MiCFP = cast<ConstantFP>(MiCMD->getValue());
+  Min = MiCFP->getValueAPF().convertToDouble();
+
+  inter_t Max;
+  Metadata *MaMD = MDN->getOperand(3U).get();
+  ConstantAsMetadata *MaCMD = cast<ConstantAsMetadata>(MaMD);
+  ConstantFP *MaCFP = cast<ConstantFP>(MaCMD->getValue());
+  Max = MaCFP->getValueAPF().convertToDouble();
+
+  return FPInterval(FPType(Width, PointPos),
+		    Interval<inter_t>(Min, Max));
+}
+
+Optional<FPInterval> retrieveRangeFromMetadata(Instruction &I) {
+  MDNode *MDN = I.getMetadata(RANGE_METADATA);
+  return retrieveRangeFromMetadata(MDN);
+}
+
+MDNode *createRangeMetadata(LLVMContext &C, const FPInterval &FPI) {
+  IntegerType *Int32Ty = Type::getInt32Ty(C);
+
+  // Width
+  ConstantInt *WCI = ConstantInt::getSigned(Int32Ty, FPI.getFPType().getSWidth());
+  ConstantAsMetadata *WCMD = ConstantAsMetadata::get(WCI);
+
+  // PointPos
+  ConstantInt *PCI = ConstantInt::get(Int32Ty, FPI.getPointPos());
+  ConstantAsMetadata *PCMD = ConstantAsMetadata::get(PCI);
+
+  Type *DoubleTy = Type::getDoubleTy(C);
+  // Min
+  Constant *MiCFP = ConstantFP::get(DoubleTy, static_cast<double>(FPI.Min));
+  ConstantAsMetadata *MiCMD = ConstantAsMetadata::get(MiCFP);
+
+  // Max
+  Constant *MaCFP = ConstantFP::get(DoubleTy, static_cast<double>(FPI.Max));
+  ConstantAsMetadata *MaCMD = ConstantAsMetadata::get(MaCFP);
+
+  Metadata *MDS[] = {WCMD, PCMD, MiCMD, MaCMD};
+  return MDNode::get(C, MDS);
+}
+
+void setRangeMetadata(Instruction &I, const FPInterval &FPI) {
+  I.setMetadata(RANGE_METADATA,
+		createRangeMetadata(I.getContext(), FPI));
+}
+
 MDNode *createErrorMetadata(LLVMContext &Context,
 			    const AffineForm<inter_t> &E) {
   Type *DoubleType = Type::getDoubleTy(Context);
@@ -35,9 +103,9 @@ void setErrorMetadata(Instruction &I, const AffineForm<inter_t> &E) {
 
 MDNode *getRangeErrorMetadata(LLVMContext &Context,
 			      std::pair<
-			      const FixedPointValue *,
+			      const FPInterval *,
 			      const AffineForm<inter_t> *> &RE) {
-  MDNode *RangeMD = RE.first->toMetadata(Context);
+  MDNode *RangeMD = createRangeMetadata(Context, *RE.first);
   MDNode *ErrorMD = createErrorMetadata(Context, *RE.second);
   Metadata *REMD[] = {RangeMD, ErrorMD};
   return MDNode::get(Context, REMD);
@@ -45,7 +113,7 @@ MDNode *getRangeErrorMetadata(LLVMContext &Context,
 
 MDTuple *getArgsMetadata(LLVMContext &Context,
 			 const ArrayRef<std::pair<
-			 const FixedPointValue *,
+			 const FPInterval *,
 			 const AffineForm<inter_t> *> > Data) {
   SmallVector<Metadata *, 2U> AllArgsMD;
   AllArgsMD.reserve(Data.size());
@@ -58,7 +126,7 @@ MDTuple *getArgsMetadata(LLVMContext &Context,
 
 void setFunctionArgsMetadata(Function &F,
 			     const ArrayRef<std::pair<
-			     const FixedPointValue *,
+			     const FPInterval *,
 			     const AffineForm<inter_t> *> > Data) {
   assert(F.arg_size() <= Data.size()
 	 && "Range and Error data must be supplied for each argument.");
@@ -82,17 +150,14 @@ getArgRangeErrorFromMetadata(const MDNode &ArgMD) {
   assert(ArgMD.getNumOperands() >= 2
 	 && "Range and Error must be supplied for each argument.");
 
-  std::unique_ptr<FixedPointValue> FPVRange =
-    FixedPointValue::createFromMDNode(nullptr,
-				      *cast<MDNode>(ArgMD.getOperand(0U).get()));
-  assert(FPVRange != nullptr && "Malformed argument range.");
-
-  FPInterval ArgRange = FPVRange->getInterval();
+  Optional<FPInterval> FPR =
+    retrieveRangeFromMetadata(cast<MDNode>(ArgMD.getOperand(0U).get()));
+  assert(FPR.hasValue() && "Malformed argument range.");
 
   AffineForm<inter_t> ArgErr =
     getArgErrorFromMetadata(*cast<MDNode>(ArgMD.getOperand(1U).get()));
 
-  return std::make_pair(ArgRange, ArgErr);
+  return std::make_pair(FPR.getValue(), ArgErr);
 }
 
 SmallVector<std::pair<FPInterval, AffineForm<inter_t> >, 1U>
@@ -129,7 +194,7 @@ void setCmpErrorMetadata(Instruction &I, const CmpErrorInfo &CmpInfo) {
 }
 
 void setGlobalVariableMetadata(GlobalObject &V,
-			       const FixedPointValue *Range,
+			       const FPInterval *Range,
 			       const AffineForm<inter_t> *Error) {
   assert(Range != nullptr && "Null Range pointer.");
   assert(Error != nullptr && "Null Error pointer.");

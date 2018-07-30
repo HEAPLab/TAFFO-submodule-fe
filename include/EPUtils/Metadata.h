@@ -27,6 +27,7 @@
 #include "EPUtils/AffineForms.h"
 #include "EPUtils/FixedPoint.h"
 
+#define RANGE_METADATA         "errorprop.range"
 #define COMP_ERROR_METADATA    "errorprop.abserror"
 #define FUNCTION_ARGS_METADATA "errorprop.argsrange"
 #define WRONG_CMP_METADATA     "errorprop.wrongcmptol"
@@ -35,6 +36,12 @@
 #define UNROLL_COUNT_METADATA  "errorprop.unroll"
 
 namespace ErrorProp {
+
+/// Extract range information from Instruction metadata.
+llvm::Optional<FPInterval> retrieveRangeFromMetadata(llvm::Instruction &I);
+
+/// Attach range info contained in FPI to I as metadata.
+void setRangeMetadata(llvm::Instruction &I, const FPInterval &FPI);
 
 /// Attach metadata containing the computed error to the given instruction.
 /// E is an affine form containing the error terms computed for Instruction I.
@@ -73,7 +80,7 @@ void setCmpErrorMetadata(llvm::Instruction &, const CmpErrorInfo &);
 /// and Error contains the initial absolute error.
 /// It may be created with AffineForm<inter_t>(0.0, Error).
 void setGlobalVariableMetadata(llvm::GlobalObject &V,
-			       const FixedPointValue *Range,
+			       const FPInterval *Range,
 			       const AffineForm<inter_t> *Error);
 
 /// Check whether V has global variable metadata attached to it.

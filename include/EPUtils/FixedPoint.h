@@ -29,36 +29,64 @@ namespace ErrorProp {
 /// Intermediate type for error computations.
 typedef long double inter_t;
 
+/// A Fixed Point Type.
+/// Contains bit width, number of fractional bits of the format
+/// and whether it is signed or not.
+class FPType {
+public:
+  FPType(unsigned Width, unsigned PointPos, bool Signed = true)
+    : Width((Signed) ? -Width : Width), PointPos(PointPos) {}
+
+  FPType(int Width, unsigned PointPos)
+    : Width(Width), PointPos(PointPos) {}
+
+  unsigned getWidth() const { return std::abs(Width); }
+  int getSWidth() const { return Width; }
+  unsigned getPointPos() const { return PointPos; }
+  bool isSigned() const { return Width < 0; }
+
+protected:
+  int Width; ///< Width of the format (in bits), negative if signed.
+  unsigned PointPos; ///< Number of fractional bits.
+};
+
 /// Interval of former fixed point values
 /// An interval representing a fixed point range in the intermediate type.
 class FPInterval : public Interval<inter_t> {
 public:
 
-  FPInterval()
-    : PointPos(0U) {}
+   FPInterval()
+     : Type(0, 0U) {}
 
+  FPInterval(const FPType &Type)
+    : Type(Type) {}
+
+  FPInterval(const FPType &Type, const Interval<inter_t> &I)
+    : Interval<inter_t>(I), Type(Type) {}
+
+  // TODO: remove
   FPInterval(unsigned PointPos, bool isSigned = false)
-    : PointPos((isSigned) ? -PointPos : PointPos) {}
+    : Type(64U, PointPos, isSigned) {}
 
+  // TODO: remove
   FPInterval(unsigned PointPos, const Interval<inter_t> &I, bool isSigned = false)
-    : Interval<inter_t>(I), PointPos((isSigned) ? -PointPos : PointPos) {}
+    : Interval<inter_t>(I), Type(64U, PointPos, isSigned) {}
 
-  unsigned getPointPos() const {
-    return std::abs(PointPos);
-  }
+  unsigned getPointPos() const { return Type.getPointPos(); }
 
-  int getSPointPos() const {
-    return PointPos;
-  }
+  // TODO remove
+  int getSPointPos() const { return (Type.isSigned()) ? -getPointPos() : getPointPos(); }
 
-  bool isSigned() const {
-    return PointPos < 0;
-  }
+  bool isSigned() const { return Type.isSigned(); }
 
   inter_t getRoundingError() const;
 
+  bool isUninitialized() const { return Type.getWidth() == 0; }
+
+  const FPType &getFPType() const { return Type; }
+
 protected:
-  int PointPos; ///< Number of fractional binary digits, negative if signed.
+  FPType Type;
 };
 
 /// Fixed Point value type wrapper.

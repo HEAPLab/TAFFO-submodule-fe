@@ -151,12 +151,12 @@ retrieveArgsRangeError(const llvm::Function &);
 #### Loop unroll count
 
 An i32 integer constant attached to the terminator instruction of the loop header block,
-with label `!errorprop.unroll`.
+with label `!taffo.unroll`.
 
 ```
 for.body:                                         ; preds = %entry, %for.body
   ...
-  br i1 %exitcond, label %for.body, label %for.end, !errorprop.unroll !8
+  br i1 %exitcond, label %for.body, label %for.end, !taffo.unroll !8
 ```
 
 At the end of the file:
@@ -168,7 +168,7 @@ At the end of the file:
 for an unroll count of 20.
 Related functions:
 
-```
+```cpp
 #include "EPUtils/Metadata.h"
 void setLoopUnrollCountMetadata(llvm::Loop &L, unsigned UnrollCount);
 llvm::Optional<unsigned> retrieveLoopUnrollCount(const llvm::Loop &L);
@@ -177,10 +177,10 @@ llvm::Optional<unsigned> retrieveLoopUnrollCount(const llvm::Loop &L);
 #### Max Recursion Count
 
 The maximum number of recursive calls to this function allowed.
-Represented as an i32 constant, labeled `!errorprop.maxrec`.
+Represented as an i32 constant, labeled `!taffo.maxrec`.
 
 ```
-define i32 @foo(i32 %x, i32 %y) !taffo.info !0 !errorprop.maxrec !9 {
+define i32 @foo(i32 %x, i32 %y) !taffo.info !0 !taffo.maxrec !9 {
   ...
 ```
 
@@ -192,7 +192,7 @@ At the end of the file:
 
 Related functions:
 
-```
+```cpp
 #include "EPUtils/Metadata.h"
 void
 setMaxRecursionCountMetadata(llvm::Function &F, unsigned MaxRecursionCount);
@@ -204,10 +204,10 @@ unsigned retrieveMaxRecursionCount(const llvm::Function &F);
 
 #### Computed absolute error
 
-`double` value attached to each instruction with label `!errorprop.argsrange`.
+`double` value attached to each instruction with label `!taffo.abserror`.
 
 ```
-%add = add nsw i32 %x, %y, !taffo.info !4, !errorprop.abserror !5
+%add = add nsw i32 %x, %y, !taffo.info !4, !taffo.abserror !5
 ```
 
 At the end of the file:
@@ -218,7 +218,7 @@ At the end of the file:
 
 Related functions:
 
-```
+```cpp
 #include "EPUtils/Metadata.h"
 void setErrorMetadata(llvm::Instruction &, const AffineForm<inter_t> &);
 
@@ -228,12 +228,12 @@ TO BE DONE
 #### Possible wrong comparison
 
 If a cmp instruction may give a wrong result due to the absolute error of the operands,
-this is signaled with `!errorprop.wrongcmptol`.
+this is signaled with `!taffo.wrongcmptol`.
 The absolute tolerance computed for the comparison is attached to this label.
 The relative threshold above which the comparison error is signaled can be set form command line.
 
 ```
-%cmp = icmp slt i32 %a, %b, !errorprop.wrongcmptol !5
+%cmp = icmp slt i32 %a, %b, !taffo.wrongcmptol !5
 ```
 
 End of file:

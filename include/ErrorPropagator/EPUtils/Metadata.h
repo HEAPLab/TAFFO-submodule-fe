@@ -31,10 +31,10 @@
 #define RANGE_METADATA         "taffo.info"
 #define GLOBAL_VAR_METADATA    "taffo.info"
 #define FUNCTION_ARGS_METADATA "taffo.funinfo"
-#define COMP_ERROR_METADATA    "errorprop.abserror"
-#define WRONG_CMP_METADATA     "errorprop.wrongcmptol"
-#define MAX_REC_METADATA       "errorprop.maxrec"
-#define UNROLL_COUNT_METADATA  "errorprop.unroll"
+#define COMP_ERROR_METADATA    "taffo.abserror"
+#define WRONG_CMP_METADATA     "taffo.wrongcmptol"
+#define MAX_REC_METADATA       "taffo.maxrec"
+#define UNROLL_COUNT_METADATA  "taffo.unroll"
 
 namespace ErrorProp {
 

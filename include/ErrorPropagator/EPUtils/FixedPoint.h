@@ -26,13 +26,22 @@
 
 namespace ErrorProp {
 
+#define FIXP_TYPE_FLAG "fixp"
+
 /// Intermediate type for error computations.
 typedef long double inter_t;
+
+using namespace llvm;
+
+class TType {
+public:
+  virtual MDNode *toMetadata(LLVMContext &C) const = 0;
+};
 
 /// A Fixed Point Type.
 /// Contains bit width, number of fractional bits of the format
 /// and whether it is signed or not.
-class FPType {
+class FPType : public TType {
 public:
   FPType(unsigned Width, unsigned PointPos, bool Signed = true)
     : Width((Signed) ? -Width : Width), PointPos(PointPos) {}
@@ -40,10 +49,13 @@ public:
   FPType(int Width, unsigned PointPos)
     : Width(Width), PointPos(PointPos) {}
 
+  MDNode *toMetadata(LLVMContext &C) const override;
   unsigned getWidth() const { return std::abs(Width); }
   int getSWidth() const { return Width; }
   unsigned getPointPos() const { return PointPos; }
   bool isSigned() const { return Width < 0; }
+
+  static FPType createFromMetadata(MDNode *MDN);
 
 protected:
   int Width; ///< Width of the format (in bits), negative if signed.

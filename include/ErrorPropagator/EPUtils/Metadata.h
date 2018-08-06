@@ -27,42 +27,51 @@
 #include "ErrorPropagator/EPUtils/AffineForms.h"
 #include "ErrorPropagator/EPUtils/FixedPoint.h"
 
-#define RANGE_METADATA         "errorprop.range"
+#define INPUT_INFO_METADATA    "taffo.info"
+#define RANGE_METADATA         "taffo.info"
+#define GLOBAL_VAR_METADATA    "taffo.info"
+#define FUNCTION_ARGS_METADATA "taffo.funinfo"
 #define COMP_ERROR_METADATA    "errorprop.abserror"
-#define FUNCTION_ARGS_METADATA "errorprop.argsrange"
 #define WRONG_CMP_METADATA     "errorprop.wrongcmptol"
-#define GLOBAL_VAR_METADATA    "errorprop.globalre"
 #define MAX_REC_METADATA       "errorprop.maxrec"
 #define UNROLL_COUNT_METADATA  "errorprop.unroll"
 
 namespace ErrorProp {
 
+/// Structure containing pointers to Type, Range, and initial Error
+/// of an LLVM Value.
+/// See FixedPoint.h for docs about TType.
+/// Range may be created with Interval<inter_t>(Min, Max).
+struct InputInfo {
+  TType *Ty;
+  Interval<inter_t> *Range;
+  inter_t *Error;
+
+  InputInfo()
+    : Ty(nullptr), Range(nullptr), Error(nullptr) {}
+
+  InputInfo(TType *T, Interval<inter_t> *Range, inter_t *Error)
+    : Ty(T), Range(Range), Error(Error) {}
+};
+
+/// Attach to Instruction I an input info metadata node
+/// containing Type info T, Range, and initial Error.
+void setInputInfoMetadata(Instruction &I, const InputInfo &IInfo);
+
 /// Extract range information from Instruction metadata.
 llvm::Optional<FPInterval> retrieveRangeFromMetadata(llvm::Instruction &I);
-
-/// Attach range info contained in FPI to I as metadata.
-/// Example:
-/// setRangeMetadata(I, FPInterval(FPType(Width, PointPos, isSigned),
-///                                Interval<inter_t>(LowerBound, UpperBound)));
-void setRangeMetadata(llvm::Instruction &I, const FPInterval &FPI);
 
 /// Attach metadata containing the computed error to the given instruction.
 /// E is an affine form containing the error terms computed for Instruction I.
 void setErrorMetadata(llvm::Instruction &I, const AffineForm<inter_t> &E);
 
-/// Attach metadata containing ranges and initial absolute errors
+/// Attach metadata containing types, ranges and initial absolute errors
 /// for each argument of the given function.
-/// RErr is an array/vector of pairs containing
-/// ranges and errors for function arguments.
-/// Each pair refers to the function parameter with the same index.
-/// The first member of each term contains its range,
-/// while the second is a 0-centered affine form containing the initial error:
-/// It can be created with AffineForm<inter_t>(0.0, Error),
-/// where the type of Error must be convertible to inter_t (defined in FixedPoint.h).
+/// AInfo is an array/vector of InputInfo object containing type,
+/// range and initial error of each formal parameter of F.
+/// Each InputInfo object refers to the function parameter with the same index.
 void setFunctionArgsMetadata(llvm::Function &F,
-			     const llvm::ArrayRef<std::pair<
-			     const FixedPointValue *,
-			     const AffineForm<inter_t> *> > RErr);
+			     const ArrayRef<InputInfo> AInfo);
 
 /// Extract function argument ranges and initial errors
 /// from Function metadata.
@@ -78,13 +87,10 @@ bool propagateFunction(const llvm::Function &F);
 /// The metadata are attached only if the comparison may be wrong.
 void setCmpErrorMetadata(llvm::Instruction &, const CmpErrorInfo &);
 
-/// Attach Range and Error metadata to global object V.
-/// Range contains the predicted range of V,
-/// and Error contains the initial absolute error.
-/// It may be created with AffineForm<inter_t>(0.0, Error).
-void setGlobalVariableMetadata(llvm::GlobalObject &V,
-			       const FPInterval *Range,
-			       const AffineForm<inter_t> *Error);
+/// Attach Input Info metadata to global object V.
+/// IInfo contains pointers to type, range and initial error
+/// to be attached to global object V as metadata.
+void setGlobalVariableMetadata(GlobalObject &V, const InputInfo &IInfo);
 
 /// Check whether V has global variable metadata attached to it.
 bool hasGlobalVariableMetadata(const llvm::GlobalObject &V);

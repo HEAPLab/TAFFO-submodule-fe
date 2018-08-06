@@ -81,20 +81,21 @@ And, at the end of the file,
 !7 = !{double 2.0e+01, double 1.0e+2}
 ```
 
-Related functions: TO BE UPDATED!
+Related functions:
 
-```
-#include "EPUtils/Metadata.h"
+```cpp
+#include "ErrorPropagator/EPUtils/Metadata.h"
+
 llvm::Optional<FPInterval> retrieveRangeFromMetadata(llvm::Instruction &I);
-void setRangeMetadata(llvm::Instruction &I, const FPInterval &FPI);
-void setGlobalVariableMetadata(llvm::GlobalObject &V,
-			       const FixedPointValue *Range,
-			       const AffineForm<inter_t> *Error);
+
+void setInputInfoMetadata(Instruction &I, const InputInfo &IInfo);
 
 bool hasGlobalVariableMetadata(const llvm::GlobalObject &V);
 
 std::pair<FPInterval, AffineForm<inter_t> >
 retrieveGlobalVariableRangeError(const llvm::GlobalObject &V);
+
+void setGlobalVariableMetadata(GlobalObject &V, const InputInfo &IInfo);
 ```
 
 (See Doxygen comments for details.)
@@ -131,14 +132,13 @@ at the end of the file:
 !11 = !{double 0.000000e+01}
 ```
 
-Related functions: TO BE UPDATED!
+Related functions:
 
-```
-#include "EPUtils/Metadata.h"
-void setFunctionArgsMetadata(llvm::Function &,
-			     const llvm::ArrayRef<std::pair<
-			     const FixedPointValue *,
-			     const AffineForm<inter_t> *> >);
+```cpp
+#include "ErrorPropagator/EPUtils/Metadata.h"
+
+void setFunctionArgsMetadata(llvm::Function &F,
+			     const ArrayRef<InputInfo> AInfo);
 
 llvm::SmallVector<std::pair<FPInterval, AffineForm<inter_t> >, 1U>
 retrieveArgsRangeError(const llvm::Function &);

@@ -22,6 +22,41 @@ namespace ErrorProp {
 
 using namespace llvm;
 
+MDNode *FPType::toMetadata(LLVMContext &C) const {
+  Metadata *TypeFlag = MDString::get(C, FIXP_TYPE_FLAG);
+
+  IntegerType *Int32Ty = Type::getInt32Ty(C);
+  ConstantInt *WCI = ConstantInt::getSigned(Int32Ty, this->getSWidth());
+  Metadata *WidthMD = ConstantAsMetadata::get(WCI);
+
+  ConstantInt *PCI = ConstantInt::get(Int32Ty, this->getPointPos());
+  ConstantAsMetadata *PointPosMD = ConstantAsMetadata::get(PCI);
+
+  Metadata *MDs[] = {TypeFlag, WidthMD, PointPosMD};
+  return MDNode::get(C, MDs);
+}
+
+FPType FPType::createFromMetadata(MDNode *MDN) {
+  assert(MDN->getNumOperands() >= 3U && "Must have flag, width, PointPos.");
+
+  MDString *Flag = cast<MDString>(MDN->getOperand(0U).get());
+  assert(Flag->getString().equals(FIXP_TYPE_FLAG) && "Must be fixp.");
+
+  int Width;
+  Metadata *WMD = MDN->getOperand(1U).get();
+  ConstantAsMetadata *WCMD = cast<ConstantAsMetadata>(WMD);
+  ConstantInt *WCI = cast<ConstantInt>(WCMD->getValue());
+  Width = WCI->getSExtValue();
+
+  unsigned PointPos;
+  Metadata *PMD = MDN->getOperand(2U).get();
+  ConstantAsMetadata *PCMD = cast<ConstantAsMetadata>(PMD);
+  ConstantInt *PCI = cast<ConstantInt>(PCMD->getValue());
+  PointPos = PCI->getZExtValue();
+
+  return FPType(Width, PointPos);
+}
+
 inter_t FPInterval::getRoundingError() const {
   return std::ldexp(static_cast<inter_t>(1.0),
 		    -this->getPointPos());

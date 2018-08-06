@@ -29,7 +29,7 @@ void
 FunctionErrorPropagator::computeErrorsWithCopy(RangeErrorMap &GlobRMap,
 					       SmallVectorImpl<Value *> *Args,
 					       bool GenMetadata) {
-  if (F.empty() || !propagateFunction(F) || FCopy == nullptr) {
+  if (F.empty() || FCopy == nullptr) {
     DEBUG(dbgs() << "Function " << F.getName() << " could not be processed.\n");
     return;
   }

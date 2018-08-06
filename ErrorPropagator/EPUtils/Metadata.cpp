@@ -137,11 +137,12 @@ getArgRangeErrorFromMetadata(const MDNode &ArgII) {
 
 SmallVector<std::pair<FPInterval, AffineForm<inter_t> >, 1U>
 retrieveArgsRangeError(const Function &F) {
-  assert(propagateFunction(F) && "Must contain argument metadata.");
+  SmallVector<std::pair<FPInterval, AffineForm<inter_t> >, 1U> REs;
 
   MDNode *ArgsMD = F.getMetadata(FUNCTION_ARGS_METADATA);
+  if (ArgsMD == nullptr)
+    return std::move(REs);
 
-  SmallVector<std::pair<FPInterval, AffineForm<inter_t> >, 1U> REs;
   for (auto ArgMDOp = ArgsMD->op_begin(), ArgMDOpEnd = ArgsMD->op_end();
        ArgMDOp != ArgMDOpEnd; ++ArgMDOp) {
     MDNode *ArgMDNode = cast<MDNode>(ArgMDOp->get());
@@ -150,9 +151,9 @@ retrieveArgsRangeError(const Function &F) {
   return std::move(REs);
 }
 
-bool propagateFunction(const Function &F) {
-  return F.getMetadata(FUNCTION_ARGS_METADATA) != nullptr;
-}
+// bool propagateFunction(const Function &F) {
+//   return F.getMetadata(FUNCTION_ARGS_METADATA) != nullptr;
+// }
 
 void setCmpErrorMetadata(Instruction &I, const CmpErrorInfo &CmpInfo) {
   if (!CmpInfo.MayBeWrong)

@@ -78,11 +78,6 @@ void setFunctionArgsMetadata(llvm::Function &F,
 llvm::SmallVector<std::pair<FPInterval, AffineForm<inter_t> >, 1U>
 retrieveArgsRangeError(const llvm::Function &);
 
-/// Check whether error propagation must be performed on this function.
-/// Returns true if metadata labelled with FUNCTION_ARGS_METADATA
-/// is found attached to F.
-bool propagateFunction(const llvm::Function &F);
-
 /// Attach maximum error tolerance to Cmp instruction.
 /// The metadata are attached only if the comparison may be wrong.
 void setCmpErrorMetadata(llvm::Instruction &, const CmpErrorInfo &);

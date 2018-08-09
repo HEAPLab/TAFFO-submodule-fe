@@ -1,10 +1,8 @@
 add_library(LLVMEPUtils
-  AffineForms.cpp
-  FixedPoint.cpp
   Metadata.cpp
-  ../../include/ErrorPropagator/EPUtils/AffineForms.h
-  ../../include/ErrorPropagator/EPUtils/FixedPoint.h
+  InputInfo.cpp
   ../../include/ErrorPropagator/EPUtils/Metadata.h
+  ../../include/ErrorPropagator/EPUtils/InputInfo.h
 )
 
 set_property(TARGET LLVMEPUtils PROPERTY CXX_STANDARD 11)

@@ -6,11 +6,15 @@ add_llvm_loadable_module(LLVMErrorPropagator
   RangeErrorMap.cpp
   FunctionCopyMap.cpp
   Propagators.cpp
+  AffineForms.cpp
+  FixedPoint.cpp
   ../include/ErrorPropagator/ErrorPropagator.h
   ../include/ErrorPropagator/FunctionCopyMap.h
   ../include/ErrorPropagator/FunctionErrorPropagator.h
   ../include/ErrorPropagator/Propagators.h
   ../include/ErrorPropagator/RangeErrorMap.h
+  ../include/ErrorPropagator/AffineForms.h
+  ../include/ErrorPropagator/FixedPoint.h
 
   PLUGIN_TOOL
   opt

@@ -18,7 +18,6 @@
 
 #include <utility>
 #include "llvm/Support/Debug.h"
-#include "ErrorPropagator/EPUtils/Metadata.h"
 
 namespace ErrorProp {
 
@@ -59,29 +58,33 @@ void RangeErrorMap::setRangeError(const Value *I,
   REMap[I] = RE;
 }
 
-void RangeErrorMap::retrieveRange(Instruction *I) {
+void RangeErrorMap::retrieveRangeError(Instruction *I) {
   if (I == nullptr)
     return;
 
-  Optional<FPInterval> FPI = retrieveRangeFromMetadata(*I);
-  if (!FPI.hasValue())
+  InputInfo *II = MDMgr->retrieveInputInfo(*I);
+  if (II == nullptr)
     return;
 
-  REMap[I] = std::make_pair(FPI.getValue(), AffineForm<inter_t>());
+  REMap[I] = std::make_pair(FPInterval(II), AffineForm<inter_t>());
 }
 
 void RangeErrorMap::retrieveRangeErrors(const Function &F) {
-  SmallVector<std::pair<FPInterval, AffineForm<inter_t> >, 1U> REs =
-    retrieveArgsRangeError(F);
+  SmallVector<InputInfo *, 1U> REs;
+  MDMgr->retrieveArgumentInputInfo(F, REs);
 
   auto REIt = REs.begin(), REEnd = REs.end();
   for (Function::const_arg_iterator Arg = F.arg_begin(), ArgE = F.arg_end();
        Arg != ArgE && REIt != REEnd; ++Arg, ++REIt) {
+    FPInterval FPI(*REIt);
+    AffineForm<inter_t> Err(0.0, FPI.getInitialError());
+
     DEBUG(dbgs() << "Retrieving data for Argument " << Arg->getName() << "... "
-	  << "Range: [" << static_cast<double>(REIt->first.Min) << ", "
-	  << static_cast<double>(REIt->first.Max) << "], Error: "
-	  << static_cast<double>(REIt->second.noiseTermsAbsSum()) << ".\n");
-    this->setRangeError(Arg, *REIt);
+	  << "Range: [" << static_cast<double>(FPI.Min) << ", "
+	  << static_cast<double>(FPI.Max) << "], Error: "
+	  << FPI.getInitialError() << ".\n");
+
+    this->setRangeError(Arg, std::make_pair(FPI, Err));
   }
 }
 
@@ -109,12 +112,9 @@ void RangeErrorMap::applyArgumentErrors(Function &F,
 
 void RangeErrorMap::retrieveRangeError(const GlobalObject &V) {
   DEBUG(dbgs() << "Retrieving data for Global Variable " << V.getName() << "... ");
-  if (!hasGlobalVariableMetadata(V)) {
-    DEBUG(dbgs() << "ignored (no data).\n");
-    return;
-  }
 
-  REMap[&V] = retrieveGlobalVariableRangeError(V);
+  FPInterval FPI(MDMgr->retrieveInputInfo(V));
+  REMap[&V] = std::make_pair(FPI, AffineForm<inter_t>(0.0, FPI.getInitialError()));
 
   DEBUG(RangeError &RE = REMap[&V];
 	dbgs() << "Range: [" << static_cast<double>(RE.first.Min) << ", "

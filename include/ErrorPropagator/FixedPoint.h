@@ -22,83 +22,66 @@
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Metadata.h"
-#include "ErrorPropagator/EPUtils/AffineForms.h"
+#include "ErrorPropagator/EPUtils/InputInfo.h"
+#include "ErrorPropagator/AffineForms.h"
 
 namespace ErrorProp {
-
-#define FIXP_TYPE_FLAG "fixp"
 
 /// Intermediate type for error computations.
 typedef long double inter_t;
 
 using namespace llvm;
 
-class TType {
-public:
-  virtual MDNode *toMetadata(LLVMContext &C) const = 0;
-};
-
-/// A Fixed Point Type.
-/// Contains bit width, number of fractional bits of the format
-/// and whether it is signed or not.
-class FPType : public TType {
-public:
-  FPType(unsigned Width, unsigned PointPos, bool Signed = true)
-    : Width((Signed) ? -Width : Width), PointPos(PointPos) {}
-
-  FPType(int Width, unsigned PointPos)
-    : Width(Width), PointPos(PointPos) {}
-
-  MDNode *toMetadata(LLVMContext &C) const override;
-  unsigned getWidth() const { return std::abs(Width); }
-  int getSWidth() const { return Width; }
-  unsigned getPointPos() const { return PointPos; }
-  bool isSigned() const { return Width < 0; }
-
-  static FPType createFromMetadata(MDNode *MDN);
-
-protected:
-  int Width; ///< Width of the format (in bits), negative if signed.
-  unsigned PointPos; ///< Number of fractional bits.
-};
-
 /// Interval of former fixed point values
 /// An interval representing a fixed point range in the intermediate type.
 class FPInterval : public Interval<inter_t> {
 public:
 
-   FPInterval()
-     : Type(0, 0U) {}
+  FPInterval() : IInfo(nullptr) {}
 
-  FPInterval(const FPType &Type)
-    : Type(Type) {}
+  FPInterval(InputInfo *II) : IInfo(II) {
+    assert(II != nullptr);
+    assert(II->IRange != nullptr);
 
-  FPInterval(const FPType &Type, const Interval<inter_t> &I)
-    : Interval<inter_t>(I), Type(Type) {}
+    this->Min = getMin();
+    this->Max = getMax();
+  }
 
-  // TODO: remove
-  FPInterval(unsigned PointPos, bool isSigned = false)
-    : Type(64U, PointPos, isSigned) {}
+  FPInterval(const Interval<inter_t> &I)
+    : Interval<inter_t>(I), IInfo(nullptr) {}
 
-  // TODO: remove
-  FPInterval(unsigned PointPos, const Interval<inter_t> &I, bool isSigned = false)
-    : Interval<inter_t>(I), Type(64U, PointPos, isSigned) {}
+  bool hasInitialError() const {
+    return IInfo != nullptr && IInfo->IError != nullptr;
+  }
 
-  unsigned getPointPos() const { return Type.getPointPos(); }
-
-  // TODO remove
-  int getSPointPos() const { return (Type.isSigned()) ? -getPointPos() : getPointPos(); }
-
-  bool isSigned() const { return Type.isSigned(); }
+  double getInitialError() const {
+    if (hasInitialError())
+      return *IInfo->IError;
+    else
+      return 0.0;
+  }
 
   inter_t getRoundingError() const;
 
-  bool isUninitialized() const { return Type.getWidth() == 0; }
+  bool isUninitialized() const { return IInfo == nullptr; }
 
-  const FPType &getFPType() const { return Type; }
+  const TType *getTType() const {
+    if (isUninitialized())
+      return nullptr;
+
+    return IInfo->IType;
+  }
 
 protected:
-  FPType Type;
+  InputInfo *IInfo;
+
+  inter_t getMin() const {
+    return static_cast<inter_t>(IInfo->IRange->Min);
+  }
+
+  inter_t getMax() const {
+    return static_cast<inter_t>(IInfo->IRange->Max);
+  }
 };
 
 /// Fixed Point value type wrapper.
@@ -238,15 +221,6 @@ public:
 protected:
   int64_t Min;
   int64_t Max;
-};
-
-struct CmpErrorInfo {
-public:
-  inter_t MaxTolerance;
-  bool MayBeWrong;
-
-  CmpErrorInfo(inter_t MaxTolerance, bool MayBeWrong = true)
-    : MaxTolerance(MaxTolerance), MayBeWrong(MayBeWrong) {}
 };
 
 } // end namespace ErrorProp

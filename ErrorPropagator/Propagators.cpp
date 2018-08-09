@@ -21,7 +21,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Argument.h"
-#include "ErrorPropagator/EPUtils/AffineForms.h"
+#include "ErrorPropagator/AffineForms.h"
 #include "ErrorPropagator/EPUtils/Metadata.h"
 
 namespace ErrorProp {
@@ -101,14 +101,16 @@ getConstantRangeError(RangeErrorMap &RMap, Instruction &I, ConstantInt *VInt) {
   if (RInfo == nullptr)
     return nullptr;
 
+  const FPType *Ty = cast<FPType>(RInfo->getTType());
+  unsigned PointPos = Ty->getPointPos();
+  int SPointPos = (Ty->isSigned()) ? -PointPos : PointPos;
   std::unique_ptr<FixedPointValue> VFPRange =
-    FixedPointValue::createFromConstantInt(RInfo->getSPointPos(),
-					   nullptr, VInt, VInt);
+    FixedPointValue::createFromConstantInt(SPointPos, nullptr, VInt, VInt);
   FPInterval VRange = VFPRange->getInterval();
 
 #if 1
   // We use the rounding error of this format as the only error.
-  AffineForm<inter_t> Error(0, VRange.getRoundingError());
+  AffineForm<inter_t> Error(0, RInfo->getRoundingError());
 #else
   AffineForm<inter_t> Error;
 #endif

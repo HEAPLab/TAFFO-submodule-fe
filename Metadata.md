@@ -86,16 +86,11 @@ Related functions:
 ```cpp
 #include "ErrorPropagator/EPUtils/Metadata.h"
 
-llvm::Optional<FPInterval> retrieveRangeFromMetadata(llvm::Instruction &I);
+InputInfo* MetadataManager::retrieveInputInfo(const Instruction &I);
+static void MetadataManager::setInputInfoMetadata(Instruction &I, const InputInfo &IInfo);
 
-void setInputInfoMetadata(Instruction &I, const InputInfo &IInfo);
-
-bool hasGlobalVariableMetadata(const llvm::GlobalObject &V);
-
-std::pair<FPInterval, AffineForm<inter_t> >
-retrieveGlobalVariableRangeError(const llvm::GlobalObject &V);
-
-void setGlobalVariableMetadata(GlobalObject &V, const InputInfo &IInfo);
+InputInfo* MetadataManager::retrieveInputInfo(const GlobalObject &V);
+static void MetadataManager::setInputInfoMetadata(GlobalObject &V, const InputInfo &IInfo);
 ```
 
 (See Doxygen comments for details.)
@@ -136,12 +131,8 @@ Related functions:
 
 ```cpp
 #include "ErrorPropagator/EPUtils/Metadata.h"
-
-void setFunctionArgsMetadata(llvm::Function &F,
-			     const ArrayRef<InputInfo> AInfo);
-
-llvm::SmallVector<std::pair<FPInterval, AffineForm<inter_t> >, 1U>
-retrieveArgsRangeError(const llvm::Function &);
+void MetadataManager::retrieveArgumentInputInfo(const Function &F, SmallVectorImpl<InputInfo *> &ResII);
+static void MetadataManager::setArgumentInputInfoMetadata(Function &F, const ArrayRef<InputInfo *> AInfo);
 ```
 
 ## ErrorPropagation Specific Metadata
@@ -170,8 +161,8 @@ Related functions:
 
 ```cpp
 #include "EPUtils/Metadata.h"
-void setLoopUnrollCountMetadata(llvm::Loop &L, unsigned UnrollCount);
-llvm::Optional<unsigned> retrieveLoopUnrollCount(const llvm::Loop &L);
+static void MetadataManager::setLoopUnrollCountMetadata(llvm::Loop &L, unsigned UnrollCount);
+static llvm::Optional<unsigned> MetadataManager::retrieveLoopUnrollCount(const llvm::Loop &L);
 ```
 
 #### Max Recursion Count
@@ -194,10 +185,8 @@ Related functions:
 
 ```cpp
 #include "EPUtils/Metadata.h"
-void
-setMaxRecursionCountMetadata(llvm::Function &F, unsigned MaxRecursionCount);
-
-unsigned retrieveMaxRecursionCount(const llvm::Function &F);
+static void MetadataManager::setMaxRecursionCountMetadata(llvm::Function &F, unsigned MaxRecursionCount);
+static unsigned MetadataManager::retrieveMaxRecursionCount(const llvm::Function &F);
 ```
 
 ### Output data
@@ -220,9 +209,8 @@ Related functions:
 
 ```cpp
 #include "EPUtils/Metadata.h"
-void setErrorMetadata(llvm::Instruction &, const AffineForm<inter_t> &);
-
-TO BE DONE
+static void MetadataManager::setErrorMetadata(llvm::Instruction &, const AffineForm<inter_t> &);
+static static double MetadataManager::retrieveErrorMetadata(const Instruction &I);
 ```
 
 #### Possible wrong comparison
@@ -240,4 +228,12 @@ End of file:
 
 ```
 !5 = !{double 1.000000e+00}
+```
+
+Related functions:
+
+```cpp
+#include "EPUtils/Metadata.h"
+static void MetadataManager::setCmpErrorMetadata(Instruction &I, const CmpErrorInfo &CEI);
+static std::unique_ptr<CmpErrorInfo> MetadataManager::retrieveCmpError(const Instruction &I);
 ```

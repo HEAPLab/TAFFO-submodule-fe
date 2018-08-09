@@ -31,7 +31,7 @@ void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
     // Compute loop trip count
     unsigned TripCount = SE.getSmallConstantTripCount(L);
     // Get user supplied unroll count
-    Optional<unsigned> OUC = retrieveLoopUnrollCount(*L);
+    Optional<unsigned> OUC = MetadataManager::retrieveLoopUnrollCount(*L);
     unsigned UnrollCount = DefaultUnrollCount;
     if (OUC.hasValue())
       if (TripCount != 0 && OUC.getValue() > TripCount)
@@ -72,7 +72,7 @@ FunctionCopyCount *FunctionCopyManager::prepareFunctionData(Function *F) {
     // do not change original code.
     FunctionCopyCount &FCC = FCMap[F];
 
-    if ((FCC.MaxRecCount = retrieveMaxRecursionCount(*F)) == 0U)
+    if ((FCC.MaxRecCount = MetadataManager::retrieveMaxRecursionCount(*F)) == 0U)
       FCC.MaxRecCount = MaxRecursionCount;
 
     // Check if we really need to clone the function

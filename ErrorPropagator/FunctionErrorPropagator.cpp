@@ -19,7 +19,7 @@
 #include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 
 #include "ErrorPropagator/Propagators.h"
-#include "ErrorPropagator/EPUtils/Metadata.h"
+//#include "ErrorPropagator/EPUtils/Metadata.h"
 
 namespace ErrorProp {
 
@@ -94,7 +94,7 @@ FunctionErrorPropagator::computeFunctionErrors(SmallVectorImpl<Value *> *ArgErrs
 
 void
 FunctionErrorPropagator::computeInstructionErrors(Instruction &I) {
-  RMap.retrieveRange(&I);
+  RMap.retrieveRangeError(&I);
   dispatchInstruction(I);
 }
 
@@ -175,7 +175,8 @@ FunctionErrorPropagator::prepareErrorsForCall(Instruction &I) {
     return;
 
   // Now propagate the errors for this call.
-  FunctionErrorPropagator CFEP(EPPass, *CalledF, FCMap);
+  FunctionErrorPropagator CFEP(EPPass, *CalledF,
+			       FCMap, RMap.getMetadataManager());
   CFEP.computeErrorsWithCopy(RMap, &Args, false);
 
   // Restore MemorySSA
@@ -194,11 +195,11 @@ FunctionErrorPropagator::attachErrorMetadata() {
 
     const AffineForm<inter_t> *Error = RMap.getError(InstCopy);
     if (Error != nullptr)
-      setErrorMetadata(*I, *Error);
+      MetadataManager::setErrorMetadata(*I, Error->noiseTermsAbsSum());
 
     CmpErrorMap::const_iterator CmpErr = CmpMap.find(InstCopy);
     if (CmpErr != CmpMap.end())
-      setCmpErrorMetadata(*I, CmpErr->second);
+      MetadataManager::setCmpErrorMetadata(*I, CmpErr->second);
   }
 }
 

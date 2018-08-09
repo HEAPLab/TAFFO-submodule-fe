@@ -25,10 +25,8 @@
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
 #include "llvm/Analysis/MemorySSA.h"
 
-#include "ErrorPropagator/EPUtils/AffineForms.h"
 #include "ErrorPropagator/EPUtils/Metadata.h"
 #include "ErrorPropagator/FunctionErrorPropagator.h"
-#include "ErrorPropagator/Propagators.h"
 
 namespace ErrorProp {
 
@@ -37,7 +35,9 @@ namespace ErrorProp {
 bool ErrorPropagator::runOnModule(Module &M) {
   checkCommandLine();
 
-  RangeErrorMap GlobalRMap;
+  MetadataManager MDManager;
+
+  RangeErrorMap GlobalRMap(MDManager);
 
   // Get Ranges and initial Errors for global variables.
   retrieveGlobalVariablesRangeError(M, GlobalRMap);
@@ -55,7 +55,7 @@ bool ErrorPropagator::runOnModule(Module &M) {
   // Iterate over all functions in this Module,
   // and propagate errors for pending input intervals for all of them.
   for (Function *F : Functions) {
-    FunctionErrorPropagator FEP(*this, *F, FCMap);
+    FunctionErrorPropagator FEP(*this, *F, FCMap, MDManager);
     FEP.computeErrorsWithCopy(GlobalRMap, nullptr, true);
   }
 

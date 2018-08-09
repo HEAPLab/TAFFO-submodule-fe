@@ -15,6 +15,9 @@
 #ifndef ERRORPROPAGATOR_FUNCTIONERRORPROPAGATOR_H
 #define ERRORPROPAGATOR_FUNCTIONERRORPROPAGATOR_H
 
+#include "RangeErrorMap.h"
+#include "FunctionCopyMap.h"
+
 #include "llvm/Pass.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instruction.h"
@@ -23,9 +26,6 @@
 #include "llvm/ADT/SmallSet.h"
 #include <vector>
 #include "llvm/Analysis/MemorySSA.h"
-
-#include "RangeErrorMap.h"
-#include "FunctionCopyMap.h"
 
 namespace ErrorProp {
 
@@ -36,9 +36,10 @@ class FunctionErrorPropagator {
 public:
   FunctionErrorPropagator(Pass &EPPass,
 			  Function &F,
-			  FunctionCopyManager &FCMap)
+			  FunctionCopyManager &FCMap,
+			  MetadataManager &MDManager)
     : EPPass(EPPass), F(F), FCMap(FCMap),
-      FCopy(FCMap.getFunctionCopy(&F)), RMap(),
+      FCopy(FCMap.getFunctionCopy(&F)), RMap(MDManager),
       CmpMap(CMPERRORMAP_NUMINITBUCKETS), MemSSA(nullptr),
       Cloned(true) {
     if (FCopy == nullptr) {

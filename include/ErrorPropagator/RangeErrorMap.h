@@ -20,8 +20,9 @@
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Function.h"
 #include "llvm/ADT/DenseMap.h"
-#include "ErrorPropagator/EPUtils/FixedPoint.h"
-#include "ErrorPropagator/EPUtils/AffineForms.h"
+#include "ErrorPropagator/EPUtils/Metadata.h"
+#include "ErrorPropagator/FixedPoint.h"
+#include "ErrorPropagator/AffineForms.h"
 
 namespace ErrorProp {
 
@@ -31,7 +32,8 @@ class RangeErrorMap {
 public:
   typedef std::pair<FPInterval, AffineForm<inter_t> > RangeError;
 
-  RangeErrorMap() : REMap() {}
+  RangeErrorMap(MetadataManager &MDManager)
+    : REMap(), MDMgr(&MDManager) {}
 
   const FPInterval *getRange(const Value *) const;
 
@@ -46,15 +48,14 @@ public:
 
   /// Set range and error for Value V.
   /// RE cannot be a reference to a RangeError contained in this map.
-  void setRangeError(const Value *V,
-		     const RangeError &RE);
+  void setRangeError(const Value *V, const RangeError &RE);
 
   void erase(const Value *V) {
     REMap.erase(V);
   }
 
   /// Retrieve range for instruction I from metadata.
-  void retrieveRange(Instruction *I);
+  void retrieveRangeError(Instruction *I);
 
   /// Retrieve ranges and errors for arguments of function F from metadata.
   void retrieveRangeErrors(const Function &F);
@@ -67,8 +68,11 @@ public:
   /// Retrieve range and error for global variable V, and add it to the map.
   void retrieveRangeError(const GlobalObject &V);
 
+  MetadataManager &getMetadataManager() { return *MDMgr; }
+
 protected:
   std::map<const Value *, RangeError> REMap;
+  MetadataManager *MDMgr;
 
 }; // end class RangeErrorMap
 

@@ -16,177 +16,53 @@
 
 namespace ErrorProp {
 
-using namespace llvm;
-
-Metadata *createDoubleMetadata(LLVMContext &C, const inter_t &Value) {
-  Type *DoubleTy = Type::getDoubleTy(C);
-  Constant *ValC = ConstantFP::get(DoubleTy,
-				   static_cast<double>(Value));
-  return ConstantAsMetadata::get(ValC);
+InputInfo* MetadataManager::retrieveInputInfo(const Instruction &I) {
+  return retrieveInputInfo(I.getMetadata(INPUT_INFO_METADATA));
 }
 
-double retrieveDoubleMetadata(Metadata *DMD) {
-  ConstantAsMetadata *DCMD = cast<ConstantAsMetadata>(DMD);
-  ConstantFP *DCFP = cast<ConstantFP>(DCMD->getValue());
-  return DCFP->getValueAPF().convertToDouble();
+InputInfo* MetadataManager::retrieveInputInfo(const GlobalObject &V) {
+  return retrieveInputInfo(V.getMetadata(INPUT_INFO_METADATA));
 }
 
-MDNode *createRangeMetadata(LLVMContext &C, const Interval<inter_t> &Range) {
-  Metadata *RangeMD[] = {createDoubleMetadata(C, Range.Min),
-			 createDoubleMetadata(C, Range.Max)};
-  return MDNode::get(C, RangeMD);
-}
-
-MDNode *createDoubleMDNode(LLVMContext &C, const inter_t &Value) {
-  return MDNode::get(C, createDoubleMetadata(C, Value));
-}
-
-double retrieveDoubleMDNode(MDNode *MDN) {
-  assert(MDN != nullptr);
-  assert(MDN->getNumOperands() > 0 && "Must have at least one operand.");
-
-  return retrieveDoubleMetadata(MDN->getOperand(0U).get());
-}
-
-Metadata *createNullFieldMetadata(LLVMContext &C) {
-  return ConstantAsMetadata::get(ConstantInt::getFalse(C));
-}
-
-MDNode *createInputInfoMetadata(LLVMContext &C, const InputInfo &IInfo) {
-  Metadata *Null = createNullFieldMetadata(C);
-  Metadata *TypeMD = (IInfo.Ty) ? IInfo.Ty->toMetadata(C) : Null;
-  Metadata *RangeMD = (IInfo.Range) ? createRangeMetadata(C, *IInfo.Range) : Null;
-  Metadata *ErrorMD = (IInfo.Error) ? createDoubleMDNode(C, *IInfo.Error) : Null;
-
-  Metadata *InputMDs[] = {TypeMD, RangeMD, ErrorMD};
-  return MDNode::get(C, InputMDs);
-}
-
-void setInputInfoMetadata(Instruction &I, const InputInfo &IInfo) {
-  I.setMetadata(INPUT_INFO_METADATA,
-		createInputInfoMetadata(I.getContext(), IInfo));
-}
-
-Optional<FPInterval> retrieveRangeFromMetadata(const MDNode *MDN) {
-  if (MDN == nullptr)
-    return NoneType();
-  assert(MDN->getNumOperands() == 3U
-	 && "Must contain type info, range, initial error.");
-
-  FPType TypeInfo =
-    FPType::createFromMetadata(cast<MDNode>(MDN->getOperand(0U).get()));
-
-  MDNode *RangeMDN = cast<MDNode>(MDN->getOperand(1U).get());
-  assert(RangeMDN->getNumOperands() == 2U && "Must have Min and Max.");
-  Interval<inter_t> Range(retrieveDoubleMetadata(RangeMDN->getOperand(0U).get()),
-			  retrieveDoubleMetadata(RangeMDN->getOperand(1U).get()));
-
-  return FPInterval(TypeInfo, Range);
-}
-
-Optional<FPInterval> retrieveRangeFromMetadata(Instruction &I) {
-  MDNode *MDN = I.getMetadata(RANGE_METADATA);
-  return retrieveRangeFromMetadata(MDN);
-}
-
-MDNode *createErrorMetadata(LLVMContext &Context,
-			    const AffineForm<inter_t> &E) {
-  Type *DoubleType = Type::getDoubleTy(Context);
-  Constant *ErrConst =
-    ConstantFP::get(DoubleType,
-		    static_cast<double>(E.noiseTermsAbsSum()));
-  ConstantAsMetadata *ErrMD = ConstantAsMetadata::get(ErrConst);
-  return MDNode::get(Context, ErrMD);
-}
-
-void setErrorMetadata(Instruction &I, const AffineForm<inter_t> &E) {
-  MDNode *ErrMDN = createErrorMetadata(I.getContext(), E);
-  I.setMetadata(COMP_ERROR_METADATA, ErrMDN);
-}
-
-MDTuple *getArgsMetadata(LLVMContext &Context,
-			 const ArrayRef<InputInfo> AInfo) {
-  SmallVector<Metadata *, 2U> AllArgsMD;
-  AllArgsMD.reserve(AInfo.size());
-
-  for (auto &IInfo : AInfo)
-    AllArgsMD.push_back(createInputInfoMetadata(Context, IInfo));
-
-  return MDNode::get(Context, AllArgsMD);
-}
-
-void setFunctionArgsMetadata(Function &F,
-			     const ArrayRef<InputInfo> AInfo) {
-  F.setMetadata(FUNCTION_ARGS_METADATA,
-		getArgsMetadata(F.getContext(), AInfo));
-}
-
-std::pair<FPInterval, AffineForm<inter_t> >
-getArgRangeErrorFromMetadata(const MDNode &ArgII) {
-  assert(ArgII.getNumOperands() == 3U
-	 && "Must contain type info, range, initial error.");
-
-  Optional<FPInterval> FPR = retrieveRangeFromMetadata(&ArgII);
-  assert(FPR.hasValue() && "Malformed argument range.");
-
-  AffineForm<inter_t> ArgErr =
-    AffineForm<inter_t>(0, retrieveDoubleMDNode(cast<MDNode>(ArgII.getOperand(2U).get())));
-
-  return std::make_pair(FPR.getValue(), ArgErr);
-}
-
-SmallVector<std::pair<FPInterval, AffineForm<inter_t> >, 1U>
-retrieveArgsRangeError(const Function &F) {
-  SmallVector<std::pair<FPInterval, AffineForm<inter_t> >, 1U> REs;
-
+void MetadataManager::
+retrieveArgumentInputInfo(const Function &F, SmallVectorImpl<InputInfo *> &ResII) {
   MDNode *ArgsMD = F.getMetadata(FUNCTION_ARGS_METADATA);
   if (ArgsMD == nullptr)
-    return std::move(REs);
+    return;
 
+  ResII.reserve(ArgsMD->getNumOperands());
   for (auto ArgMDOp = ArgsMD->op_begin(), ArgMDOpEnd = ArgsMD->op_end();
        ArgMDOp != ArgMDOpEnd; ++ArgMDOp) {
     MDNode *ArgMDNode = cast<MDNode>(ArgMDOp->get());
-    REs.push_back(getArgRangeErrorFromMetadata(*ArgMDNode));
+    ResII.push_back(retrieveInputInfo(ArgMDNode));
   }
-  return std::move(REs);
 }
 
-// bool propagateFunction(const Function &F) {
-//   return F.getMetadata(FUNCTION_ARGS_METADATA) != nullptr;
-// }
-
-void setCmpErrorMetadata(Instruction &I, const CmpErrorInfo &CmpInfo) {
-  if (!CmpInfo.MayBeWrong)
-    return;
-
-  Type *DoubleType = Type::getDoubleTy(I.getContext());
-  Constant *MaxTolConst =
-    ConstantFP::get(DoubleType,
-		    static_cast<double>(CmpInfo.MaxTolerance));
-  ConstantAsMetadata *ErrMD = ConstantAsMetadata::get(MaxTolConst);
-  MDNode *MaxTolNode = MDNode::get(I.getContext(), ErrMD);
-
-  I.setMetadata(WRONG_CMP_METADATA, MaxTolNode);
+void MetadataManager::
+setInputInfoMetadata(Instruction &I, const InputInfo &IInfo) {
+  I.setMetadata(INPUT_INFO_METADATA, IInfo.toMetadata(I.getContext()));
 }
 
-void setGlobalVariableMetadata(GlobalObject &V, const InputInfo &IInfo) {
-  V.setMetadata(GLOBAL_VAR_METADATA,
-		createInputInfoMetadata(V.getContext(), IInfo));
+void MetadataManager::
+setInputInfoMetadata(GlobalObject &V, const InputInfo &IInfo) {
+  V.setMetadata(INPUT_INFO_METADATA, IInfo.toMetadata(V.getContext()));
 }
 
-bool
-hasGlobalVariableMetadata(const GlobalObject &V) {
-  return V.getMetadata(GLOBAL_VAR_METADATA) != nullptr;
+void MetadataManager::
+setArgumentInputInfoMetadata(Function &F, const ArrayRef<InputInfo *> AInfo) {
+  LLVMContext &Context = F.getContext();
+  SmallVector<Metadata *, 2U> AllArgsMD;
+  AllArgsMD.reserve(AInfo.size());
+
+  for (InputInfo *IInfo : AInfo) {
+    assert(IInfo != nullptr);
+    AllArgsMD.push_back(IInfo->toMetadata(Context));
+  }
+
+  F.setMetadata(FUNCTION_ARGS_METADATA, MDNode::get(Context, AllArgsMD));
 }
 
-std::pair<FPInterval, AffineForm<inter_t> >
-retrieveGlobalVariableRangeError(const GlobalObject &V) {
-  MDNode *MD = V.getMetadata(GLOBAL_VAR_METADATA);
-  assert(MD != nullptr && "No global variable metadata.");
-  return getArgRangeErrorFromMetadata(*MD);
-}
-
-void
+void MetadataManager::
 setMaxRecursionCountMetadata(Function &F, unsigned MaxRecursionCount) {
   ConstantInt *CIRC = ConstantInt::get(Type::getInt32Ty(F.getContext()),
 				       MaxRecursionCount,
@@ -196,7 +72,7 @@ setMaxRecursionCountMetadata(Function &F, unsigned MaxRecursionCount) {
   F.setMetadata(MAX_REC_METADATA, RCNode);
 }
 
-unsigned
+unsigned MetadataManager::
 retrieveMaxRecursionCount(const Function &F) {
   MDNode *RecC = F.getMetadata(MAX_REC_METADATA);
   if (RecC == nullptr)
@@ -208,7 +84,7 @@ retrieveMaxRecursionCount(const Function &F) {
   return CIRC->getZExtValue();
 }
 
-void
+void MetadataManager::
 setLoopUnrollCountMetadata(Loop &L, unsigned UnrollCount) {
   // Get Loop header terminating instruction
   BasicBlock *Header = L.getHeader();
@@ -228,7 +104,7 @@ setLoopUnrollCountMetadata(Loop &L, unsigned UnrollCount) {
 }
 
 Optional<unsigned>
-retrieveLoopUnrollCount(const Loop &L) {
+MetadataManager::retrieveLoopUnrollCount(const Loop &L) {
   // Get Loop header terminating instruction
   BasicBlock *Header = L.getHeader();
   assert(Header && "Loop with no header.");
@@ -245,5 +121,123 @@ retrieveLoopUnrollCount(const Loop &L) {
   ConstantInt *CIUC = cast<ConstantInt>(CMUC->getValue());
   return CIUC->getZExtValue();
 }
+
+void MetadataManager::setErrorMetadata(Instruction &I, double Error) {
+  I.setMetadata(COMP_ERROR_METADATA, createDoubleMDNode(I.getContext(), Error));
+}
+
+double MetadataManager::retrieveErrorMetadata(const Instruction &I) {
+  return retrieveDoubleMDNode(I.getMetadata(COMP_ERROR_METADATA));
+}
+
+void MetadataManager::
+setCmpErrorMetadata(Instruction &I, const CmpErrorInfo &CEI) {
+  if (!CEI.MayBeWrong)
+    return;
+
+  I.setMetadata(WRONG_CMP_METADATA, CEI.toMetadata(I.getContext()));
+}
+
+std::unique_ptr<CmpErrorInfo> MetadataManager::
+retrieveCmpError(const Instruction &I) {
+  return CmpErrorInfo::createFromMetadata(I.getMetadata(WRONG_CMP_METADATA));
+}
+
+TType *MetadataManager::retrieveTType(MDNode *MDN) {
+  if (MDN == nullptr)
+    return nullptr;
+
+  auto CachedTT = TTypes.find(MDN);
+  if (CachedTT != TTypes.end())
+    return CachedTT->second.get();
+
+  std::unique_ptr<TType> TT = TType::createFromMetadata(MDN);
+  TType *RetTT = TT.get();
+
+  TTypes.insert(std::make_pair(MDN, std::move(TT)));
+  return RetTT;
+}
+
+Range *MetadataManager::retrieveRange(MDNode *MDN) {
+  if (MDN == nullptr)
+    return nullptr;
+
+  auto CachedRange = Ranges.find(MDN);
+  if (CachedRange != Ranges.end())
+    return CachedRange->second.get();
+
+  std::unique_ptr<Range> NRange = Range::createFromMetadata(MDN);
+  Range *RetRange = NRange.get();
+
+  Ranges.insert(std::make_pair(MDN, std::move(NRange)));
+  return RetRange;
+}
+
+double *MetadataManager::retrieveError(MDNode *MDN) {
+  if (MDN == nullptr)
+    return nullptr;
+
+  auto CachedError = IErrors.find(MDN);
+  if (CachedError != IErrors.end())
+    return CachedError->second.get();
+
+  std::unique_ptr<double> NError = CreateInitialErrorFromMetadata(MDN);
+  double *RetError = NError.get();
+
+  IErrors.insert(std::make_pair(MDN, std::move(NError)));
+  return RetError;
+}
+
+InputInfo *MetadataManager::retrieveInputInfo(MDNode *MDN) {
+  if (MDN == nullptr)
+    return nullptr;
+
+  auto CachedIInfo = IInfos.find(MDN);
+  if (CachedIInfo != IInfos.end())
+    return CachedIInfo->second.get();
+
+  std::unique_ptr<InputInfo> NIInfo = createInputInfoFromMetadata(MDN);
+  InputInfo *RetIInfo = NIInfo.get();
+
+  IInfos.insert(std::make_pair(MDN, std::move(NIInfo)));
+  return RetIInfo;
+}
+
+namespace {
+
+bool isNullInputInfoField(Metadata *MD) {
+  ConstantAsMetadata *CMD = dyn_cast<ConstantAsMetadata>(MD);
+  if (CMD == nullptr)
+    return false;
+
+  ConstantInt *CI = dyn_cast<ConstantInt>(CMD->getValue());
+  if (CI == nullptr)
+    return false;
+
+  return CI->isZero() && CI->getBitWidth() == 1U;
+}
+
+}
+
+std::unique_ptr<InputInfo> MetadataManager::
+createInputInfoFromMetadata(MDNode *MDN) {
+  assert(MDN != nullptr);
+  assert(MDN->getNumOperands() == 3U && "Must have Type, Range, Initial Error.");
+
+  Metadata *ITypeMDN = MDN->getOperand(0U).get();
+  TType *IType = (isNullInputInfoField(ITypeMDN))
+    ? nullptr : retrieveTType(cast<MDNode>(ITypeMDN));
+
+  Metadata *IRangeMDN = MDN->getOperand(1U).get();
+  Range *IRange = (isNullInputInfoField(IRangeMDN))
+    ? nullptr : retrieveRange(cast<MDNode>(IRangeMDN));
+
+  Metadata *IErrorMDN = MDN->getOperand(2U).get();
+  double *IError = (isNullInputInfoField(IErrorMDN))
+    ? nullptr : retrieveError(cast<MDNode>(IErrorMDN));
+
+  return std::unique_ptr<InputInfo>(new InputInfo(IType, IRange, IError));
+}
+
 
 }

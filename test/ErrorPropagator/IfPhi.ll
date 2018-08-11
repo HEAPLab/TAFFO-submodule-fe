@@ -1,30 +1,33 @@
-; RUN: opt -load %eputilslib -load %errorproplib -errorprop -S %s | FileCheck %s
+; RUN: opt -load %errorproplib -errorprop -S %s | FileCheck %s
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
-; CHECK: %add = add nsw i32 %a, %b, !errorprop.range !9, !errorprop.abserror !10
-; CHECK: %sub = sub nsw i32 %a, %b, !errorprop.range !11, !errorprop.abserror !10
-; CHECK: %a.addr.0 = phi i32 [ %add, %if.then ], [ %sub, %if.else ], !errorprop.range !12, !errorprop.abserror !10
-; CHECK: %mul = mul nsw i32 %a.addr.0, %b, !errorprop.range !13, !errorprop.abserror !14
-; CHECK: %div = sdiv i32 %b, %mul, !errorprop.range !15, !errorprop.abserror !16
+; CHECK: %cmp = icmp slt i32 %a, %b, !taffo.wrongcmptol !6
+; CHECK: %add = add nsw i32 %a, %b, !taffo.info !10, !taffo.abserror !12
+; CHECK: %sub = sub nsw i32 %a, %b, !taffo.info !13, !taffo.abserror !12
+; CHECK: %a.addr.0 = phi i32 [ %add, %if.then ], [ %sub, %if.else ], !taffo.info !15, !taffo.abserror !12
+; CHECK: %mul = mul nsw i32 %a.addr.0, %b, !taffo.info !17, !taffo.abserror !19
+; CHECK: %div = sdiv i32 %b, %mul, !taffo.info !20, !taffo.abserror !22
+; CHECK: ret i32 %div, !taffo.abserror !22
+
 ; Function Attrs: noinline nounwind uwtable
-define i32 @foo(i32 %a, i32 %b) #0 !errorprop.argsrange !3 {
+define i32 @foo(i32 %a, i32 %b) #0 !taffo.funinfo !3 {
 entry:
   %cmp = icmp slt i32 %a, %b
   br i1 %cmp, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
-  %add = add nsw i32 %a, %b, !errorprop.range !10
+  %add = add nsw i32 %a, %b, !taffo.info !11
   br label %if.end
 
 if.else:                                          ; preds = %entry
-  %sub = sub nsw i32 %a, %b, !errorprop.range !11
+  %sub = sub nsw i32 %a, %b, !taffo.info !13
   br label %if.end
 
 if.end:                                           ; preds = %if.else, %if.then
-  %a.addr.0 = phi i32 [ %add, %if.then ], [ %sub, %if.else ], !errorprop.range !12
-  %mul = mul nsw i32 %a.addr.0, %b, !errorprop.range !13
-  %div = sdiv i32 %b, %mul, !errorprop.range !14
+  %a.addr.0 = phi i32 [ %add, %if.then ], [ %sub, %if.else ], !taffo.info !15
+  %mul = mul nsw i32 %a.addr.0, %b, !taffo.info !17
+  %div = sdiv i32 %b, %mul, !taffo.info !19
   ret i32 %div
 }
 
@@ -33,17 +36,25 @@ if.end:                                           ; preds = %if.else, %if.then
 
 !0 = !{i32 1, !"wchar_size", i32 4}
 !1 = !{!"clang version 6.0.1 (https://git.llvm.org/git/clang.git/ 0e746072ed897a85b4f533ab050b9f506941a097) (git@github.com:llvm-mirror/llvm.git ce53c20d527634abbccce7caf92891517ba0ab30)"}
-!3 = !{!4, !7}
-!4 = !{!5, !6}
-!5 = !{i32 -3, i32 8, i32 12}
-!6 = !{double 1.250000e-01}
-!7 = !{!8, !9}
-!8 = !{i32 -3, i32 10, i32 14}
-!9 = !{double 2.000000e-03}
-!10 = !{i32 -3, i32 18, i32 26}
-!11 = !{i32 -3, i32 -6, i32 2}
-!12 = !{i32 -3, i32 -6, i32 26}
-!13 = !{i32 -3, i32 -84, i32 364}
-!14 = !{i32 -3, i32 -8, i32 26}
-; CHECK: !15 = !{i32 -3, i32 -8, i32 26}
-; CHECK: !16 = !{double 0x3FC30D3B4629C08B}
+!3 = !{!4, !8}
+!4 = !{!5, !6, !7}
+!5 = !{!"fixp", i32 -32, i32 3}
+!6 = !{double 1.000000e+00, double 1.500000e+00}
+!7 = !{double 1.250000e-01}
+!8 = !{!5, !9, !10}
+!9 = !{double 1.250000e+00, double 1.750000e+00}
+!10 = !{double 2.000000e-03}
+!11 = !{!5, !12, i1 0}
+!12 = !{double 2.250000e+00, double 3.250000e+00}
+!13 = !{!5, !14, i1 0}
+!14 = !{double -7.500000e-01, double 2.500000e-01}
+!15 = !{!5, !16, i1 0}
+!16 = !{double -7.500000e-01, double 3.250000e+00}
+!17 = !{!5, !18, i1 0}
+!18 = !{double -1.500000e+01, double 4.550000e+01}
+!19 = !{!5, !20, i1 0}
+!20 = !{double -1.000000e+00, double 3.250000e+00}
+
+; CHECK: !12 = !{double 1.270000e-01}
+; CHECK: !19 = !{double 2.290040e-01}
+; CHECK: !22 = !{double 0x3FC349213E824590}

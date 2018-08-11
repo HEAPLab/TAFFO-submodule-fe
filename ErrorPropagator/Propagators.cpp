@@ -143,7 +143,7 @@ getOperandRangeError(RangeErrorMap &RMap, Instruction &I, unsigned Op) {
 
 } // end of anonymous namespace
 
-void propagateBinaryOp(RangeErrorMap &RMap, Instruction &I) {
+bool propagateBinaryOp(RangeErrorMap &RMap, Instruction &I) {
   BinaryOperator &BI = cast<BinaryOperator>(I);
 
   DEBUG(dbgs() << "Computing error for " << BI.getOpcodeName()
@@ -151,14 +151,14 @@ void propagateBinaryOp(RangeErrorMap &RMap, Instruction &I) {
 
   if (RMap.getRangeError(&I) == nullptr) {
     DEBUG(dbgs() << "ignored (no range data).\n");
-    return;
+    return false;
   }
 
   auto *O1 = getOperandRangeError(RMap, BI, 0U);
   auto *O2 = getOperandRangeError(RMap, BI, 1U);
   if (O1 == nullptr || O2 == nullptr) {
     DEBUG(dbgs() << "no data.\n");
-    return;
+    return false;
   }
 
   AffineForm<inter_t> ERes;
@@ -190,26 +190,25 @@ void propagateBinaryOp(RangeErrorMap &RMap, Instruction &I) {
       const FPInterval *ResR = RMap.getRange(&I);
       if (ResR == nullptr) {
 	DEBUG(dbgs() << "no data.");
-	return;
+	return false;
       }
       ERes = propagateShr(O1->second, *ResR);
       break;
     }
     default:
       DEBUG(dbgs() << "not supported.\n");
-      return;
+      return false;
   }
 
   // Add error to RMap.
   RMap.setError(&BI, ERes);
 
-  // Add computed error metadata to the instruction.
-  // setErrorMetadata(I, ERes);
-
   DEBUG(dbgs() << static_cast<double>(ERes.noiseTermsAbsSum()) << ".\n");
+
+  return true;
 }
 
-void propagateStore(RangeErrorMap &RMap, Instruction &I) {
+bool propagateStore(RangeErrorMap &RMap, Instruction &I) {
   assert(I.getOpcode() == Instruction::Store && "Must be Store.");
   StoreInst &SI = cast<StoreInst>(I);
 
@@ -218,7 +217,7 @@ void propagateStore(RangeErrorMap &RMap, Instruction &I) {
   auto *SrcRE = getOperandRangeError(RMap, I, 0U);
   if (SrcRE == nullptr) {
     DEBUG(dbgs() << " ignored (no data).\n");
-    return;
+    return false;
   }
 
   // Value *IDest = SI.getPointerOperand();
@@ -232,6 +231,8 @@ void propagateStore(RangeErrorMap &RMap, Instruction &I) {
   RMap.setRangeError(&SI, *SrcRE);
 
   DEBUG(dbgs() << static_cast<double>(SrcRE->second.noiseTermsAbsSum()) << ".\n");
+
+  return true;
 }
 
 void findLOEError(RangeErrorMap &RMap, Instruction *I,
@@ -307,7 +308,7 @@ void findMemSSAError(RangeErrorMap &RMap, MemorySSA &MemSSA,
   }
 }
 
-void propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
+bool propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
   assert(I.getOpcode() == Instruction::Load && "Must be Load.");
   LoadInst &LI = cast<LoadInst>(I);
 
@@ -330,7 +331,7 @@ void propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
     const RangeErrorMap::RangeError *RE = REs.front();
     RMap.setRangeError(&I, *RE);
     DEBUG(dbgs() << static_cast<double>(RE->second.noiseTermsAbsSum()) << ".\n");
-    return;
+    return true;
   }
 
   // Otherwise, we take the maximum error.
@@ -344,7 +345,7 @@ void propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
   const FPInterval *SrcR = RMap.getRange(&I);
   if (SrcR == nullptr) {
     DEBUG(dbgs() << "ignored (no data).\n");
-    return;
+    return false;
   }
 
   if (MaxAbsErr >= 0) {
@@ -352,22 +353,24 @@ void propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
     RMap.setRangeError(&I, std::make_pair(*SrcR, Error));
 
     DEBUG(dbgs() << static_cast<double>(Error.noiseTermsAbsSum()) << ".\n");
-    return;
+    return true;
   }
 
   // If we have no other error info, we take the rounding error.
   AffineForm<inter_t> Error(0, SrcR->getRoundingError());
   RMap.setRangeError(&I, std::make_pair(*SrcR, Error));
   DEBUG(dbgs() << static_cast<double>(Error.noiseTermsAbsSum()) << ".\n");
+
+  return true;
 }
 
-void unOpErrorPassThrough(RangeErrorMap &RMap, Instruction &I) {
+bool unOpErrorPassThrough(RangeErrorMap &RMap, Instruction &I) {
   assert(isa<UnaryInstruction>(I) && "Must be Unary.");
 
   auto *OpRE = getOperandRangeError(RMap, I, 0U);
   if (OpRE == nullptr) {
     DEBUG(dbgs() << "no data.\n");
-    return;
+    return false;
   }
 
   if (RMap.getRangeError(&I) == nullptr) {
@@ -380,43 +383,45 @@ void unOpErrorPassThrough(RangeErrorMap &RMap, Instruction &I) {
   }
 
   DEBUG(dbgs() << static_cast<double>(OpRE->second.noiseTermsAbsSum()) << ".\n");
+
+  return true;
 }
 
-void propagateIExt(RangeErrorMap &RMap, Instruction &I) {
+bool propagateIExt(RangeErrorMap &RMap, Instruction &I) {
   assert((I.getOpcode() == Instruction::SExt
 	  || I.getOpcode() == Instruction::ZExt) && "Must be SExt or ZExt.");
 
   DEBUG(dbgs() << "Propagating error for Int Extend instruction " << I.getName() << "... ");
 
   // No further error is introduced with signed/unsigned extension.
-  unOpErrorPassThrough(RMap, I);
+  return unOpErrorPassThrough(RMap, I);
 }
 
-void propagateTrunc(RangeErrorMap &RMap, Instruction &I) {
+bool propagateTrunc(RangeErrorMap &RMap, Instruction &I) {
   assert(I.getOpcode() == Instruction::Trunc && "Must be Trunc.");
 
   DEBUG(dbgs() << "Propagating error for Trunc instruction " << I.getName() << "... ");
 
   // No further error is introduced with truncation if no overflow occurs
   // (in which case it is useless to propagate other errors).
-  unOpErrorPassThrough(RMap, I);
+  return unOpErrorPassThrough(RMap, I);
 }
 
-void propagateSelect(RangeErrorMap &RMap, Instruction &I) {
+bool propagateSelect(RangeErrorMap &RMap, Instruction &I) {
   SelectInst &SI = cast<SelectInst>(I);
 
   DEBUG(dbgs() << "Propagating error for Select instruction " << I.getName() << "... ");
 
   if (RMap.getRangeError(&I) == nullptr) {
     DEBUG(dbgs() << "ignored (no range data).\n");
-    return;
+    return false;
   }
 
   auto *TV = getOperandRangeError(RMap, I, SI.getTrueValue());
   auto *FV = getOperandRangeError(RMap, I, SI.getFalseValue());
   if (TV == nullptr || FV == nullptr) {
     DEBUG(dbgs() << "(no data).\n");
-    return;
+    return false;
   }
 
   // Retrieve absolute errors attched to each value.
@@ -433,16 +438,18 @@ void propagateSelect(RangeErrorMap &RMap, Instruction &I) {
   // setErrorMetadata(I, ERes);
 
   DEBUG(dbgs() << static_cast<double>(ERes.noiseTermsAbsSum()) << ".\n");
+
+  return true;
 }
 
-void propagatePhi(RangeErrorMap &RMap, Instruction &I) {
+bool propagatePhi(RangeErrorMap &RMap, Instruction &I) {
   PHINode &PHI = cast<PHINode>(I);
 
   DEBUG(dbgs() << "Propagating error for PHI node " << I.getName() << "... ");
 
   if (RMap.getRangeError(&I) == nullptr) {
     DEBUG(dbgs() << "ignored (no range data).\n");
-    return;
+    return false;
   }
 
   // Iterate over values and choose the largest absolute error.
@@ -458,7 +465,7 @@ void propagatePhi(RangeErrorMap &RMap, Instruction &I) {
   if (AbsErr < 0.0) {
     // If no incoming value has an error, skip this instruction.
     DEBUG(dbgs() << "ignored (no error data).\n");
-    return;
+    return false;
   }
 
   AffineForm<inter_t> ERes(0, AbsErr);
@@ -470,6 +477,8 @@ void propagatePhi(RangeErrorMap &RMap, Instruction &I) {
   // setErrorMetadata(I, ERes);
 
   DEBUG(dbgs() << static_cast<double>(AbsErr) << ".\n");
+
+  return true;
 }
 
 inter_t computeMinRangeDiff(const FPInterval &R1, const FPInterval &R2) {
@@ -491,7 +500,7 @@ inter_t computeMinRangeDiff(const FPInterval &R1, const FPInterval &R2) {
 
 extern cl::opt<unsigned> CmpErrorThreshold;
 
-void checkICmp(RangeErrorMap &RMap, CmpErrorMap &CmpMap, Instruction &I) {
+bool checkICmp(RangeErrorMap &RMap, CmpErrorMap &CmpMap, Instruction &I) {
   ICmpInst &CI = cast<ICmpInst>(I);
 
   DEBUG(dbgs() << "Checking comparison error for ICmp "
@@ -502,7 +511,7 @@ void checkICmp(RangeErrorMap &RMap, CmpErrorMap &CmpMap, Instruction &I) {
   auto *Op2 = getOperandRangeError(RMap, I, 1U);
   if (Op1 == nullptr || Op2 == nullptr) {
     DEBUG(dbgs() << "(no data).\n");
-    return;
+    return false;
   }
 
   // Compute the total independent absolute error between operands.
@@ -533,9 +542,11 @@ void checkICmp(RangeErrorMap &RMap, CmpErrorMap &CmpMap, Instruction &I) {
     DEBUG(dbgs() << "might be wrong!\n");
   else
     DEBUG(dbgs() << "no possible error.\n");
+
+  return true;
 }
 
-void propagateRet(RangeErrorMap &RMap, Instruction &I) {
+bool propagateRet(RangeErrorMap &RMap, Instruction &I) {
   ReturnInst &RI = cast<ReturnInst>(I);
 
   DEBUG(dbgs() << "Propagating error for Return instruction "
@@ -546,7 +557,7 @@ void propagateRet(RangeErrorMap &RMap, Instruction &I) {
   const AffineForm<inter_t> *RetErr = RMap.getError(Ret);
   if (Ret == nullptr || RetErr == nullptr) {
     DEBUG(dbgs() << "unchanged (no data).\n");
-    return;
+    return false;
   }
 
   // Associate RetErr to the ret instruction.
@@ -563,13 +574,15 @@ void propagateRet(RangeErrorMap &RMap, Instruction &I) {
     RMap.setError(F, RetErr->flattenNoiseTerms());
 
     DEBUG(dbgs() << static_cast<double>(RetErr->noiseTermsAbsSum()) << ".\n");
+    return true;
   }
   else {
     DEBUG(dbgs() << "unchanged (smaller than previous).\n");
+    return true;
   }
 }
 
-void propagateCall(RangeErrorMap &RMap, Instruction &I) {
+bool propagateCall(RangeErrorMap &RMap, Instruction &I) {
   Value *F = nullptr;
   if (isa<CallInst>(I)) {
     F = cast<CallInst>(I).getCalledValue();
@@ -585,7 +598,7 @@ void propagateCall(RangeErrorMap &RMap, Instruction &I) {
 
   if (RMap.getRangeError(&I) == nullptr) {
     DEBUG(dbgs() << "ignored (no range data).\n");
-    return;
+    return false;
   }
 
   const AffineForm<inter_t> *Error = RMap.getError(F);
@@ -600,9 +613,11 @@ void propagateCall(RangeErrorMap &RMap, Instruction &I) {
   RMap.setError(&I, ErrorCopy);
 
   DEBUG(dbgs() << static_cast<double>(ErrorCopy.noiseTermsAbsSum()) << ".\n");
+
+  return true;
 }
 
-void propagateGetElementPtr(RangeErrorMap &RMap, Instruction &I) {
+bool propagateGetElementPtr(RangeErrorMap &RMap, Instruction &I) {
   GetElementPtrInst &GEPI = cast<GetElementPtrInst>(I);
 
   DEBUG(dbgs() << "Propagating error for GetElementPtr instruction "
@@ -612,12 +627,14 @@ void propagateGetElementPtr(RangeErrorMap &RMap, Instruction &I) {
     RMap.getRangeError(GEPI.getPointerOperand());
   if (RE == nullptr) {
     DEBUG(dbgs() << "ignored (no data).\n");
-    return;
+    return false;
   }
 
   RMap.setRangeError(&GEPI, *RE);
 
   DEBUG(dbgs() << static_cast<double>(RE->second.noiseTermsAbsSum()) << ".\n");
+
+  return true;
 }
 
 } // end of namespace ErrorProp

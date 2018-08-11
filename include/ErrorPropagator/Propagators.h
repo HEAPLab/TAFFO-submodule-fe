@@ -26,46 +26,46 @@
 namespace ErrorProp {
 
 /// Propagate errors for a Binary Operator instruction.
-void propagateBinaryOp(RangeErrorMap &, Instruction &);
+bool propagateBinaryOp(RangeErrorMap &, Instruction &);
 
 /// Propagate errors for a store instruction
 /// by associating the errors of the source to the destination.
-void propagateStore(RangeErrorMap &, Instruction &);
+bool propagateStore(RangeErrorMap &, Instruction &);
 
 /// Propagate the errors for a Load instruction
 /// by associating the errors of the source to it.
-void propagateLoad(RangeErrorMap &, MemorySSA &, Instruction &);
+bool propagateLoad(RangeErrorMap &, MemorySSA &, Instruction &);
 
 /// Propagate the errors for an Int Extend instruction
 /// by associating the errors of the source to it.
-void propagateIExt(RangeErrorMap &, Instruction &);
+bool propagateIExt(RangeErrorMap &, Instruction &);
 
 /// Propagate the errors for a Trunc instruction
 /// by associating the errors of the source to it.
-void propagateTrunc(RangeErrorMap &, Instruction &);
+bool propagateTrunc(RangeErrorMap &, Instruction &);
 
 /// Propagate errors for a Select instruction
 /// by associating the maximum error from the source values to it.
-void propagateSelect(RangeErrorMap &, Instruction &);
+bool propagateSelect(RangeErrorMap &, Instruction &);
 
 /// Propagate errors for a PHI Node
 /// by associating the maximum error from the source values to it.
-void propagatePhi(RangeErrorMap &, Instruction &);
+bool propagatePhi(RangeErrorMap &, Instruction &);
 
 /// Check whether the error on the operands could make this comparison wrong.
-void checkICmp(RangeErrorMap &, CmpErrorMap &, Instruction &);
+bool checkICmp(RangeErrorMap &, CmpErrorMap &, Instruction &);
 
 /// Associate the error previously computed for the returned value
 /// to the containing function, only if larger
 /// than the one already associated (if any).
-void propagateRet(RangeErrorMap &RMap, Instruction &I);
+bool propagateRet(RangeErrorMap &RMap, Instruction &I);
 
 /// Associate the error of the called function to I.
 /// Works woth both CallInst and InvokeInst.
-void propagateCall(RangeErrorMap &RMap, Instruction &I);
+bool propagateCall(RangeErrorMap &RMap, Instruction &I);
 
 /// Associate the error of the source pointer to I.
-void propagateGetElementPtr(RangeErrorMap &RMap, Instruction &I);
+bool propagateGetElementPtr(RangeErrorMap &RMap, Instruction &I);
 
 #define DEFAULT_RE_COUNT 8U
 

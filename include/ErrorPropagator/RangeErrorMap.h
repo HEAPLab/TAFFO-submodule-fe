@@ -55,7 +55,8 @@ public:
   }
 
   /// Retrieve range for instruction I from metadata.
-  void retrieveRangeError(Instruction *I);
+  /// Return true if initial error metadata was found attached to I.
+  bool retrieveRangeError(Instruction &I);
 
   /// Retrieve ranges and errors for arguments of function F from metadata.
   void retrieveRangeErrors(const Function &F);

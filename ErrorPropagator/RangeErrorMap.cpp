@@ -58,15 +58,19 @@ void RangeErrorMap::setRangeError(const Value *I,
   REMap[I] = RE;
 }
 
-void RangeErrorMap::retrieveRangeError(Instruction *I) {
-  if (I == nullptr)
-    return;
-
-  InputInfo *II = MDMgr->retrieveInputInfo(*I);
+bool RangeErrorMap::retrieveRangeError(Instruction &I) {
+  InputInfo *II = MDMgr->retrieveInputInfo(I);
   if (II == nullptr)
-    return;
+    return false;
 
-  REMap[I] = std::make_pair(FPInterval(II), AffineForm<inter_t>());
+  if (II->IError == nullptr) {
+    REMap[&I] = std::make_pair(FPInterval(II), AffineForm<inter_t>());
+    return false;
+  }
+  else {
+    REMap[&I] = std::make_pair(FPInterval(II), AffineForm<inter_t>(0.0, *II->IError));
+    return true;
+  }
 }
 
 void RangeErrorMap::retrieveRangeErrors(const Function &F) {
@@ -113,7 +117,13 @@ void RangeErrorMap::applyArgumentErrors(Function &F,
 void RangeErrorMap::retrieveRangeError(const GlobalObject &V) {
   DEBUG(dbgs() << "Retrieving data for Global Variable " << V.getName() << "... ");
 
-  FPInterval FPI(MDMgr->retrieveInputInfo(V));
+  InputInfo *II = MDMgr->retrieveInputInfo(V);
+  if (II == nullptr) {
+    DEBUG(dbgs() << "ignored (no data).\n");
+    return;
+  }
+
+  FPInterval FPI(II);
   REMap[&V] = std::make_pair(FPI, AffineForm<inter_t>(0.0, FPI.getInitialError()));
 
   DEBUG(RangeError &RE = REMap[&V];

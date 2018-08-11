@@ -67,7 +67,7 @@ protected:
   void computeInstructionErrors(Instruction &I);
 
   /// Compute errors for a single instruction.
-  void dispatchInstruction(Instruction &I);
+  bool dispatchInstruction(Instruction &I);
 
   /// Compute the error on the return value of another function.
   void prepareErrorsForCall(Instruction &I);

@@ -94,58 +94,60 @@ FunctionErrorPropagator::computeFunctionErrors(SmallVectorImpl<Value *> *ArgErrs
 
 void
 FunctionErrorPropagator::computeInstructionErrors(Instruction &I) {
-  RMap.retrieveRangeError(&I);
-  dispatchInstruction(I);
+  bool HasInitialError = RMap.retrieveRangeError(I);
+
+  double InitialError;
+  if (HasInitialError) {
+    auto *IEP = RMap.getError(&I);
+    assert(IEP != nullptr);
+    InitialError = IEP->noiseTermsAbsSum();
+  }
+
+  bool ComputedError = dispatchInstruction(I);
+
+  if (HasInitialError && ComputedError) {
+    DEBUG(dbgs() << "WARNING: computed error for instruction "
+	  << I.getName() << " ignored because of metadata error "
+	  << InitialError << ".\n");
+    RMap.setError(&I, AffineForm<inter_t>(0.0, InitialError));
+  }
 }
 
-void
+bool
 FunctionErrorPropagator::dispatchInstruction(Instruction &I) {
   assert(MemSSA != nullptr);
 
-  if (I.isBinaryOp()) {
-    propagateBinaryOp(RMap, I);
-    return;
-  }
+  if (I.isBinaryOp())
+    return propagateBinaryOp(RMap, I);
 
   switch (I.getOpcode()) {
     case Instruction::Store:
-      propagateStore(RMap, I);
-      break;
+      return propagateStore(RMap, I);
     case Instruction::Load:
-      propagateLoad(RMap, *MemSSA, I);
-      break;
+      return propagateLoad(RMap, *MemSSA, I);
     case Instruction::SExt:
       // Fall-through.
     case Instruction::ZExt:
-      propagateIExt(RMap, I);
-      break;
+      return propagateIExt(RMap, I);
     case Instruction::Trunc:
-      propagateTrunc(RMap, I);
-      break;
+      return propagateTrunc(RMap, I);
     case Instruction::Select:
-      propagateSelect(RMap, I);
-      break;
+      return propagateSelect(RMap, I);
     case Instruction::PHI:
-      propagatePhi(RMap, I);
-      break;
+      return propagatePhi(RMap, I);
     case Instruction::ICmp:
-      checkICmp(RMap, CmpMap, I);
-      break;
+      return checkICmp(RMap, CmpMap, I);
     case Instruction::Ret:
-      propagateRet(RMap, I);
-      break;
+      return propagateRet(RMap, I);
     case Instruction::Call:
       prepareErrorsForCall(I);
-      propagateCall(RMap, I);
-      break;
+      return propagateCall(RMap, I);
     case Instruction::Invoke:
       prepareErrorsForCall(I);
-      propagateCall(RMap, I);
-      break;
+      return propagateCall(RMap, I);
     default:
       DEBUG(dbgs() << "Unhandled " << I.getOpcodeName()
 	    << " instruction: " << I.getName() << "\n");
-      break;
   }
 }
 

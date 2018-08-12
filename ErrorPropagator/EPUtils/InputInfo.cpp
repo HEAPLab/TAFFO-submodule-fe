@@ -1,3 +1,18 @@
+//===-- InputInfo.cpp - Data Structures for Input Info Metadata -*- C++ -*-===//
+//
+//                     The LLVM Compiler Infrastructure
+//
+// This file is distributed under the University of Illinois Open Source
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+///
+/// \file
+/// Various data structures that support in-memory representation of
+/// input info metadata.
+///
+//===----------------------------------------------------------------------===//
+
 #include "ErrorPropagator/EPUtils/InputInfo.h"
 
 #include <cmath>

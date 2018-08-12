@@ -1,4 +1,4 @@
-//===-- InputInfo.h - Data Structures for Input Info Metadata----*- C++ -*-===//
+//===-- InputInfo.h - Data Structures for Input Info Metadata ---*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //

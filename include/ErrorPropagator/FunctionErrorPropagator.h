@@ -94,7 +94,8 @@ public:
   typedef std::vector<BasicBlock *> queue_type;
   typedef queue_type::reverse_iterator iterator;
 
-  BBScheduler(Function &F) {
+  BBScheduler(Function &F, LoopInfo &LI)
+    : Queue(), Set(), LInfo(LI) {
     Queue.reserve(F.size());
     enqueueChildren(&F.getEntryBlock());
   }
@@ -114,13 +115,12 @@ public:
 protected:
   queue_type Queue;
   SmallSet<BasicBlock *, 8U> Set;
+  LoopInfo &LInfo;
 
   /// Put BB and all of its successors in the queue.
   void enqueueChildren(BasicBlock *BB);
-  /// Put only unvisited successors of BBin the queue.
-  void enqueueUnvisitedChildren(BasicBlock *BB);
-  /// True if BB has unvisited successors.
-  bool hasUnvisitedChildren(BasicBlock *BB) const;
+  /// True if Dst is an exiting or external block wrt Loop L.
+  bool isExiting(BasicBlock *Dst, Loop *L) const;
 };
 
 } // end namespace ErrorProp

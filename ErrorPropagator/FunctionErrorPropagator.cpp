@@ -17,9 +17,10 @@
 #include "llvm/IR/InstIterator.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Analysis/CFLSteensAliasAnalysis.h"
+#include "llvm/Analysis/LoopInfo.h"
 
 #include "ErrorPropagator/Propagators.h"
-//#include "ErrorPropagator/EPUtils/Metadata.h"
+#include "ErrorPropagator/EPUtils/Metadata.h"
 
 namespace ErrorProp {
 
@@ -85,8 +86,11 @@ FunctionErrorPropagator::computeFunctionErrors(SmallVectorImpl<Value *> *ArgErrs
   RMap.retrieveRangeErrors(*FCopy);
   RMap.applyArgumentErrors(*FCopy, ArgErrs);
 
+  LoopInfo &LInfo =
+    EPPass.getAnalysis<LoopInfoWrapperPass>(*FCopy).getLoopInfo();
+
   // Compute errors for all instructions in the function
-  BBScheduler BBSched(*FCopy);
+  BBScheduler BBSched(*FCopy, LInfo);
   for (BasicBlock *BB : BBSched)
     for (Instruction &I : *BB)
       computeInstructionErrors(I);
@@ -208,43 +212,47 @@ FunctionErrorPropagator::attachErrorMetadata() {
 void BBScheduler::enqueueChildren(BasicBlock *BB) {
   assert(BB != nullptr && "Null basic block.");
 
+  // Do nothing if already visited.
+  if (Set.count(BB))
+    return;
+
   DEBUG(dbgs() << "Scheduling " << BB->getName() << ".\n");
 
   Set.insert(BB);
 
   TerminatorInst *TI = BB->getTerminator();
   if (TI != nullptr) {
-    for (BasicBlock *DestBB : TI->successors())
-      if (!Set.count(DestBB))
+    Loop *L = LInfo.getLoopFor(BB);
+    if (L == nullptr) {
+      // Not part of a loop, just visit all unvisited successors.
+      for (BasicBlock *DestBB : TI->successors())
 	enqueueChildren(DestBB);
-      else if (hasUnvisitedChildren(DestBB))
-	enqueueUnvisitedChildren(DestBB);
+    }
+    else {
+      // Part of a loop: visit exiting blocks first,
+      // so they are scheduled at the end.
+      SmallVector<BasicBlock *, 2U> BodyQueue;
+      for (BasicBlock *DestBB : TI->successors())
+	if (isExiting(DestBB, L))
+	  enqueueChildren(DestBB);
+	else
+	  BodyQueue.push_back(DestBB);
+
+      for (BasicBlock *BodyBB : BodyQueue)
+	enqueueChildren(BodyBB);
+    }
   }
   Queue.push_back(BB);
 }
 
-void BBScheduler::enqueueUnvisitedChildren(BasicBlock *BB) {
-  assert(BB != nullptr && "Null basic block.");
+bool BBScheduler::isExiting(BasicBlock *Dst, Loop *L) const {
+  assert(L != nullptr);
 
-  DEBUG(dbgs() << "Scheduling " << BB->getName() << ".\n");
+  if (!L->contains(Dst))
+    return true;
 
-  TerminatorInst *TI = BB->getTerminator();
-  if (TI != nullptr) {
-    for (BasicBlock *DestBB : TI->successors())
-      if (!Set.count(DestBB))
-	enqueueChildren(DestBB);
-  }
-  // Queue.push_back(BB);
+  return L->isLoopExiting(Dst);
 }
 
-bool BBScheduler::hasUnvisitedChildren(BasicBlock *BB) const {
-  TerminatorInst *TI = BB->getTerminator();
-  if (TI != nullptr) {
-    for (BasicBlock *DestBB : TI->successors())
-      if (!Set.count(DestBB))
-	return true;
-  }
-  return false;
-}
 
 } // end namespace ErrorProp

@@ -129,18 +129,24 @@ FunctionErrorPropagator::dispatchInstruction(Instruction &I) {
       return propagateStore(RMap, I);
     case Instruction::Load:
       return propagateLoad(RMap, *MemSSA, I);
+    case Instruction::FPExt:
+      // Fall-through.
     case Instruction::SExt:
       // Fall-through.
     case Instruction::ZExt:
-      return propagateIExt(RMap, I);
+      return propagateExt(RMap, I);
+    case Instruction::FPTrunc:
+      // Fall-through.
     case Instruction::Trunc:
       return propagateTrunc(RMap, I);
     case Instruction::Select:
       return propagateSelect(RMap, I);
     case Instruction::PHI:
       return propagatePhi(RMap, I);
+    case Instruction::FCmp:
+      // Fall-through.
     case Instruction::ICmp:
-      return checkICmp(RMap, CmpMap, I);
+      return checkCmp(RMap, CmpMap, I);
     case Instruction::Ret:
       return propagateRet(RMap, I);
     case Instruction::Call:
@@ -149,6 +155,14 @@ FunctionErrorPropagator::dispatchInstruction(Instruction &I) {
     case Instruction::Invoke:
       prepareErrorsForCall(I);
       return propagateCall(RMap, I);
+    case Instruction::UIToFP:
+      // Fall-through.
+    case Instruction::SIToFP:
+      return propagateIToFP(RMap, I);
+    case Instruction::FPToUI:
+      // Fall-through.
+    case Instruction::FPToSI:
+      return propagateFPToI(RMap, I);
     default:
       DEBUG(dbgs() << "Unhandled " << I.getOpcodeName()
 	    << " instruction: " << I.getName() << "\n");

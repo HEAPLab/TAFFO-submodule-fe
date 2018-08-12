@@ -164,18 +164,26 @@ bool propagateBinaryOp(RangeErrorMap &RMap, Instruction &I) {
 
   AffineForm<inter_t> ERes;
   switch(BI.getOpcode()) {
+    case Instruction::FAdd:
+      // Fall-through.
     case Instruction::Add:
       ERes = propagateAdd(O1->first, *O1->second,
 			  O2->first, *O2->second);
       break;
+    case Instruction::FSub:
+      // Fall-through.
     case Instruction::Sub:
       ERes = propagateSub(O1->first, *O1->second,
 			  O2->first, *O2->second);
       break;
+    case Instruction::FMul:
+      // Fall-through.
     case Instruction::Mul:
       ERes = propagateMul(O1->first, *O1->second,
 			  O2->first, *O2->second);
       break;
+    case Instruction::FDiv:
+      // Fall-through.
     case Instruction::UDiv:
       // Fall-through.
     case Instruction::SDiv:
@@ -391,24 +399,60 @@ bool unOpErrorPassThrough(RangeErrorMap &RMap, Instruction &I) {
   return true;
 }
 
-bool propagateIExt(RangeErrorMap &RMap, Instruction &I) {
+bool propagateExt(RangeErrorMap &RMap, Instruction &I) {
   assert((I.getOpcode() == Instruction::SExt
-	  || I.getOpcode() == Instruction::ZExt) && "Must be SExt or ZExt.");
+	  || I.getOpcode() == Instruction::ZExt
+	  || I.getOpcode() == Instruction::FPExt)
+	 && "Must be SExt, ZExt or FExt.");
 
-  DEBUG(dbgs() << "Propagating error for Int Extend instruction " << I.getName() << "... ");
+  DEBUG(dbgs() << "Propagating error for Extend instruction " << I.getName() << "... ");
 
   // No further error is introduced with signed/unsigned extension.
   return unOpErrorPassThrough(RMap, I);
 }
 
 bool propagateTrunc(RangeErrorMap &RMap, Instruction &I) {
-  assert(I.getOpcode() == Instruction::Trunc && "Must be Trunc.");
+  assert((I.getOpcode() == Instruction::Trunc
+	  || I.getOpcode() == Instruction::FPTrunc)
+	 && "Must be Trunc.");
 
   DEBUG(dbgs() << "Propagating error for Trunc instruction " << I.getName() << "... ");
 
   // No further error is introduced with truncation if no overflow occurs
   // (in which case it is useless to propagate other errors).
   return unOpErrorPassThrough(RMap, I);
+}
+
+bool propagateIToFP(RangeErrorMap &RMap, Instruction &I) {
+  assert((isa<SIToFPInst>(I) || isa<UIToFPInst>(I)) && "Must be IToFP.");
+
+  DEBUG(dbgs() << "Propagating error for IToFP instruction " << I.getName() << "... ");
+
+  return unOpErrorPassThrough(RMap, I);
+}
+
+bool propagateFPToI(RangeErrorMap &RMap, Instruction &I) {
+  assert((isa<FPToSIInst>(I) || isa<FPToUIInst>(I)) && "Must be FPToI.");
+
+  DEBUG(dbgs() << "Propagating error for FPToI instruction " << I.getName() << "... ");
+
+  const AffineForm<inter_t> *Error = RMap.getError(I.getOperand(0U));
+  if (Error == nullptr) {
+    DEBUG(dbgs() << "ignored (no error data).");
+    return false;
+  }
+
+  const FPInterval *Range = RMap.getRange(&I);
+  if (Range == nullptr || Range->isUninitialized()) {
+    DEBUG(dbgs() << "ignored (no range data).");
+    return false;
+  }
+
+  AffineForm<inter_t> NewError = *Error + AffineForm<inter_t>(0.0, Range->getRoundingError());
+  RMap.setError(&I, NewError);
+
+  DEBUG(dbgs() << static_cast<double>(NewError.noiseTermsAbsSum()) << ".\n");
+  return true;
 }
 
 bool propagateSelect(RangeErrorMap &RMap, Instruction &I) {
@@ -505,10 +549,10 @@ inter_t computeMinRangeDiff(const FPInterval &R1, const FPInterval &R2) {
 
 extern cl::opt<unsigned> CmpErrorThreshold;
 
-bool checkICmp(RangeErrorMap &RMap, CmpErrorMap &CmpMap, Instruction &I) {
-  ICmpInst &CI = cast<ICmpInst>(I);
+bool checkCmp(RangeErrorMap &RMap, CmpErrorMap &CmpMap, Instruction &I) {
+  CmpInst &CI = cast<CmpInst>(I);
 
-  DEBUG(dbgs() << "Checking comparison error for ICmp "
+  DEBUG(dbgs() << "Checking comparison error for ICmp/FCmp "
 	<< CmpInst::getPredicateName(CI.getPredicate())
 	<< " instruction " << I.getName() << "... ");
 

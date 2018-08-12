@@ -36,13 +36,21 @@ bool propagateStore(RangeErrorMap &, Instruction &);
 /// by associating the errors of the source to it.
 bool propagateLoad(RangeErrorMap &, MemorySSA &, Instruction &);
 
-/// Propagate the errors for an Int Extend instruction
+/// Propagate the errors for an Extend instruction
 /// by associating the errors of the source to it.
-bool propagateIExt(RangeErrorMap &, Instruction &);
+bool propagateExt(RangeErrorMap &, Instruction &);
 
 /// Propagate the errors for a Trunc instruction
 /// by associating the errors of the source to it.
 bool propagateTrunc(RangeErrorMap &, Instruction &);
+
+/// Propagate errors for a SIToFP or UIToFP instruction
+/// by associating the errors of the source to it.
+bool propagateIToFP(RangeErrorMap &, Instruction &);
+
+/// Propagate errors for a FPToSI or FPToUI instruction
+/// by associating to it the error of the source plus the rounding error.
+bool propagateFPToI(RangeErrorMap &, Instruction &);
 
 /// Propagate errors for a Select instruction
 /// by associating the maximum error from the source values to it.
@@ -53,7 +61,7 @@ bool propagateSelect(RangeErrorMap &, Instruction &);
 bool propagatePhi(RangeErrorMap &, Instruction &);
 
 /// Check whether the error on the operands could make this comparison wrong.
-bool checkICmp(RangeErrorMap &, CmpErrorMap &, Instruction &);
+bool checkCmp(RangeErrorMap &, CmpErrorMap &, Instruction &);
 
 /// Associate the error previously computed for the returned value
 /// to the containing function, only if larger

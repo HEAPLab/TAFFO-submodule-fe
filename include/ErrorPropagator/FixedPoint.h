@@ -63,9 +63,11 @@ public:
 
   inter_t getRoundingError() const {
     assert(!isUninitialized());
-    assert(IInfo->IType != nullptr);
 
-    return static_cast<inter_t>(IInfo->IType->getRoundingError());
+    if (IInfo->IType != nullptr)
+      return static_cast<inter_t>(IInfo->IType->getRoundingError());
+    else
+      return 0.0;
   }
 
   bool isUninitialized() const { return IInfo == nullptr; }

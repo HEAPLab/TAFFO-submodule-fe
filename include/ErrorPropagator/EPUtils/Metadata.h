@@ -45,8 +45,9 @@ using namespace llvm;
 /// The returned pointers have the same lifetime as the MetadataManager instance.
 class MetadataManager {
 public:
-  MetadataManager() = default;
-  MetadataManager(const MetadataManager &) = delete;
+  static MetadataManager& getMetadataManager() {
+    return Instance;
+  }
 
   /// Get the Input Info (Type, Range, Initial Error) attached to I.
   InputInfo* retrieveInputInfo(const Instruction &I);
@@ -119,6 +120,12 @@ protected:
   InputInfo *retrieveInputInfo(MDNode *MDN);
 
   std::unique_ptr<InputInfo> createInputInfoFromMetadata(MDNode *MDN);
+
+private:
+  static MetadataManager Instance;
+
+  MetadataManager() = default;
+  MetadataManager(const MetadataManager &) = delete;
 };
 
 }

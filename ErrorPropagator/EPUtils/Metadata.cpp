@@ -16,6 +16,8 @@
 
 namespace ErrorProp {
 
+MetadataManager MetadataManager::Instance;
+
 InputInfo* MetadataManager::retrieveInputInfo(const Instruction &I) {
   return retrieveInputInfo(I.getMetadata(INPUT_INFO_METADATA));
 }

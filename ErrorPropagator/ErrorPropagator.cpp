@@ -35,7 +35,7 @@ namespace ErrorProp {
 bool ErrorPropagator::runOnModule(Module &M) {
   checkCommandLine();
 
-  MetadataManager MDManager;
+  MetadataManager &MDManager = MetadataManager::getMetadataManager();
 
   RangeErrorMap GlobalRMap(MDManager);
 

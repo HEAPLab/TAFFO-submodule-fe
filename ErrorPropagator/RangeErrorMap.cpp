@@ -36,7 +36,11 @@ const AffineForm<inter_t> *RangeErrorMap::getError(const Value *I) const {
   if (RError == REMap.end()) {
     return nullptr;
   }
-  return &((RError->second).second);
+  const Optional<AffineForm<inter_t> > &Error = RError->second.second;
+  if (Error.hasValue())
+    return Error.getPointer();
+  else
+    return nullptr;
 }
 
 const RangeErrorMap::RangeError*
@@ -64,7 +68,7 @@ bool RangeErrorMap::retrieveRangeError(Instruction &I) {
     return false;
 
   if (II->IError == nullptr) {
-    REMap[&I] = std::make_pair(FPInterval(II), AffineForm<inter_t>());
+    REMap[&I] = std::make_pair(FPInterval(II), NoneType());
     return false;
   }
   else {
@@ -81,14 +85,22 @@ void RangeErrorMap::retrieveRangeErrors(const Function &F) {
   for (Function::const_arg_iterator Arg = F.arg_begin(), ArgE = F.arg_end();
        Arg != ArgE && REIt != REEnd; ++Arg, ++REIt) {
     FPInterval FPI(*REIt);
-    AffineForm<inter_t> Err(0.0, FPI.getInitialError());
 
     DEBUG(dbgs() << "Retrieving data for Argument " << Arg->getName() << "... "
 	  << "Range: [" << static_cast<double>(FPI.Min) << ", "
-	  << static_cast<double>(FPI.Max) << "], Error: "
-	  << FPI.getInitialError() << ".\n");
+	  << static_cast<double>(FPI.Max) << "], Error: ");
 
-    this->setRangeError(Arg, std::make_pair(FPI, Err));
+    if (FPI.hasInitialError()) {
+      AffineForm<inter_t> Err(0.0, FPI.getInitialError());
+      this->setRangeError(Arg, std::make_pair(FPI, Err));
+
+      DEBUG(dbgs() << FPI.getInitialError() << ".\n");
+    }
+    else {
+      this->setRangeError(Arg, std::make_pair(FPI, NoneType()));
+
+      DEBUG(dbgs() << "none.\n");
+    }
   }
 }
 
@@ -124,12 +136,20 @@ void RangeErrorMap::retrieveRangeError(const GlobalObject &V) {
   }
 
   FPInterval FPI(II);
-  REMap[&V] = std::make_pair(FPI, AffineForm<inter_t>(0.0, FPI.getInitialError()));
 
-  DEBUG(RangeError &RE = REMap[&V];
-	dbgs() << "Range: [" << static_cast<double>(RE.first.Min) << ", "
-	<< static_cast<double>(RE.first.Max) << "], Error: "
-	<< static_cast<double>(RE.second.noiseTermsAbsSum()) << ".\n");
+  DEBUG(dbgs() << "Range: [" << static_cast<double>(FPI.Min) << ", "
+	<< static_cast<double>(FPI.Max) << "], Error: ");
+
+  if (FPI.hasInitialError()) {
+    REMap[&V] = std::make_pair(FPI, AffineForm<inter_t>(0.0, FPI.getInitialError()));
+
+    DEBUG(dbgs() << FPI.getInitialError() << ".\n");
+  }
+  else {
+    REMap[&V] = std::make_pair(FPI, NoneType());
+
+    DEBUG(dbgs() << "none.\n");
+  }
 }
 
 } // end namespace ErrorProp

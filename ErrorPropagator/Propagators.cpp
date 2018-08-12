@@ -119,7 +119,7 @@ getConstantRangeError(RangeErrorMap &RMap, Instruction &I, ConstantInt *VInt) {
   return RMap.getRangeError(VInt);
 }
 
-const std::pair<FPInterval, AffineForm<inter_t> >*
+const RangeErrorMap::RangeError*
 getOperandRangeError(RangeErrorMap &RMap, Instruction &I, Value *V) {
   assert(V != nullptr);
 
@@ -132,7 +132,7 @@ getOperandRangeError(RangeErrorMap &RMap, Instruction &I, Value *V) {
   return RMap.getRangeError(V);
 }
 
-const std::pair<FPInterval, AffineForm<inter_t> >*
+const RangeErrorMap::RangeError*
 getOperandRangeError(RangeErrorMap &RMap, Instruction &I, unsigned Op) {
   Value *V = I.getOperand(Op);
   if (V == nullptr)
@@ -156,7 +156,8 @@ bool propagateBinaryOp(RangeErrorMap &RMap, Instruction &I) {
 
   auto *O1 = getOperandRangeError(RMap, BI, 0U);
   auto *O2 = getOperandRangeError(RMap, BI, 1U);
-  if (O1 == nullptr || O2 == nullptr) {
+  if (O1 == nullptr || !O1->second.hasValue()
+      || O2 == nullptr || !O2->second.hasValue()) {
     DEBUG(dbgs() << "no data.\n");
     return false;
   }
@@ -164,25 +165,25 @@ bool propagateBinaryOp(RangeErrorMap &RMap, Instruction &I) {
   AffineForm<inter_t> ERes;
   switch(BI.getOpcode()) {
     case Instruction::Add:
-      ERes = propagateAdd(O1->first, O1->second,
-			  O2->first, O2->second);
+      ERes = propagateAdd(O1->first, *O1->second,
+			  O2->first, *O2->second);
       break;
     case Instruction::Sub:
-      ERes = propagateSub(O1->first, O1->second,
-			  O2->first, O2->second);
+      ERes = propagateSub(O1->first, *O1->second,
+			  O2->first, *O2->second);
       break;
     case Instruction::Mul:
-      ERes = propagateMul(O1->first, O1->second,
-			  O2->first, O2->second);
+      ERes = propagateMul(O1->first, *O1->second,
+			  O2->first, *O2->second);
       break;
     case Instruction::UDiv:
       // Fall-through.
     case Instruction::SDiv:
-      ERes = propagateDiv(O1->first, O1->second,
-			  O2->first, O2->second);
+      ERes = propagateDiv(O1->first, *O1->second,
+			  O2->first, *O2->second);
       break;
     case Instruction::Shl:
-      ERes = propagateShl(O1->second);
+      ERes = propagateShl(*O1->second);
       break;
     case Instruction::LShr:
       // Fall-through.
@@ -192,7 +193,7 @@ bool propagateBinaryOp(RangeErrorMap &RMap, Instruction &I) {
 	DEBUG(dbgs() << "no data.");
 	return false;
       }
-      ERes = propagateShr(O1->second, *ResR);
+      ERes = propagateShr(*O1->second, *ResR);
       break;
     }
     default:
@@ -230,7 +231,7 @@ bool propagateStore(RangeErrorMap &RMap, Instruction &I) {
   // Associate the source error to this store instruction.
   RMap.setRangeError(&SI, *SrcRE);
 
-  DEBUG(dbgs() << static_cast<double>(SrcRE->second.noiseTermsAbsSum()) << ".\n");
+  DEBUG(dbgs() << static_cast<double>(SrcRE->second->noiseTermsAbsSum()) << ".\n");
 
   return true;
 }
@@ -330,15 +331,18 @@ bool propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
     // If we found only one defining instruction, we just use its data.
     const RangeErrorMap::RangeError *RE = REs.front();
     RMap.setRangeError(&I, *RE);
-    DEBUG(dbgs() << static_cast<double>(RE->second.noiseTermsAbsSum()) << ".\n");
+    DEBUG(if (RE->second.hasValue())
+	    dbgs() << static_cast<double>(RE->second->noiseTermsAbsSum()) << ".\n";
+	  else
+	    dbgs() << "no data.\n");
     return true;
   }
 
   // Otherwise, we take the maximum error.
   inter_t MaxAbsErr = -1.0;
   for (const RangeErrorMap::RangeError *RE : REs)
-    if (RE != nullptr) {
-      MaxAbsErr = std::max(MaxAbsErr, RE->second.noiseTermsAbsSum());
+    if (RE != nullptr && RE->second.hasValue()) {
+      MaxAbsErr = std::max(MaxAbsErr, RE->second->noiseTermsAbsSum());
     }
 
   // We also take the range from metadata attached to LI (if any).
@@ -368,7 +372,7 @@ bool unOpErrorPassThrough(RangeErrorMap &RMap, Instruction &I) {
   assert(isa<UnaryInstruction>(I) && "Must be Unary.");
 
   auto *OpRE = getOperandRangeError(RMap, I, 0U);
-  if (OpRE == nullptr) {
+  if (OpRE == nullptr || !OpRE->second.hasValue()) {
     DEBUG(dbgs() << "no data.\n");
     return false;
   }
@@ -379,10 +383,10 @@ bool unOpErrorPassThrough(RangeErrorMap &RMap, Instruction &I) {
   }
   else {
     // Add only error to RMap.
-    RMap.setError(&I, OpRE->second);
+    RMap.setError(&I, *OpRE->second);
   }
 
-  DEBUG(dbgs() << static_cast<double>(OpRE->second.noiseTermsAbsSum()) << ".\n");
+  DEBUG(dbgs() << static_cast<double>(OpRE->second->noiseTermsAbsSum()) << ".\n");
 
   return true;
 }
@@ -419,14 +423,15 @@ bool propagateSelect(RangeErrorMap &RMap, Instruction &I) {
 
   auto *TV = getOperandRangeError(RMap, I, SI.getTrueValue());
   auto *FV = getOperandRangeError(RMap, I, SI.getFalseValue());
-  if (TV == nullptr || FV == nullptr) {
+  if (TV == nullptr || !TV->second.hasValue()
+      || FV == nullptr || !FV->second.hasValue()) {
     DEBUG(dbgs() << "(no data).\n");
     return false;
   }
 
   // Retrieve absolute errors attched to each value.
-  inter_t ErrT = TV->second.noiseTermsAbsSum();
-  inter_t ErrF = FV->second.noiseTermsAbsSum();
+  inter_t ErrT = TV->second->noiseTermsAbsSum();
+  inter_t ErrF = FV->second->noiseTermsAbsSum();
 
   // The error for this instruction is the maximum between the two branches.
   AffineForm<inter_t> ERes(0, std::max(ErrT, ErrF));
@@ -456,10 +461,10 @@ bool propagatePhi(RangeErrorMap &RMap, Instruction &I) {
   inter_t AbsErr = -1.0;
   for (const Use &IVal : PHI.incoming_values()) {
     auto *RE = getOperandRangeError(RMap, I, IVal);
-    if (RE == nullptr) {
+    if (RE == nullptr || !RE->second.hasValue()) {
       continue;
     }
-    AbsErr = std::max(AbsErr, RE->second.noiseTermsAbsSum());
+    AbsErr = std::max(AbsErr, RE->second->noiseTermsAbsSum());
   }
 
   if (AbsErr < 0.0) {
@@ -509,14 +514,15 @@ bool checkICmp(RangeErrorMap &RMap, CmpErrorMap &CmpMap, Instruction &I) {
 
   auto *Op1 = getOperandRangeError(RMap, I, 0U);
   auto *Op2 = getOperandRangeError(RMap, I, 1U);
-  if (Op1 == nullptr || Op2 == nullptr) {
+  if (Op1 == nullptr || !Op1->second.hasValue()
+      || Op2 == nullptr || !Op2->second.hasValue()) {
     DEBUG(dbgs() << "(no data).\n");
     return false;
   }
 
   // Compute the total independent absolute error between operands.
   // (NoiseTerms present in both operands will cancel themselves.)
-  inter_t AbsErr = (Op1->second - Op2->second).noiseTermsAbsSum();
+  inter_t AbsErr = (*Op1->second - *Op2->second).noiseTermsAbsSum();
 
   // Maximum absolute error tolerance to avoid changing the comparison result.
   inter_t MaxTol = std::max(computeMinRangeDiff(Op1->first, Op2->first),
@@ -625,14 +631,14 @@ bool propagateGetElementPtr(RangeErrorMap &RMap, Instruction &I) {
 
   const RangeErrorMap::RangeError *RE =
     RMap.getRangeError(GEPI.getPointerOperand());
-  if (RE == nullptr) {
+  if (RE == nullptr || !RE->second.hasValue()) {
     DEBUG(dbgs() << "ignored (no data).\n");
     return false;
   }
 
   RMap.setRangeError(&GEPI, *RE);
 
-  DEBUG(dbgs() << static_cast<double>(RE->second.noiseTermsAbsSum()) << ".\n");
+  DEBUG(dbgs() << static_cast<double>(RE->second->noiseTermsAbsSum()) << ".\n");
 
   return true;
 }

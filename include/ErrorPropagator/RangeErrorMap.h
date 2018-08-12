@@ -20,6 +20,7 @@
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Function.h"
 #include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/Optional.h"
 #include "ErrorPropagator/EPUtils/Metadata.h"
 #include "ErrorPropagator/FixedPoint.h"
 #include "ErrorPropagator/AffineForms.h"
@@ -30,7 +31,7 @@ using namespace llvm;
 
 class RangeErrorMap {
 public:
-  typedef std::pair<FPInterval, AffineForm<inter_t> > RangeError;
+  typedef std::pair<FPInterval, Optional<AffineForm<inter_t> > > RangeError;
 
   RangeErrorMap(MetadataManager &MDManager)
     : REMap(), MDMgr(&MDManager) {}

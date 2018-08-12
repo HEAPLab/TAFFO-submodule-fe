@@ -1,4 +1,4 @@
-; RUN: opt -load %eputilslib -load %errorproplib -errorprop -S %s | FileCheck %s
+; RUN: opt -load %errorproplib -errorprop -S %s | FileCheck %s
 
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
@@ -6,16 +6,16 @@ target triple = "x86_64-unknown-linux-gnu"
 @a = global i32 5, align 4, !taffo.info !0
 @b = global i32 10, align 4, !taffo.info !4
 
-; CHECK: %0 = load i32, i32* @a, align 4, !errorprop.abserror !2
-; CHECK: %add = add nsw i32 %c, %0, !errorprop.range !9, !errorprop.abserror !5
-; CHECK: store i32 %add, i32* @a, align 4, !errorprop.abserror !5
-; CHECK: %1 = load i32, i32* @b, align 4, !errorprop.abserror !5
-; CHECK: %mul = mul nsw i32 %c, %1, !errorprop.range !10, !errorprop.abserror !11
-; CHECK: store i32 %mul, i32* @b, align 4, !errorprop.abserror !11
-; CHECK: %2 = load i32, i32* @a, align 4, !errorprop.abserror !5
-; CHECK: %3 = load i32, i32* @b, align 4, !errorprop.abserror !11
-; CHECK: %add1 = add nsw i32 %2, %3, !errorprop.range !12, !errorprop.abserror !13
-; CHECK: ret i32 %add1, !errorprop.abserror !13
+; CHECK: %0 = load i32, i32* @a, align 4, !taffo.abserror !3
+; CHECK: %add = add nsw i32 %c, %0, !taffo.info !10, !taffo.abserror !6
+; CHECK: store i32 %add, i32* @a, align 4, !taffo.abserror !6
+; CHECK: %1 = load i32, i32* @b, align 4, !taffo.abserror !6
+; CHECK: %mul = mul nsw i32 %c, %1, !taffo.info !12, !taffo.abserror !14
+; CHECK: store i32 %mul, i32* @b, align 4, !taffo.abserror !14
+; CHECK: %2 = load i32, i32* @a, align 4, !taffo.abserror !6
+; CHECK: %3 = load i32, i32* @b, align 4, !taffo.abserror !14
+; CHECK: %add1 = add nsw i32 %2, %3, !taffo.info !15, !taffo.abserror !17
+; CHECK: ret i32 %add1, !taffo.abserror !17
 
 ; Function Attrs: noinline nounwind uwtable
 define i32 @foo(i32 %c) !taffo.funinfo !7 {
@@ -50,5 +50,5 @@ entry:
 !15 = !{!1, !16, i1 0}
 !16 = !{double 5.820000e+02, double 1.065000e+03}
 
-; CHECK: !11 = !{double 1.702000e-01}
-; CHECK: !13 = !{double 1.902000e-01}
+; CHECK: !14 = !{double 1.702000e-01}
+; CHECK: !17 = !{double 1.902000e-01}

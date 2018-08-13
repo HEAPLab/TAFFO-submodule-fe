@@ -15,13 +15,13 @@ target triple = "x86_64-unknown-linux-gnu"
 ; CHECK: %mul38 = mul nsw i32 %3, %beta, !taffo.info !27, !taffo.abserror !29
 ; CHECK: store i32 %mul38, i32* %arrayidx37, align 4, !taffo.abserror !29
 ; CHECK: %4 = load i32, i32* %arrayidx45, align 4, !taffo.info !13, !taffo.abserror !26
-; CHECK: %5 = load i32, i32* %arrayidx49, align 4, !taffo.info !30, !taffo.abserror !29
+; CHECK: %5 = load i32, i32* %arrayidx49, align 4, !taffo.info !30, !taffo.abserror !4
 ; CHECK: %mul50 = mul nsw i32 %4, %5, !taffo.info !31, !taffo.abserror !33
 ; CHECK: %6 = load i32, i32* %arrayidx54, align 4, !taffo.info !34, !taffo.abserror !29
 ; CHECK: %add55 = add nsw i32 %6, %mul50, !taffo.info !34, !taffo.abserror !36
 ; CHECK: store i32 %add55, i32* %arrayidx54, align 4, !taffo.abserror !36
 
-define void @foo(i32 %alpha, i32 %beta, [22 x i32]* %A, [18 x i32]* %B, [24 x i32]* %C, [24 x i32]* %D) !taffo.funinfo !0 {
+define void @foo(i32 %alpha, i32 %beta, [22 x i32]* %A, [18 x i32]* noalias nocapture %B, [24 x i32]* noalias nocapture %C, [24 x i32]* noalias nocapture %D) !taffo.funinfo !0 {
 entry:
   %tmp = alloca [16 x [18 x i32]], align 16, !taffo.info !14
   br label %for.cond
@@ -203,5 +203,5 @@ for.end64:                                        ; preds = %for.cond28
 ; CHECK: !25 = !{double 0x3FA3D70BD017E3B4}
 ; CHECK: !26 = !{double 0x3FA3D80BD017E3B4}
 ; CHECK: !29 = !{double 0x3FBDF548E32F8F2E}
-; CHECK: !33 = !{double 0x4095F50BB9AD7A8A}
-; CHECK: !36 = !{double 0x4095F5838ED10748}
+; CHECK: !33 = !{double 0x3FF44D970B78A4FC}
+; CHECK: !36 = !{double 0x3FF62CEB99AB9DEF}

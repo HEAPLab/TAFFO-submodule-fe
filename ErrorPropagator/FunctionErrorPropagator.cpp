@@ -109,11 +109,17 @@ FunctionErrorPropagator::computeInstructionErrors(Instruction &I) {
 
   bool ComputedError = dispatchInstruction(I);
 
-  if (HasInitialError && ComputedError) {
-    DEBUG(dbgs() << "WARNING: computed error for instruction "
-	  << I.getName() << " ignored because of metadata error "
-	  << InitialError << ".\n");
-    RMap.setError(&I, AffineForm<inter_t>(0.0, InitialError));
+  if (HasInitialError) {
+    if (ComputedError) {
+      DEBUG(dbgs() << "WARNING: computed error for instruction "
+	    << I.getName() << " ignored because of metadata error "
+	    << InitialError << ".\n");
+      RMap.setError(&I, AffineForm<inter_t>(0.0, InitialError));
+    }
+    else {
+      DEBUG(dbgs() << "Initial error for instruction "
+	    << I.getName() << ": " << InitialError << ".\n");
+    }
   }
 }
 
@@ -166,7 +172,9 @@ FunctionErrorPropagator::dispatchInstruction(Instruction &I) {
     default:
       DEBUG(dbgs() << "Unhandled " << I.getOpcodeName()
 	    << " instruction: " << I.getName() << "\n");
+      return false;
   }
+  llvm_unreachable("No return statement.");
 }
 
 void

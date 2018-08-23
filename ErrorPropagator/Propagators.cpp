@@ -225,16 +225,15 @@ bool propagateStore(RangeErrorMap &RMap, Instruction &I) {
 
   auto *SrcRE = getOperandRangeError(RMap, I, 0U);
   if (SrcRE == nullptr) {
-    DEBUG(dbgs() << " ignored (no data).\n");
-    return false;
+    Value *IDest = SI.getPointerOperand();
+    assert(IDest != nullptr && "Store with null Pointer Operand.\n");
+    SrcRE = RMap.getRangeError(IDest);
+    if (SrcRE == nullptr) {
+      DEBUG(dbgs() << " ignored (no data).\n");
+      return false;
+    }
   }
-
-  // Value *IDest = SI.getPointerOperand();
-  // assert(IDest != nullptr && "Store with null Pointer Operand.\n");
-
-  // // Associate the propagated error to the pointer instruction.
-  // RangeErrorMap::RangeError SrcRECopy = *SrcRE;
-  // RMap.setRangeError(IDest, SrcRECopy);
+  assert(SrcRE != nullptr);
 
   // Associate the source error to this store instruction.
   RMap.setRangeError(&SI, *SrcRE);

@@ -7,7 +7,7 @@
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
 #include "llvm/Transforms/Utils/UnrollLoop.h"
 #include "llvm/Support/Debug.h"
-#include "ErrorPropagator/EPUtils/Metadata.h"
+#include "ErrorPropagator/MDUtils/Metadata.h"
 
 namespace ErrorProp {
 

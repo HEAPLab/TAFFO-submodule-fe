@@ -84,7 +84,7 @@ And, at the end of the file,
 Related functions:
 
 ```cpp
-#include "ErrorPropagator/EPUtils/Metadata.h"
+#include "ErrorPropagator/MDUtils/Metadata.h"
 
 InputInfo* MetadataManager::retrieveInputInfo(const Instruction &I);
 static void MetadataManager::setInputInfoMetadata(Instruction &I, const InputInfo &IInfo);
@@ -130,7 +130,7 @@ at the end of the file:
 Related functions:
 
 ```cpp
-#include "ErrorPropagator/EPUtils/Metadata.h"
+#include "ErrorPropagator/MDUtils/Metadata.h"
 void MetadataManager::retrieveArgumentInputInfo(const Function &F, SmallVectorImpl<InputInfo *> &ResII);
 static void MetadataManager::setArgumentInputInfoMetadata(Function &F, const ArrayRef<InputInfo *> AInfo);
 ```
@@ -160,7 +160,7 @@ for an unroll count of 20.
 Related functions:
 
 ```cpp
-#include "EPUtils/Metadata.h"
+#include "MDUtils/Metadata.h"
 static void MetadataManager::setLoopUnrollCountMetadata(llvm::Loop &L, unsigned UnrollCount);
 static llvm::Optional<unsigned> MetadataManager::retrieveLoopUnrollCount(const llvm::Loop &L);
 ```
@@ -184,7 +184,7 @@ At the end of the file:
 Related functions:
 
 ```cpp
-#include "EPUtils/Metadata.h"
+#include "MDUtils/Metadata.h"
 static void MetadataManager::setMaxRecursionCountMetadata(llvm::Function &F, unsigned MaxRecursionCount);
 static unsigned MetadataManager::retrieveMaxRecursionCount(const llvm::Function &F);
 ```
@@ -208,7 +208,7 @@ At the end of the file:
 Related functions:
 
 ```cpp
-#include "EPUtils/Metadata.h"
+#include "MDUtils/Metadata.h"
 static void MetadataManager::setErrorMetadata(llvm::Instruction &, const AffineForm<inter_t> &);
 static static double MetadataManager::retrieveErrorMetadata(const Instruction &I);
 ```
@@ -233,7 +233,7 @@ End of file:
 Related functions:
 
 ```cpp
-#include "EPUtils/Metadata.h"
+#include "MDUtils/Metadata.h"
 static void MetadataManager::setCmpErrorMetadata(Instruction &I, const CmpErrorInfo &CEI);
 static std::unique_ptr<CmpErrorInfo> MetadataManager::retrieveCmpError(const Instruction &I);
 ```

@@ -26,7 +26,7 @@
 #include "llvm/ADT/Optional.h"
 #include "llvm/IR/Metadata.h"
 #include "llvm/IR/Constants.h"
-#include "ErrorPropagator/EPUtils/InputInfo.h"
+#include "ErrorPropagator/MDUtils/InputInfo.h"
 
 #define INPUT_INFO_METADATA    "taffo.info"
 #define FUNCTION_ARGS_METADATA "taffo.funinfo"

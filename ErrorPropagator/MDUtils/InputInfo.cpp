@@ -13,7 +13,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "ErrorPropagator/EPUtils/InputInfo.h"
+#include "ErrorPropagator/MDUtils/InputInfo.h"
 
 #include <cmath>
 #include "llvm/IR/Constants.h"

@@ -34,6 +34,11 @@ public:
 
   virtual double getRoundingError() const = 0;
 
+  /// Safe approximation of the minimum value representable with this Type.
+  virtual double getMinValueBound() const = 0;
+  /// Safe approximation of the maximum value representable with this Type.
+  virtual double getMaxValueBound() const = 0;
+
   virtual MDNode *toMetadata(LLVMContext &C) const = 0;
 
   static std::unique_ptr<TType> createFromMetadata(MDNode *MDN);
@@ -55,6 +60,8 @@ public:
     : TType(K_FPType), Width(Width), PointPos(PointPos) {}
 
   double getRoundingError() const override;
+  double getMinValueBound() const override;
+  double getMaxValueBound() const override;
   MDNode *toMetadata(LLVMContext &C) const override;
   unsigned getWidth() const { return std::abs(Width); }
   int getSWidth() const { return Width; }

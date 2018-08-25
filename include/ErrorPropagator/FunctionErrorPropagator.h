@@ -75,6 +75,9 @@ protected:
   /// Attach error metadata to the original function.
   void attachErrorMetadata();
 
+  /// Returns true if I may overflow, according to range data.
+  bool checkOverflow(Instruction &I);
+
   Pass &EPPass;
   Function &F;
   FunctionCopyManager &FCMap;

@@ -74,6 +74,24 @@ double FPType::getRoundingError() const {
   return std::ldexp(1.0, -this->getPointPos());
 }
 
+double FPType::getMinValueBound() const {
+  if (isSigned()) {
+    return std::ldexp(-1.0, getWidth() - getPointPos() - 1);
+  }
+  else {
+    return 0.0;
+  }
+}
+
+double FPType::getMaxValueBound() const  {
+  int MaxIntExp = (isSigned()) ? getWidth() - 1 : getWidth();
+  double MaxIntPlus1 = std::ldexp(1.0, MaxIntExp);
+  double MaxInt = MaxIntPlus1 - 1.0;
+  if (MaxInt == MaxIntPlus1)
+    MaxInt = std::nextafter(MaxInt, 0.0);
+  return std::ldexp(MaxInt, -getPointPos());
+}
+
 Metadata *createDoubleMetadata(LLVMContext &C, double Value) {
   Type *DoubleTy = Type::getDoubleTy(C);
   Constant *ValC = ConstantFP::get(DoubleTy, Value);

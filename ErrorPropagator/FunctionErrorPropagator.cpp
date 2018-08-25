@@ -121,6 +121,12 @@ FunctionErrorPropagator::computeInstructionErrors(Instruction &I) {
 	    << I.getName() << ": " << InitialError << ".\n");
     }
   }
+
+  DEBUG(
+	if(checkOverflow(I))
+	  dbgs() << "Possible overflow detected for instruction "
+		 << I.getName() << ".\n";
+	);
 }
 
 bool
@@ -229,6 +235,17 @@ FunctionErrorPropagator::attachErrorMetadata() {
     if (CmpErr != CmpMap.end())
       MetadataManager::setCmpErrorMetadata(*I, CmpErr->second);
   }
+}
+
+bool FunctionErrorPropagator::checkOverflow(Instruction &I) {
+  const FPInterval *Range = RMap.getRange(&I);
+  const TType *Type;
+  if (Range == nullptr
+      || (Type = Range->getTType()) == nullptr)
+    return false;
+
+  return Range->Min < Type->getMinValueBound()
+    || Range->Max > Type->getMaxValueBound();
 }
 
 void BBScheduler::enqueueChildren(BasicBlock *BB) {

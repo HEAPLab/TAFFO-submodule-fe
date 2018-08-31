@@ -162,8 +162,7 @@ FunctionErrorPropagator::dispatchInstruction(Instruction &I) {
     case Instruction::Ret:
       return propagateRet(RMap, I);
     case Instruction::Call:
-      prepareErrorsForCall(I);
-      return propagateCall(RMap, I);
+     // Fall-through.
     case Instruction::Invoke:
       prepareErrorsForCall(I);
       return propagateCall(RMap, I);

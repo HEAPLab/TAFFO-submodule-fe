@@ -224,11 +224,11 @@ bool propagateStore(RangeErrorMap &RMap, Instruction &I) {
   DEBUG(dbgs() << "Propagating error for Store instruction " << I.getName() << "... ");
 
   auto *SrcRE = getOperandRangeError(RMap, I, 0U);
-  if (SrcRE == nullptr) {
+  if (SrcRE == nullptr || !SrcRE->second.hasValue()) {
     Value *IDest = SI.getPointerOperand();
     assert(IDest != nullptr && "Store with null Pointer Operand.\n");
     SrcRE = RMap.getRangeError(IDest);
-    if (SrcRE == nullptr) {
+    if (SrcRE == nullptr || !SrcRE->second.hasValue()) {
       DEBUG(dbgs() << " ignored (no data).\n");
       return false;
     }
@@ -437,13 +437,13 @@ bool propagateFPToI(RangeErrorMap &RMap, Instruction &I) {
 
   const AffineForm<inter_t> *Error = RMap.getError(I.getOperand(0U));
   if (Error == nullptr) {
-    DEBUG(dbgs() << "ignored (no error data).");
+    DEBUG(dbgs() << "ignored (no error data).\n");
     return false;
   }
 
   const FPInterval *Range = RMap.getRange(&I);
   if (Range == nullptr || Range->isUninitialized()) {
-    DEBUG(dbgs() << "ignored (no range data).");
+    DEBUG(dbgs() << "ignored (no range data).\n");
     return false;
   }
 

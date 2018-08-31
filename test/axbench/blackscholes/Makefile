@@ -14,6 +14,7 @@ MODULE		:= blackscholes.out
 CPP_FILES       := blackscholes.c
 OBJ_FILES       := $(addprefix obj/,$(notdir $(CPP_FILES:.c=.o))) 
 OBJ_FILES_FIX   := $(addprefix obj/,$(notdir $(CPP_FILES:.c=.fixp.o)))
+LL_FILES_ERR    := $(addprefix obj/,$(notdir $(CPP_FILES:.c=.err.ll)))
 
 .PHONY: all clean
 
@@ -31,7 +32,7 @@ DIR:
 		mkdir obj;				\
 	fi
 
-$(MODULE): $(OBJ_FILES) $(OBJ_FILES_FIX)
+$(MODULE): $(OBJ_FILES) $(OBJ_FILES_FIX) $(LL_FILES_ERR)
 	$(LD) $(OBJ_FILES) $(LIB) $(LFLAGS) -o bin/$@
 	$(LD) $(OBJ_FILES_FIX) $(LIB) $(LFLAGS) -o bin/$@.fixp
 
@@ -44,6 +45,9 @@ obj/%.init.ll: obj/%.ll
 
 obj/%.fixp.ll: obj/%.init.ll
 	opt -load=$(PASSLIB) -S -flttofix -dce -debug-only=flttofix -stats $< -o $@
+
+obj/%.err.ll: obj/%.fixp.ll
+	opt -load=$(ERRORLIB) -S -errorprop -debug-only=errorprop $< -o $@
 
 obj/%.s: obj/%.ll
 	$(CC) -S  $< -o $@ $(OX)

@@ -244,6 +244,7 @@ bool propagateStore(RangeErrorMap &RMap, Instruction &I) {
 
   auto *SrcRE = getOperandRangeError(RMap, I, 0U);
   if (SrcRE == nullptr || !SrcRE->second.hasValue()) {
+    DEBUG(dbgs() << "(no data, looking up pointer) ");
     Value *IDest = SI.getPointerOperand();
     assert(IDest != nullptr && "Store with null Pointer Operand.\n");
     SrcRE = RMap.getRangeError(IDest);

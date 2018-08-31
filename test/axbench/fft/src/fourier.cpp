@@ -28,12 +28,12 @@ void radix2DitCooleyTykeyFft(int K, int* indices, Complex* x, Complex* f)
 	calcFftIndices(K, indices) ;
 
 	int step ;
-	float __attribute((annotate("no_float 1 31 unsigned"))) arg ;
+	float __attribute((annotate("no_float 1 31 unsigned 0 2048 1e-10"))) arg ;
 	int eI ;
 	int oI ;
 
-	float __attribute((annotate("no_float 20 12"))) fftSin;
-	float __attribute((annotate("no_float 20 12"))) fftCos;
+	float __attribute((annotate("no_float 20 12 signed -1.0 1.0 1e-4"))) fftSin;
+	float __attribute((annotate("no_float 20 12 signed -1.0 1.0 1e-4"))) fftCos;
 
 	Complex t;
 	int i ;

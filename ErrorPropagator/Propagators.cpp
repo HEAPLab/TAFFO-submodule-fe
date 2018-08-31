@@ -651,17 +651,14 @@ bool propagateCall(RangeErrorMap &RMap, Instruction &I) {
   }
 
   const AffineForm<inter_t> *Error = RMap.getError(F);
-  AffineForm<inter_t> ErrorCopy(0U);
   if (Error == nullptr) {
-    DEBUG(dbgs() << "(no data), ");
-  }
-  else {
-    ErrorCopy = *Error;
+    DEBUG(dbgs() << "ignored (no error data).\n");
+    return false;
   }
 
-  RMap.setError(&I, ErrorCopy);
+  RMap.setError(&I, *Error);
 
-  DEBUG(dbgs() << static_cast<double>(ErrorCopy.noiseTermsAbsSum()) << ".\n");
+  DEBUG(dbgs() << static_cast<double>(Error->noiseTermsAbsSum()) << ".\n");
 
   return true;
 }

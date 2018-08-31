@@ -93,6 +93,21 @@ propagateShr(const AffineForm<inter_t> &E1, const FPInterval &ResR) {
 }
 
 const RangeErrorMap::RangeError *
+getConstantFPRangeError(RangeErrorMap &RMap, ConstantFP *VFP) {
+  double CVal;
+  if (VFP->getType()->isDoubleTy())
+    CVal = VFP->getValueAPF().convertToDouble();
+  else if (VFP->getType()->isFloatTy())
+    CVal = VFP->getValueAPF().convertToFloat();
+  else
+    return nullptr;
+
+  FPInterval FPI(Interval<inter_t>(CVal, CVal));
+  RMap.setRangeError(VFP, std::make_pair(FPI, AffineForm<inter_t>(0.0)));
+  return RMap.getRangeError(VFP);
+}
+
+const RangeErrorMap::RangeError *
 getConstantRangeError(RangeErrorMap &RMap, Instruction &I, ConstantInt *VInt) {
 
   // We interpret the value of VInt with the same
@@ -123,10 +138,14 @@ const RangeErrorMap::RangeError*
 getOperandRangeError(RangeErrorMap &RMap, Instruction &I, Value *V) {
   assert(V != nullptr);
 
-  // If V is a Constant extract its value.
+  // If V is a Constant Int extract its value.
   ConstantInt *VInt = dyn_cast<ConstantInt>(V);
   if (VInt != nullptr)
     return getConstantRangeError(RMap, I, VInt);
+
+  ConstantFP *VFP = dyn_cast<ConstantFP>(V);
+  if (VFP != nullptr)
+    return getConstantFPRangeError(RMap, VFP);
 
   // Otherwise, check if Range and Error have already been computed.
   return RMap.getRangeError(V);
@@ -149,10 +168,10 @@ bool propagateBinaryOp(RangeErrorMap &RMap, Instruction &I) {
   DEBUG(dbgs() << "Computing error for " << BI.getOpcodeName()
 	<< " instruction " << I.getName() << "... ");
 
-  if (RMap.getRangeError(&I) == nullptr) {
-    DEBUG(dbgs() << "ignored (no range data).\n");
-    return false;
-  }
+  // if (RMap.getRangeError(&I) == nullptr) {
+  //   DEBUG(dbgs() << "ignored (no range data).\n");
+  //   return false;
+  // }
 
   auto *O1 = getOperandRangeError(RMap, BI, 0U);
   auto *O2 = getOperandRangeError(RMap, BI, 1U);
@@ -384,7 +403,8 @@ bool unOpErrorPassThrough(RangeErrorMap &RMap, Instruction &I) {
     return false;
   }
 
-  if (RMap.getRangeError(&I) == nullptr) {
+  auto *DestRE = RMap.getRangeError(&I);
+  if (DestRE == nullptr || DestRE->first.isUninitialized()) {
     // Add operand range and error to RMap.
     RMap.setRangeError(&I, *OpRE);
   }
@@ -557,8 +577,8 @@ bool checkCmp(RangeErrorMap &RMap, CmpErrorMap &CmpMap, Instruction &I) {
 
   auto *Op1 = getOperandRangeError(RMap, I, 0U);
   auto *Op2 = getOperandRangeError(RMap, I, 1U);
-  if (Op1 == nullptr || !Op1->second.hasValue()
-      || Op2 == nullptr || !Op2->second.hasValue()) {
+  if (Op1 == nullptr || Op1->first.isUninitialized() || !Op1->second.hasValue()
+      || Op2 == nullptr || Op2->first.isUninitialized() || !Op2->second.hasValue()) {
     DEBUG(dbgs() << "(no data).\n");
     return false;
   }

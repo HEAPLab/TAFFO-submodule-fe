@@ -197,7 +197,7 @@ FunctionErrorPropagator::prepareErrorsForCall(Instruction &I) {
     Args.append(II.arg_begin(), II.arg_end());
   }
 
-  if (CalledF == nullptr)
+  if (CalledF == nullptr || isSpecialFunction(*CalledF))
     return;
 
   DEBUG(dbgs() << "Preparing errors for function call/invoke "

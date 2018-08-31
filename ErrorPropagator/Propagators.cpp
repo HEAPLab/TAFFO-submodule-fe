@@ -396,7 +396,7 @@ bool propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
 }
 
 bool unOpErrorPassThrough(RangeErrorMap &RMap, Instruction &I) {
-  assert(isa<UnaryInstruction>(I) && "Must be Unary.");
+  // assert(isa<UnaryInstruction>(I) && "Must be Unary.");
 
   auto *OpRE = getOperandRangeError(RMap, I, 0U);
   if (OpRE == nullptr || !OpRE->second.hasValue()) {
@@ -652,18 +652,28 @@ bool propagateRet(RangeErrorMap &RMap, Instruction &I) {
   }
 }
 
+bool isSpecialFunction(Function &F) {
+  return F.arg_size() == 1U
+    && (F.empty() || !F.hasName() || F.getName().find("_fixp") != StringRef::npos);
+}
+
 bool propagateCall(RangeErrorMap &RMap, Instruction &I) {
-  Value *F = nullptr;
+  Function *F = nullptr;
   if (isa<CallInst>(I)) {
-    F = cast<CallInst>(I).getCalledValue();
+    F = cast<CallInst>(I).getCalledFunction();
     DEBUG(dbgs() << "Propagating error for Call instruction "
 	  << I.getName() << "... ");
   }
   else {
     assert(isa<InvokeInst>(I));
-    F = cast<InvokeInst>(I).getCalledValue();
+    F = cast<InvokeInst>(I).getCalledFunction();
     DEBUG(dbgs() << "Propagating error for Invoke instruction "
 	  << I.getName() << "... ");
+  }
+
+  if (F != nullptr && isSpecialFunction(*F)) {
+    DEBUG(dbgs() << "(special pass-through) ");
+    return unOpErrorPassThrough(RMap, I);
   }
 
   if (RMap.getRangeError(&I) == nullptr) {

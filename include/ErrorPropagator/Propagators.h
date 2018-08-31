@@ -68,6 +68,8 @@ bool checkCmp(RangeErrorMap &, CmpErrorMap &, Instruction &);
 /// than the one already associated (if any).
 bool propagateRet(RangeErrorMap &RMap, Instruction &I);
 
+bool isSpecialFunction(Function &F);
+
 /// Associate the error of the called function to I.
 /// Works woth both CallInst and InvokeInst.
 bool propagateCall(RangeErrorMap &RMap, Instruction &I);

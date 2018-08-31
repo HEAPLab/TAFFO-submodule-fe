@@ -43,10 +43,14 @@ void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
 
     DEBUG(dbgs() << "Trying to unroll loop by " << UnrollCount << "... ");
 
+    unsigned TripMult = SE.getSmallConstantTripMultiple(L);
+    if (TripMult == 0U)
+      TripMult = UnrollCount;
+
     // Actually unroll loop
     LoopUnrollResult URes = UnrollLoop(L, UnrollCount, TripCount,
     				       true, false, true, false, false,
-    				       SE.getSmallConstantTripMultiple(L), 0U,
+    				       TripMult, 0U,
     				       false, &LInfo, &SE, &DomTree,
     				       &AssC, &ORE, true);
     switch (URes) {

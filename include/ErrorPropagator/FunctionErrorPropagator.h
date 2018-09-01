@@ -58,6 +58,8 @@ public:
 			     SmallVectorImpl<Value *> *Args = nullptr,
 			     bool GenMetadata = false);
 
+  RangeErrorMap &getRMap() { return RMap; }
+
 protected:
   /// Compute errors instruction by instruction.
   void computeFunctionErrors(SmallVectorImpl<Value *> *ArgErrs);
@@ -71,6 +73,11 @@ protected:
 
   /// Compute the error on the return value of another function.
   void prepareErrorsForCall(Instruction &I);
+
+  /// Transfer the errors computed locally to the actual parameters of the function call,
+  /// but only if they are pointers.
+  void applyActualParametersErrors(RangeErrorMap &GlobRMap,
+				   SmallVectorImpl<Value *> *Args);
 
   /// Attach error metadata to the original function.
   void attachErrorMetadata();

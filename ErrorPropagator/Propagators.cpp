@@ -236,18 +236,48 @@ bool propagateBinaryOp(RangeErrorMap &RMap, Instruction &I) {
   return true;
 }
 
-bool propagateStore(RangeErrorMap &RMap, Instruction &I) {
+void updateArgumentRE(RangeErrorMap &RMap, MemorySSA &MemSSA, Value *Pointer,
+		      const RangeErrorMap::RangeError *NewRE) {
+  assert(Pointer != nullptr);
+  assert(NewRE != nullptr);
+
+  if (isa<Argument>(Pointer)) {
+    auto *PointerRE = RMap.getRangeError(Pointer);
+    if (PointerRE == nullptr || !PointerRE->second.hasValue()
+	|| PointerRE->second->noiseTermsAbsSum() < NewRE->second->noiseTermsAbsSum()) {
+      RMap.setRangeError(Pointer, *NewRE);
+      // DEBUG(dbgs() << "Error of argument "<< Pointer->getName() << " updated.\n");
+    }
+  }
+  else if (GetElementPtrInst *GEPI = dyn_cast<GetElementPtrInst>(Pointer)) {
+    updateArgumentRE(RMap, MemSSA, GEPI->getPointerOperand(), NewRE);
+  }
+  else if (LoadInst *LI = dyn_cast<LoadInst>(Pointer)) {
+    MemorySSAWalker *MSSAWalker = MemSSA.getWalker();
+    assert(MSSAWalker != nullptr && "Null MemorySSAWalker.");
+    if (MemoryDef *MD = dyn_cast<MemoryDef>(MSSAWalker->getClobberingMemoryAccess(LI))) {
+      if (StoreInst *SI = dyn_cast<StoreInst>(MD->getMemoryInst())) {
+	updateArgumentRE(RMap, MemSSA, SI->getValueOperand(), NewRE);
+      }
+    }
+    // TODO: Handle MemoryPHI
+  }
+}
+
+bool propagateStore(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
   assert(I.getOpcode() == Instruction::Store && "Must be Store.");
   StoreInst &SI = cast<StoreInst>(I);
 
   DEBUG(dbgs() << "Propagating error for Store instruction " << I.getName() << "... ");
 
+  Value *IDest = SI.getPointerOperand();
+  assert(IDest != nullptr && "Store with null Pointer Operand.\n");
+  auto *PointerRE = RMap.getRangeError(IDest);
+
   auto *SrcRE = getOperandRangeError(RMap, I, 0U);
   if (SrcRE == nullptr || !SrcRE->second.hasValue()) {
     DEBUG(dbgs() << "(no data, looking up pointer) ");
-    Value *IDest = SI.getPointerOperand();
-    assert(IDest != nullptr && "Store with null Pointer Operand.\n");
-    SrcRE = RMap.getRangeError(IDest);
+    SrcRE = PointerRE;
     if (SrcRE == nullptr || !SrcRE->second.hasValue()) {
       DEBUG(dbgs() << " ignored (no data).\n");
       return false;
@@ -255,8 +285,10 @@ bool propagateStore(RangeErrorMap &RMap, Instruction &I) {
   }
   assert(SrcRE != nullptr);
 
-  // Associate the source error to this store instruction.
+  // Associate the source error to this store instruction,
   RMap.setRangeError(&SI, *SrcRE);
+  // and to the pointer, if greater, and if it is a function Argument.
+  updateArgumentRE(RMap, MemSSA, IDest, SrcRE);
 
   DEBUG(dbgs() << static_cast<double>(SrcRE->second->noiseTermsAbsSum()) << ".\n");
 
@@ -286,11 +318,16 @@ void findLOEError(RangeErrorMap &RMap, Instruction *I,
   }
 }
 
-void findMemDefError(RangeErrorMap &RMap, const MemoryDef *MD,
+void findMemDefError(RangeErrorMap &RMap, Instruction *I, const MemoryDef *MD,
 		     SmallVectorImpl<const RangeErrorMap::RangeError *> &Res) {
   assert(MD != nullptr && "MD is null.");
 
-  Res.push_back(RMap.getRangeError(MD->getMemoryInst()));
+  Instruction *MI = MD->getMemoryInst();
+  if (isa<CallInst>(MI) || isa<InvokeInst>(MI))
+    // The computed error should have been attached to the actual parameter.
+    findLOEError(RMap, I, Res);
+  else
+    Res.push_back(RMap.getRangeError(MD->getMemoryInst()));
 }
 
 void findMemPhiError(RangeErrorMap &RMap,
@@ -329,7 +366,7 @@ void findMemSSAError(RangeErrorMap &RMap, MemorySSA &MemSSA,
 		    Visited, Res);
   }
   else if (isa<MemoryDef>(MA))
-    findMemDefError(RMap, cast<MemoryDef>(MA), Res);
+    findMemDefError(RMap, I, cast<MemoryDef>(MA), Res);
   else {
     assert(isa<MemoryPhi>(MA));
     findMemPhiError(RMap, MemSSA, I, cast<MemoryPhi>(MA), Visited, Res);

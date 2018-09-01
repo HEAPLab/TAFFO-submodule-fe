@@ -30,7 +30,7 @@ bool propagateBinaryOp(RangeErrorMap &, Instruction &);
 
 /// Propagate errors for a store instruction
 /// by associating the errors of the source to the destination.
-bool propagateStore(RangeErrorMap &, Instruction &);
+bool propagateStore(RangeErrorMap &, MemorySSA &, Instruction &);
 
 /// Propagate the errors for a Load instruction
 /// by associating the errors of the source to it.

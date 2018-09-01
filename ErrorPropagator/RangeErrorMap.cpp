@@ -118,11 +118,10 @@ void RangeErrorMap::applyArgumentErrors(Function &F,
     if (Err == nullptr)
       continue;
 
-    AffineForm<inter_t> ErrCopy = *Err;
-    this->setError(&*FArg, ErrCopy);
+    this->setError(&*FArg, *Err);
 
     DEBUG(dbgs() << "Pre-computed error applied to argument " << FArg->getName()
-	  << ": " << static_cast<double>(ErrCopy.noiseTermsAbsSum()) << ".\n");
+	  << ": " << static_cast<double>(Err->noiseTermsAbsSum()) << ".\n");
   }
 }
 

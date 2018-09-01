@@ -40,8 +40,8 @@ FunctionErrorPropagator::computeErrorsWithCopy(RangeErrorMap &GlobRMap,
 
   Function &CF = *FCopy;
 
-  DEBUG(dbgs() << "Processing function " << CF.getName()
-	<< " (iteration " << OldRecCount + 1 << ")...\n");
+  DEBUG(dbgs() << "\n*** Processing function " << CF.getName()
+	<< " (iteration " << OldRecCount + 1 << ")... ***\n");
 
   CmpMap.clear();
   RMap = GlobRMap;
@@ -61,6 +61,8 @@ FunctionErrorPropagator::computeErrorsWithCopy(RangeErrorMap &GlobRMap,
     // Put error metadata in original function.
     attachErrorMetadata();
   }
+
+  applyActualParametersErrors(GlobRMap, Args);
 
   // Associate computed errors to global variables.
   for (const GlobalVariable &GV : F.getParent()->globals()) {
@@ -138,7 +140,7 @@ FunctionErrorPropagator::dispatchInstruction(Instruction &I) {
 
   switch (I.getOpcode()) {
     case Instruction::Store:
-      return propagateStore(RMap, I);
+      return propagateStore(RMap, *MemSSA, I);
     case Instruction::Load:
       return propagateLoad(RMap, *MemSSA, I);
     case Instruction::FPExt:
@@ -214,6 +216,28 @@ FunctionErrorPropagator::prepareErrorsForCall(Instruction &I) {
 
   // Restore MemorySSA
   EPPass.getAnalysis<MemorySSAWrapperPass>(*I.getFunction());
+}
+
+void
+FunctionErrorPropagator::applyActualParametersErrors(RangeErrorMap &GlobRMap,
+						     SmallVectorImpl<Value *> *Args) {
+  if (Args == nullptr)
+    return;
+
+  auto FArg = F.arg_begin();
+  auto FArgEnd = F.arg_end();
+  for (auto AArg = Args->begin(), AArgEnd = Args->end();
+       AArg != AArgEnd && FArg != FArgEnd;
+       ++AArg, ++FArg) {
+    if (!FArg->getType()->isPointerTy())
+      continue;
+
+    const AffineForm<inter_t> *Err = RMap.getError(&*FArg);
+    if (Err == nullptr)
+      continue;
+
+    GlobRMap.setError(*AArg, *Err);
+  }
 }
 
 void

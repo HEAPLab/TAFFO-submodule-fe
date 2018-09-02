@@ -55,6 +55,9 @@ bool ErrorPropagator::runOnModule(Module &M) {
   // Iterate over all functions in this Module,
   // and propagate errors for pending input intervals for all of them.
   for (Function *F : Functions) {
+    if (StartOnly && !MetadataManager::isStartingPoint(*F))
+      continue;
+
     FunctionErrorPropagator FEP(*this, *F, FCMap, MDManager);
     FEP.computeErrorsWithCopy(GlobalRMap, nullptr, true);
   }

@@ -44,6 +44,9 @@ cl::opt<unsigned> MaxRecursionCount("recur",
 					     "to the same function."),
 				    cl::value_desc("count"),
 				    cl::init(1U));
+cl::opt<bool> StartOnly("startonly",
+			cl::desc("Propagate only functions with start metadata."),
+			cl::init(false));
 
 class ErrorPropagator : public ModulePass {
 public:

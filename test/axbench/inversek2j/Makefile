@@ -55,7 +55,7 @@ $(OBJ_FIX) : obj/main.fixp.ll
 	$(CC) -c obj/main.fixp.s -o $@
 
 obj/main.err.ll : obj/main.fixp.ll
-	opt -load=$(ERRORLIB) -S -errorprop -debug-only=errorprop $< -o $@
+	opt -load=$(ERRORLIB) -S -errorprop -startonly -debug-only=errorprop $< -o $@
 
 clean:
 	@rm -rf *.o

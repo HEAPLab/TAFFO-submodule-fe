@@ -47,7 +47,7 @@ obj/%.fixp.ll: obj/%.init.ll
 	opt -load=$(PASSLIB) -S -flttofix -dce -debug-only=flttofix -stats $< -o $@
 
 obj/%.err.ll: obj/%.fixp.ll
-	opt -load=$(ERRORLIB) -S -errorprop -debug-only=errorprop $< -o $@
+	opt -load=$(ERRORLIB) -S -errorprop -startonly -debug-only=errorprop $< -o $@
 
 obj/%.s: obj/%.ll
 	$(CC) -S  $< -o $@ $(OX)

@@ -51,7 +51,7 @@ obj/main.fixp.ll : obj/main.init.ll
 	opt -load=$(PASSLIB) -S -flttofix -dce -debug-only=flttofix -stats $(OX) $< -o $@
 
 obj/main.err.ll : obj/main.fixp.ll
-	opt -load=$(ERRORLIB) -S -errorprop -nounroll -debug-only=errorprop $< -o $@
+	opt -load=$(ERRORLIB) -S -errorprop -nounroll -startonly -debug-only=errorprop $< -o $@
 
 $(OBJ_FIX) : obj/main.fixp.ll
 	$(CC) -S $^ -o obj/main.fixp.s $(OX)

@@ -1,7 +1,7 @@
 CC			:= clang++
 LD			:= clang++
 
-OX          := -O3
+OX          :=# -O3
 
 CFLAGS		:= -Wall -Wnarrowing -std=c++11
 LFLAGS		:= -lboost_regex
@@ -16,7 +16,7 @@ OBJ_FLOAT := obj/main.o
 OBJ_FIX   := obj/main.fixp.o
 
 .PHONY: all clean
-	
+
 all: DIR $(MODULE)
 
 .PRECIOUS: obj/%.ll obj/%.o obj/%.s
@@ -30,7 +30,7 @@ DIR:
 		mkdir obj;				\
 	fi
 
-$(MODULE): $(OBJ_FLOAT) $(OBJ_FIX)
+$(MODULE): $(OBJ_FLOAT) $(OBJ_FIX) obj/main.err.ll
 	$(LD) $(OBJ_FLOAT) $(LFLAGS) -o bin/$@
 	$(LD) $(OBJ_FIX) $(LFLAGS) -o bin/$@.fixp
 
@@ -44,8 +44,14 @@ $(OBJ_FLOAT) : obj/main.ll
 	$(CC) -S $^ -o obj/main.s $(OX)
 	$(CC) -c obj/main.s -o $@
 
-obj/main.fixp.ll : obj/main.ll
+obj/main.init.ll : obj/main.ll
+	opt -load=$(INITLIB) -S -taffoinit -debug-only=flttofix,annotation -stats $< -o $@
+
+obj/main.fixp.ll : obj/main.init.ll
 	opt -load=$(PASSLIB) -S -flttofix -dce -debug-only=flttofix -stats $(OX) $< -o $@
+
+obj/main.err.ll : obj/main.fixp.ll
+	opt -load=$(ERRORLIB) -S -errorprop -nounroll -debug-only=errorprop $< -o $@
 
 $(OBJ_FIX) : obj/main.fixp.ll
 	$(CC) -S $^ -o obj/main.fixp.s $(OX)

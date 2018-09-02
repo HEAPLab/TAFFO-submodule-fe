@@ -72,6 +72,9 @@ FunctionErrorPropagator::computeErrorsWithCopy(RangeErrorMap &GlobRMap,
     GlobRMap.setError(&GV, *GVErr);
   }
 
+  // Update global struct element errors.
+  GlobRMap.updateStructElemError(RMap);
+
   // Associate computed error to the original function.
   auto FErr = RMap.getError(FCopy);
   if (FErr != nullptr)

@@ -20,6 +20,7 @@
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Function.h"
 #include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Optional.h"
 #include "ErrorPropagator/MDUtils/Metadata.h"
 #include "ErrorPropagator/FixedPoint.h"
@@ -72,9 +73,16 @@ public:
 
   MetadataManager &getMetadataManager() { return *MDMgr; }
 
+  void updateStructElemError(StoreInst &SI, const AffineForm<inter_t> *Error);
+  void updateStructElemError(StructType *ST, unsigned Idx, const inter_t &Error);
+  void updateStructElemError(const RangeErrorMap &Other);
+
 protected:
   std::map<const Value *, RangeError> REMap;
   MetadataManager *MDMgr;
+  std::map<StructType *, SmallVector<Optional<inter_t>, 2U>> StructMap;
+
+  void printStructErrs(StructType *ST, raw_ostream &OS) const;
 
 }; // end class RangeErrorMap
 

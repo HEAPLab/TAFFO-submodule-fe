@@ -82,6 +82,8 @@ FunctionErrorPropagator::computeErrorsWithCopy(RangeErrorMap &GlobRMap,
 
   // Restore original recursion count.
   FCMap.setRecursionCount(&F, OldRecCount);
+
+  DEBUG(dbgs() << "Finished processing function " << CF.getName() << ".\n\n");
 }
 
 void
@@ -114,17 +116,24 @@ FunctionErrorPropagator::computeInstructionErrors(Instruction &I) {
 
   bool ComputedError = dispatchInstruction(I);
 
-  if (HasInitialError) {
-    if (ComputedError) {
-      DEBUG(dbgs() << "WARNING: computed error for instruction "
-	    << I.getName() << " ignored because of metadata error "
-	    << InitialError << ".\n");
-      RMap.setError(&I, AffineForm<inter_t>(0.0, InitialError));
-    }
-    else {
-      DEBUG(dbgs() << "Initial error for instruction "
-	    << I.getName() << ": " << InitialError << ".\n");
-    }
+  // if (HasInitialError) {
+  //   if (ComputedError) {
+  //     DEBUG(dbgs() << "WARNING: computed error for instruction "
+  // 	    << I.getName() << " ignored because of metadata error "
+  // 	    << InitialError << ".\n");
+  //     RMap.setError(&I, AffineForm<inter_t>(0.0, InitialError));
+  //   }
+  //   else {
+  //     DEBUG(dbgs() << "Initial error for instruction "
+  // 	    << I.getName() << ": " << InitialError << ".\n");
+  //   }
+  // }
+
+  if (!ComputedError && HasInitialError) {
+    DEBUG(dbgs() << "WARNING: metadata error "
+	  << InitialError << " attached to instruction "
+	  << I.getName() << ".\n");
+    RMap.setError(&I, AffineForm<inter_t>(0.0, InitialError));
   }
 
   DEBUG(

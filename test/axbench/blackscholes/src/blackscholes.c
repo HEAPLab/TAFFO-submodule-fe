@@ -67,19 +67,19 @@ int numError = 0;
 // See Hull, Section 11.8, P.243-244
 #define inv_sqrt_2xPI 0.39894228040143270286
 
-fptype CNDF ( fptype InputX ) 
+fptype CNDF ( fptype InputX __attribute((annotate("range -0.6 1.02"))))
 {
     int sign;
 
-    fptype OutputX;
-    fptype xInput;
-    fptype xNPrimeofX;
-    fptype expValues;
-    fptype xK2;
-    fptype xK2_2, xK2_3;
-    fptype xK2_4, xK2_5;
-    fptype xLocal, xLocal_1;
-    fptype xLocal_2, xLocal_3;
+    fptype OutputX __attribute((annotate("range -0.6 1.02")));
+    fptype xInput __attribute((annotate("range -0.6 1.02")));
+    fptype xNPrimeofX __attribute((annotate("range -0.6 1.02")));
+    fptype expValues __attribute((annotate("range -0.6 1.02")));
+    fptype xK2 __attribute((annotate("range -0.6 1.02")));
+    fptype xK2_2 __attribute((annotate("range -0.6 1.02"))), xK2_3 __attribute((annotate("range -0.6 1.02")));
+    fptype xK2_4 __attribute((annotate("range -0.6 1.02"))), xK2_5 __attribute((annotate("range -0.6 1.02")));
+    fptype xLocal __attribute((annotate("range -0.6 1.02"))), xLocal_1 __attribute((annotate("range -0.6 1.02")));
+    fptype xLocal_2 __attribute((annotate("range -0.6 1.02"))), xLocal_3 __attribute((annotate("range -0.6 1.02")));
 
     // Check for negative value of InputX
     if (InputX < 0.0) {
@@ -148,7 +148,7 @@ fptype BlkSchlsEqEuroNoDiv( fptype sptprice __attribute((annotate("no_float 20 1
     //fptype xStockPrice;
     //fptype xStrikePrice;
     fptype xRiskFreeRate __attribute((annotate("range 0 0.1")));
-    fptype xVolatility __attribute((annotate("range 0 6.5e-1")));
+    fptype xVolatility __attribute((annotate("range 0 6.5e-1 0")));
     fptype xTime __attribute((annotate("range 0 1")));
     fptype xSqrtTime __attribute((annotate("range 0 1")));
 

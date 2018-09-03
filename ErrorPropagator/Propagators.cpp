@@ -102,6 +102,9 @@ getConstantFPRangeError(RangeErrorMap &RMap, ConstantFP *VFP) {
   else
     return nullptr;
 
+  // Kludge! ;-)
+  CVal = 1.0;
+
   FPInterval FPI(Interval<inter_t>(CVal, CVal));
   RMap.setRangeError(VFP, std::make_pair(FPI, AffineForm<inter_t>(0.0)));
   return RMap.getRangeError(VFP);
@@ -556,19 +559,23 @@ bool propagatePhi(RangeErrorMap &RMap, Instruction &I) {
 
   DEBUG(dbgs() << "Propagating error for PHI node " << I.getName() << "... ");
 
-  if (RMap.getRangeError(&I) == nullptr) {
-    DEBUG(dbgs() << "ignored (no range data).\n");
-    return false;
-  }
+  // if (RMap.getRangeError(&I) == nullptr) {
+  //   DEBUG(dbgs() << "ignored (no range data).\n");
+  //   return false;
+  // }
 
   // Iterate over values and choose the largest absolute error.
   inter_t AbsErr = -1.0;
+  inter_t Min = std::numeric_limits<inter_t>::infinity();
+  inter_t Max = -std::numeric_limits<inter_t>::infinity();
   for (const Use &IVal : PHI.incoming_values()) {
     auto *RE = getOperandRangeError(RMap, I, IVal);
     if (RE == nullptr || !RE->second.hasValue()) {
       continue;
     }
     AbsErr = std::max(AbsErr, RE->second->noiseTermsAbsSum());
+    Min = std::min(Min, RE->first.Min);
+    Max = std::max(Max, RE->first.Max);
   }
 
   if (AbsErr < 0.0) {
@@ -578,9 +585,11 @@ bool propagatePhi(RangeErrorMap &RMap, Instruction &I) {
   }
 
   AffineForm<inter_t> ERes(0, AbsErr);
+  FPInterval FPI(Interval<inter_t>(Min, Max));
 
   // Add error to RMap.
-  RMap.setError(&I, ERes);
+  //RMap.setError(&I, ERes);
+  RMap.setRangeError(&I, std::make_pair(FPI, ERes));
 
   // Add computed error metadata to the instruction.
   // setErrorMetadata(I, ERes);

@@ -49,8 +49,8 @@ obj/main.init.ll : obj/main.ll
 	opt -load=$(INITLIB) -S -taffoinit -debug-only=flttofix,annotation -stats $< -o $@
 
 obj/main.fixp.ll : obj/main.init.ll
-	opt -load=$(PASSLIB) -S -flttofix -dce -debug-only=flttofix -stats $(OX) $< -o $@
-	#opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg -simplifycfg -loop-simplify -loop-rotate -lcssa -indvars -debug-only=flttofix -stats $(OX) $< -o $@
+	#opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg -debug-only=flttofix -stats $(OX) $< -o $@
+	opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg -simplifycfg -loop-simplify -loop-rotate -lcssa -indvars -debug-only=flttofix -stats $(OX) $< -o $@
 
 obj/main.err.ll : obj/main.fixp.ll
 	opt -load=$(ERRORLIB) -S -errorprop -startonly -dunroll 5 -debug-only=errorprop,loop-unroll $< -o $@

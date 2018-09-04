@@ -4,10 +4,11 @@
 #include <fstream>
 #include <map>
 
-void calcFftIndices(int K, int* indices)
+void calcFftIndices(int K __attribute((annotate("range 0 100 0"))),
+		    int* indices __attribute((annotate("0 100 0"))))
 {
-	int i, j ;
-	int N ;
+	int __attribute((annotate("range 0 100 0"))) i, __attribute((annotate("range 0 100 0"))) j;
+	int  __attribute((annotate("range 0 100 0"))) N;
 
 	N = (int)log2f(K) ;
 
@@ -22,7 +23,10 @@ void calcFftIndices(int K, int* indices)
 	}
 }
 
-void radix2DitCooleyTykeyFft(int K, int* indices, Complex* x, Complex* f)
+void radix2DitCooleyTykeyFft(int K __attribute((annotate("range 0 100 0"))),
+			     int* indices __attribute((annotate("range 0 100 0"))),
+			     Complex* x __attribute((annotate("range 0 100 0"))),
+			     Complex* f __attribute((annotate("range 0 100 0"))))
 {
 
 	calcFftIndices(K, indices) ;
@@ -35,14 +39,14 @@ void radix2DitCooleyTykeyFft(int K, int* indices, Complex* x, Complex* f)
 	float __attribute((annotate("no_float 20 12 signed -1.0 1.0 1e-4"))) fftSin;
 	float __attribute((annotate("no_float 20 12 signed -1.0 1.0 1e-4"))) fftCos;
 
-	Complex t;
+	Complex __attribute((annotate("range 0 100 0"))) t;
 	int i ;
-	int N ;
+	int __attribute((annotate("range 1 100 0"))) N ;
 	int j ;
-	int k ;
+	int __attribute((annotate("range 0 100 0"))) k ;
 
-	double dataIn[1];
-	double dataOut[2];
+	double __attribute((annotate("range -1.0 1.0"))) dataIn[1];
+	double __attribute((annotate("range -1.0 1.0"))) dataOut[2];
 
 	for(i = 0, N = 1 << (i + 1); N <= K ; i++, N = 1 << (i + 1))
 	{

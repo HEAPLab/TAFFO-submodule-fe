@@ -2,7 +2,9 @@
 
 #include <cmath>
 
-void fftSinCos(float __attribute((annotate("range 0 2048 1e-10"))) x, float* s, float* c) {
+void fftSinCos(float __attribute((annotate("range 0 2048 1e-10"))) x,
+	       float* __attribute((annotate("range -1 1 0"))) s,
+	       float* __attribute((annotate("range -1 1 0"))) c) {
     *s = sin(-2 * PI * x);
     *c = cos(-2 * PI * x);
 }

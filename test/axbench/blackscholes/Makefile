@@ -44,7 +44,7 @@ obj/%.init.ll: obj/%.ll
 	opt -load=$(INITLIB) -S -taffoinit -debug-only=flttofix,annotation -stats $< -o $@
 
 obj/%.fixp.ll: obj/%.init.ll
-	opt -load=$(PASSLIB) -S -flttofix -dce -debug-only=flttofix -stats $< -o $@
+	opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg -debug-only=flttofix -stats $< -o $@
 
 obj/%.err.ll: obj/%.fixp.ll
 	opt -load=$(ERRORLIB) -S -errorprop -startonly -debug-only=errorprop $< -o $@

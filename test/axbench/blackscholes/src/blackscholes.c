@@ -147,24 +147,24 @@ fptype BlkSchlsEqEuroNoDiv( fptype sptprice __attribute((annotate("no_float 20 1
     // local private working variables for the calculation
     //fptype xStockPrice;
     //fptype xStrikePrice;
-    fptype xRiskFreeRate __attribute((annotate("range 0 0.1")));
-    fptype xVolatility __attribute((annotate("range 0 6.5e-1 0")));
-    fptype xTime __attribute((annotate("range 0 1")));
-    fptype xSqrtTime __attribute((annotate("range 0 1")));
+    fptype xRiskFreeRate __attribute((annotate("range 0.01 0.1")));
+    fptype xVolatility __attribute((annotate("range 0.1 6.5e-1 0")));
+    fptype xTime __attribute((annotate("range 0.1 1")));
+    fptype xSqrtTime __attribute((annotate("range 0.1 1")));
 
     fptype logValues __attribute((annotate("range -0.6 1")));
     fptype xLogTerm __attribute((annotate("range -0.6 1")));
     fptype xD1 __attribute((annotate("range -0.6 1.02")));
     fptype xD2 __attribute((annotate("range -0.6 0.37")));
     fptype xPowerTerm __attribute((annotate("range 0 0.2")));
-    fptype xDen __attribute((annotate("range 0 6.5e-1")));
+    fptype xDen __attribute((annotate("range 0.1 6.5e-1")));
     fptype d1 __attribute((annotate("range -0.6 1.02")));
     fptype d2 __attribute((annotate("range -0.6 0.37")));
     fptype FutureValueX __attribute((annotate("range 0.3 1")));
-    fptype NofXd1 __attribute((annotate("range 0 1")));
-    fptype NofXd2 __attribute((annotate("range 0 1")));
-    fptype NegNofXd1 __attribute((annotate("range 0 1")));
-    fptype NegNofXd2 __attribute((annotate("range 0 1")));
+    fptype NofXd1 __attribute((annotate("range 0.1 1")));
+    fptype NofXd2 __attribute((annotate("range 0.1 1")));
+    fptype NegNofXd1 __attribute((annotate("range 0.1 1")));
+    fptype NegNofXd2 __attribute((annotate("range 0.1 1")));
 
     //xStockPrice = sptprice;
     //xStrikePrice = strike;

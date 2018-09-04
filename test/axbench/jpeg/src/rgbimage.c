@@ -186,14 +186,14 @@ void freeRgbImage(RgbImage* image) {
 	free(image->pixels);
 }
 
-void makeGrayscale(RgbImage* __attribute((annotate("range 0 65535 1.0"))) image) {
+void makeGrayscale(RgbImage* __attribute((annotate("range 0 65535 0"))) image) {
 	int i;
 	int j;
 	float __attribute((annotate("no_float 17 15 signed 0 65535")))luminance;
 
-	float __attribute((annotate("no_float 15 16 signed 0 65535")))rC = 0.30;
-	float __attribute((annotate("no_float 15 16 signed 0 65535")))gC = 0.59;
-	float __attribute((annotate("no_float 15 16 signed 0 65535")))bC = 0.11;
+	float __attribute((annotate("no_float 15 16 signed 0 65535 0")))rC = 0.30;
+	float __attribute((annotate("no_float 15 16 signed 0 65535 0")))gC = 0.59;
+	float __attribute((annotate("no_float 15 16 signed 0 65535 0")))bC = 0.11;
 
 	for(i = 0; i < image->h; i++) {
 		for(j = 0; j < image->w; j++) {

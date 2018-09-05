@@ -62,6 +62,9 @@ bool ErrorPropagator::runOnModule(Module &M) {
     FEP.computeErrorsWithCopy(GlobalRMap, nullptr, true);
   }
 
+  dbgs() << "\n*** Target Errors: ***\n";
+  GlobalRMap.printTargetErrors(dbgs());
+
   return false;
 }
 

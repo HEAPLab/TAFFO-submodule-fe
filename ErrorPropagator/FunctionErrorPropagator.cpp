@@ -74,6 +74,8 @@ FunctionErrorPropagator::computeErrorsWithCopy(RangeErrorMap &GlobRMap,
 
   // Update global struct element errors.
   GlobRMap.updateStructElemError(RMap);
+  // Update target errors
+  GlobRMap.updateTargets(RMap);
 
   // Associate computed error to the original function.
   auto FErr = RMap.getError(FCopy);

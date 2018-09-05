@@ -30,6 +30,22 @@ namespace ErrorProp {
 
 using namespace llvm;
 
+class TargetErrors {
+public:
+  void updateTarget(const Value *V, const inter_t &Error);
+  void updateTarget(const Instruction *I, const inter_t &Error);
+  void updateTarget(const GlobalVariable *V, const inter_t &Error);
+  void updateTarget(StringRef T, const inter_t &Error);
+  void updateAllTargets(const TargetErrors &Other);
+
+  inter_t getErrorForTarget(StringRef T) const;
+
+  void printTargetErrors(raw_ostream &OS) const;
+
+protected:
+  DenseMap<StringRef, inter_t> Targets;
+};
+
 class RangeErrorMap {
 public:
   typedef std::pair<FPInterval, Optional<AffineForm<inter_t> > > RangeError;
@@ -77,10 +93,14 @@ public:
   void updateStructElemError(StructType *ST, unsigned Idx, const inter_t &Error);
   void updateStructElemError(const RangeErrorMap &Other);
 
+  void updateTargets(const RangeErrorMap &Other);
+  void printTargetErrors(raw_ostream &OS) const { TErrs.printTargetErrors(OS); }
+
 protected:
   std::map<const Value *, RangeError> REMap;
   MetadataManager *MDMgr;
   std::map<StructType *, SmallVector<Optional<inter_t>, 2U>> StructMap;
+  TargetErrors TErrs;
 
   void printStructErrs(StructType *ST, raw_ostream &OS) const;
 

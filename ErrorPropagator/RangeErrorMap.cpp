@@ -55,11 +55,16 @@ RangeErrorMap::getRangeError(const Value *I) const {
 void RangeErrorMap::setError(const Value *I, const AffineForm<inter_t> &E) {
   // If Range does not exist, the default is created.
   REMap[I].second = E;
+
+  TErrs.updateTarget(I, E.noiseTermsAbsSum());
 }
 
 void RangeErrorMap::setRangeError(const Value *I,
 				  const RangeError &RE) {
   REMap[I] = RE;
+
+  if (RE.second.hasValue())
+    TErrs.updateTarget(I, RE.second.getValue().noiseTermsAbsSum());
 }
 
 bool RangeErrorMap::retrieveRangeError(Instruction &I) {
@@ -225,6 +230,55 @@ void RangeErrorMap::printStructErrs(StructType *ST, raw_ostream &OS) const {
       OS << "null, ";
   }
   OS << "}";
+}
+
+void RangeErrorMap::updateTargets(const RangeErrorMap &Other) {
+  this->TErrs.updateAllTargets(Other.TErrs);
+}
+
+void TargetErrors::updateTarget(const Value *V, const inter_t &Error) {
+  if (isa<Instruction>(V))
+    updateTarget(cast<Instruction>(V), Error);
+  else if (isa<GlobalVariable>(V))
+    updateTarget(cast<GlobalVariable>(V), Error);
+}
+
+void TargetErrors::updateTarget(const Instruction *I, const inter_t &Error) {
+  assert(I != nullptr);
+  Optional<StringRef> Target = MetadataManager::retrieveTargetMetadata(*I);
+  if (Target.hasValue())
+    updateTarget(Target.getValue(), Error);
+}
+
+void TargetErrors::updateTarget(const GlobalVariable *V, const inter_t &Error) {
+  assert(V != nullptr);
+  Optional<StringRef> Target = MetadataManager::retrieveTargetMetadata(*V);
+  if (Target.hasValue())
+    updateTarget(Target.getValue(), Error);
+}
+
+void TargetErrors::updateTarget(StringRef T, const inter_t &Error) {
+  Targets[T] = std::max(Targets[T], Error);
+}
+
+void TargetErrors::updateAllTargets(const TargetErrors &Other) {
+  for (auto &T : Other.Targets)
+    this->updateTarget(T.first, T.second);
+}
+
+inter_t TargetErrors::getErrorForTarget(StringRef T) const {
+  auto Error = Targets.find(T);
+  if (Error == Targets.end())
+    return 0;
+
+  return Error->second;
+}
+
+void TargetErrors::printTargetErrors(raw_ostream &OS) const {
+  for (auto &T : Targets) {
+    OS << "Computed error for target " << T.first << ": "
+       << static_cast<double>(T.second) << "\n";
+  }
 }
 
 } // end namespace ErrorProp

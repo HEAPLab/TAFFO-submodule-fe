@@ -17,7 +17,7 @@ void forwardk2j(float  __attribute((annotate("no_float 4 28 signed 0.1 1.58 4e-9
 	*y = l1 * sin(theta1) + l2 * sin(theta1 + theta2) ;
 }
 
-void inversek2j(float __attribute((annotate("no_float 4 28 signed 0.1 1.58 4e-9"))) x, float  __attribute((annotate("no_float 4 28 signed 0.1 1.58 4e-9"))) y, float* __attribute((annotate("range 0.1 1.58 4e-9"))) theta1, float*  __attribute((annotate("range 0.1 1.58 4e-9"))) theta2) {
+void inversek2j(float __attribute((annotate("no_float 4 28 signed 0.1 1.58 4e-9"))) x, float  __attribute((annotate("no_float 4 28 signed 0.1 1.58 4e-9"))) y, float* __attribute((annotate("target range 0.1 1.58 4e-9"))) theta1, float*  __attribute((annotate("target range 0.1 1.58 4e-9"))) theta2) {
 
 	double dataIn[2];
 	dataIn[0] = x;

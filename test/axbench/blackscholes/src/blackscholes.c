@@ -26,6 +26,8 @@
 //double max_out_price, min_out_price;
 
 
+#define DEFAULT_VALUE "1.1"
+
 #define DIVIDE 120.0
 
 
@@ -67,20 +69,20 @@ int numError = 0;
 // See Hull, Section 11.8, P.243-244
 #define inv_sqrt_2xPI 0.39894228040143270286
 
-fptype CNDF ( fptype InputX __attribute((annotate("range -0.6 1.02"))))
+fptype CNDF ( fptype InputX __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE))))
 {
     int sign;
 
-    fptype OutputX __attribute((annotate("range -0.6 1.02")));
-    fptype xInput __attribute((annotate("range -0.6 1.02")));
-    fptype xNPrimeofX __attribute((annotate("range -0.6 1.02")));
-    fptype expValues __attribute((annotate("range -0.6 1.02")));
-    fptype xK2 __attribute((annotate("range -0.6 1.02")));
-    fptype xK2_2 __attribute((annotate("range -0.6 1.02"))), xK2_3 __attribute((annotate("range -0.6 1.02")));
-    fptype xK2_4 __attribute((annotate("range -0.6 1.02"))), xK2_5 __attribute((annotate("range -0.6 1.02")));
-    fptype xLocal __attribute((annotate("range -0.6 1.02"))), xLocal_1 __attribute((annotate("range -0.6 1.02")));
-    fptype xLocal_2 __attribute((annotate("range -0.6 1.02"))), xLocal_3 __attribute((annotate("range -0.6 1.02")));
-
+    fptype OutputX __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype xInput __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype xNPrimeofX __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype expValues __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype xK2 __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype xK2_2 __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE))), xK2_3 __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype xK2_4 __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE))), xK2_5 __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype xLocal __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE))), xLocal_1 __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype xLocal_2 __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE))), xLocal_3 __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    
     // Check for negative value of InputX
     if (InputX < 0.0) {
         InputX = -InputX;
@@ -136,35 +138,37 @@ fptype CNDF ( fptype InputX __attribute((annotate("range -0.6 1.02"))))
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
-fptype BlkSchlsEqEuroNoDiv( fptype sptprice __attribute((annotate("no_float 20 12 signed 0.3 1 2e-4"))) ,
-                            fptype strike __attribute((annotate("no_float 16 16 signed 0.3 1 1.5e-5"))) , fptype rate __attribute((annotate("no_float 8 24 signed 0 0.1 6.0e-8"))),
-                            fptype volatility __attribute((annotate("no_float 8 24 signed 0 6.5e-1 6.0e-8"))), fptype time __attribute((annotate("no_float 20 12 signed 0 1 2e-4"))),
-                            int otype, float timet __attribute((annotate("no_float 20 12 signed 0 0 0"))),
+fptype BlkSchlsEqEuroNoDiv( fptype sptprice __attribute((annotate("no_float 20 12 signed " DEFAULT_VALUE " " DEFAULT_VALUE " 2e-8"))) ,
+                            fptype strike __attribute((annotate("no_float 16 16 signed " DEFAULT_VALUE " " DEFAULT_VALUE " 1.5e-8"))) ,
+			    fptype rate __attribute((annotate("no_float 8 24 signed " DEFAULT_VALUE " " DEFAULT_VALUE " 6.0e-8"))),
+                            fptype volatility __attribute((annotate("no_float 8 24 signed " DEFAULT_VALUE " " DEFAULT_VALUE " 6.0e-8"))),
+			    fptype time __attribute((annotate("no_float 20 12 signed " DEFAULT_VALUE " " DEFAULT_VALUE " 2e-8"))),
+                            int otype, float timet __attribute((annotate("no_float 20 12 signed 1 1 0"))),
                             fptype*  N1, fptype* N2)
 {
-  fptype OptionPrice __attribute((annotate("range 0 30")));
+  fptype OptionPrice __attribute((annotate("target range 10 11")));
 
     // local private working variables for the calculation
     //fptype xStockPrice;
     //fptype xStrikePrice;
-    fptype xRiskFreeRate __attribute((annotate("range 0.01 0.1")));
-    fptype xVolatility __attribute((annotate("range 0.1 6.5e-1 0")));
-    fptype xTime __attribute((annotate("range 0.1 1")));
-    fptype xSqrtTime __attribute((annotate("range 0.1 1")));
+    fptype xRiskFreeRate __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype xVolatility __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE " 0")));
+    fptype xTime __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype xSqrtTime __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
 
-    fptype logValues __attribute((annotate("range -0.6 1")));
-    fptype xLogTerm __attribute((annotate("range -0.6 1")));
-    fptype xD1 __attribute((annotate("range -0.6 1.02")));
-    fptype xD2 __attribute((annotate("range -0.6 0.37")));
-    fptype xPowerTerm __attribute((annotate("range 0 0.2")));
-    fptype xDen __attribute((annotate("range 0.1 6.5e-1")));
-    fptype d1 __attribute((annotate("range -0.6 1.02")));
-    fptype d2 __attribute((annotate("range -0.6 0.37")));
-    fptype FutureValueX __attribute((annotate("range 0.3 1")));
-    fptype NofXd1 __attribute((annotate("range 0.1 1")));
-    fptype NofXd2 __attribute((annotate("range 0.1 1")));
-    fptype NegNofXd1 __attribute((annotate("range 0.1 1")));
-    fptype NegNofXd2 __attribute((annotate("range 0.1 1")));
+    fptype logValues __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype xLogTerm __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype xD1 __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype xD2 __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype xPowerTerm __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype xDen __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype d1 __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype d2 __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype FutureValueX __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype NofXd1 __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype NofXd2 __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype NegNofXd1 __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
+    fptype NegNofXd2 __attribute((annotate("range " DEFAULT_VALUE " " DEFAULT_VALUE)));
 
     //xStockPrice = sptprice;
     //xStrikePrice = strike;

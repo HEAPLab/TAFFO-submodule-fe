@@ -46,7 +46,7 @@ void radix2DitCooleyTykeyFft(int K __attribute((annotate("range 0 100 0"))),
 	int __attribute((annotate("range 0 100 0"))) k ;
 
 	double __attribute((annotate("range -1.0 1.0"))) dataIn[1];
-	double __attribute((annotate("range -1.0 1.0"))) dataOut[2];
+	double __attribute((annotate("target range -1.0 1.0"))) dataOut[2];
 
 	for(i = 0, N = 1 << (i + 1); N <= K ; i++, N = 1 << (i + 1))
 	{

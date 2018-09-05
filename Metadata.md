@@ -139,6 +139,63 @@ static void MetadataManager::setArgumentInputInfoMetadata(Function &F, const Arr
 
 ### Input Data
 
+#### Target instructions
+
+Instructions and global variables may be associated to a target variable in the original program.
+Taffo will keep track of the errors propagated for all instructions that are associated to each target,
+and display the maximum absolute error computed for that target at the end of the pass.
+Targets may be specified with a MDString node containing the name of the target,
+with lable `!taffo.target`.
+Each instruction/global variable may be associated with a single target.
+
+```
+  ...
+  %OptionPrice = alloca float, align 4, !taffo.info !17, !taffo.target !19
+  ...
+  store float %sub51, float* %OptionPrice, align 4, !taffo.info !17, !taffo.target !19
+  ...
+```
+
+At the end of the file:
+```
+!19 = !{!"OptionPrice7"}
+```
+(The name of the target is OptionPrice7).
+
+Related functions:
+```cpp
+#include "MDUtils/Metadata.h"
+static void MetadataManager::setTargetMetadata(Instruction &I, StringRef Name);
+static void MetadataManager::setTargetMetadata(GlobalObject &V, StringRef Name);
+static Optional<StringRef> MetadataManager::retrieveTargetMetadata(const Instruction &I);
+static Optional<StringRef> MetadataManager::retrieveTargetMetadata(const GlobalObject &V);
+```
+
+#### Starting point
+
+A starting point for error propagation is a function whose errors will be propagated,
+and for which the output error metadata will be emitted.
+Functions not marked as starting points will not be propagated,
+unless they are called in marked functions.
+A function may be marked as a starting point by attaching to it a metadata node with any content,
+labeled with `!taffo.start`.
+
+```
+define float @_Z4CNDFf(float %InputX) #0 !taffo.start !2 {
+  ...
+```
+At the end of the file:
+```
+!2 = !{i1 true}
+```
+
+Related functions:
+```cpp
+#include "MDUtils/Metadata.h"
+static void MetadataManager::setStartingPoint(Function &F);
+static bool MetadataManager::isStartingPoint(const Function &F);
+```
+
 #### Loop unroll count
 
 An i32 integer constant attached to the terminator instruction of the loop header block,
@@ -210,7 +267,7 @@ Related functions:
 ```cpp
 #include "MDUtils/Metadata.h"
 static void MetadataManager::setErrorMetadata(llvm::Instruction &, const AffineForm<inter_t> &);
-static static double MetadataManager::retrieveErrorMetadata(const Instruction &I);
+static double MetadataManager::retrieveErrorMetadata(const Instruction &I);
 ```
 
 #### Possible wrong comparison

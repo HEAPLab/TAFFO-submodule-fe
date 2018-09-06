@@ -8,7 +8,7 @@ The input information associated to a variable takes the form of a metadata node
 !n = !{type, range, initialError}
 ```
 
-Each item of the metadata tuple can be either a link to another metadata tuple or the integer zero (i1 0) in case a specific information does not apply.
+Each item of the metadata tuple can be either a link to another metadata tuple or the integer zero (`i1 false`) in case a specific information does not apply.
 
 ### ``type`` Subnode
 
@@ -18,7 +18,7 @@ The ``type`` subnode, if present, specifies the target type of the variable afte
 !n = !{typeFlag, ...}
 ```
 
-The following items are used to further specialize the type, depending on the value of typeFlag (a MDString).
+The following items are used to further specialize the type, depending on the value of typeFlag (a `MDString`).
 
 #### ``fixp`` Type Flag
 
@@ -81,7 +81,7 @@ And, at the end of the file,
 !7 = !{double 2.0e+01, double 1.0e+2}
 ```
 
-Related functions:
+**Related functions:**
 
 ```cpp
 #include "ErrorPropagator/MDUtils/Metadata.h"
@@ -93,7 +93,32 @@ InputInfo* MetadataManager::retrieveInputInfo(const GlobalObject &V);
 static void MetadataManager::setInputInfoMetadata(GlobalObject &V, const InputInfo &IInfo);
 ```
 
-(See Doxygen comments for details.)
+The functions above use the `InputInfo` struct for storing the data to be converted to metadata.
+It contains the following public fields:
+- ` TType *IType;`: this is a pointer to an object describing the type of the instruction.
+  The only supported type is currently `FPType`, which describes a fixed point type, and is a subclass of `TType`.
+  For further information on the member fields and functions of `FPType`, please refer to file `InputInfo.h`.
+- `Range *IRange;`: this is a pointer to an instance of the `Range` struct, which simply contains the lower and upper bounds of the variable's range as `double` fields.
+- `double *IError;`: a pointer to a `double` containing the initial error for the current instruction/global variable.
+
+All of these fields are optional: if they are assigned the value `nullptr`, the TAFFO `MetadataManager` will emit `i1 false` for them.
+
+**Example:**
+```cpp
+...
+FPType Ty(32U, 18U, false);
+Range R(1.0, 1.0e+02);
+double Err = 1.0e-8;
+InputInfo II(&Ty, &R, &Err);
+MetadataManager::setInputInfoMetadata(Instr, II);
+```
+The piece of code above associates the range [1.0, 100] and the initial error 10^-8 to instruction Instr,
+which will be treated as an unsigned fixed point value with 18 fractionary bits and 12 integer bits (for a total width of 32 bits).
+
+Note that `MetadataManager` does not gain ownership of the pointers in the `InputInfo` object given to a `setInputInfoMetadata(...)` function.
+Conversely, it keeps ownership of the pointers returned by the `MetadataManager::retrieveInputInfo(...)` functions.
+The objects referred to by such pointers are cached into the `MetadataManager` instance that can be retrieved with the `static MetadataManager& getMetadataManager()` function,
+so that if multiple variables have the same range, type or initial error, a pointer to the same object is returned.
 
 #### Input Information of Function Arguments
 
@@ -134,6 +159,10 @@ Related functions:
 void MetadataManager::retrieveArgumentInputInfo(const Function &F, SmallVectorImpl<InputInfo *> &ResII);
 static void MetadataManager::setArgumentInputInfoMetadata(Function &F, const ArrayRef<InputInfo *> AInfo);
 ```
+The `InputInfo` instances for these functions can be created in the same way as for Instructions and Global Variables.
+The `MetadataManager::setArgumentInputInfoMetadata` function expects an array of pointers to `InputInfo` instances, one for each formal parameter, and in the same order.
+The `MetadataManager::retrieveArgumentInputInfo` function populates vector `ResII` with pointers to an `InputInfo` object for each argument.
+Again, `MetadataManager` keeps the ownership of  the `InputInfo` pointers it returns, but does not gain ownership of those it receives.
 
 ## ErrorPropagation Specific Metadata
 

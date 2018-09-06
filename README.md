@@ -21,14 +21,14 @@ $ opt -load /path/to/taffo-error/build/ErrorPropagator/libLLVMErrorPropagator.so
 
 You may run the lit regression tests with
 ```
-$ llvm-lit /path/to/taffo-error/test/ErrorPropagator
+$ llvm-lit /path/to/taffo-error/build/test/ErrorPropagator
 ```
 
 ## Usage
 
 TAFFO Error Propagator (TAFFO-EP) will propagate initial errors and rounding errors for all instructions whose operands meet the following requirements:
 - There must be a range attached to them by means of input info metadata (cf. `Metadata.md`);
-  this requirement is relaxed for instruction that do not (usually) change the range of their single operand,
+  this requirement is relaxed for instructions that do not (usually) change the range of their single operand,
   such as extend and certain conv instructions.
 - An absolute error for them must be available, either because it has been propagated by this pass, or because it is attached to them as initial error in input info metadata.
   If both error sources are available, TAFFO gives precedence to the computed error.
@@ -72,22 +72,22 @@ The number of times a loop is unrolled (the trip count) is determined from the f
 2. the unroll count specified by metadata attched to the terminator instruction of the loop header (cf. `Metadata.md`);
 3. the default unroll count specified with command line option `-dunroll`.
 
-The LLVM loop unrolling facilities need loops be normalized.
+The LLVM loop unrolling facilities need loops to be normalized.
 Therefore, before running TAFFO-EP the following optimization passes should be scheduled:
 `-mem2reg -simplifycfg -loop-simplify -loop-rotate -lcssa -indvars`.
 
-A more advanced treatment of loop is currently under development on branch `lipschitz`.
+A more advanced treatment of loops is currently under development on branch `lipschitz`.
 It needs the Boost Interval Arithmetic library (header only) and the GiNaC library for symbolic computations.
 
 ### Debugging Info
 
-TAFFO-EP emits different debugging messages useful for finding out where the largest error increases come from.
-When `-debug-only=errorprop` is specified on `opt`'s command line, the following kinds messages are emitted:
+TAFFO-EP emits several debugging messages useful for finding out where the largest error increases come from.
+When `-debug-only=errorprop` is specified on `opt`'s command line, messages of the following categories are emitted:
 - the absolute error computed for each instruction;
-- instructions whose error could not be propagated because of their type (mostly `br` instructions) or of missing range or error data;
+- instructions whose error could not be propagated because of their type (mostly `br` instructions) or because of missing range or error data;
 - whether the initial error specified with metadata has been used for an instruction;
 - whether a `cmp` instruction may yield to a wrong comparison because of the absolute error of its operand;
 - whether a fixed point instruction may cause an overflow according to the range and bit width specified in metadata;
-- the number of times a loop has been unrolled, or if loop unrolling failed for that loop (tip: use `-debug-only=loop-unroll` to know why a loop could not be unrolled);
+- the number of times a loop has been unrolled, or whether loop unrolling failed for that loop (tip: use `-debug-only=loop-unroll` to know why a loop could not be unrolled);
 - for each `struct`, the maximum error computed for each field;
 - the maximum absolute error computed for each target variable.

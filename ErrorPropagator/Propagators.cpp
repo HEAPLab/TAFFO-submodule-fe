@@ -17,6 +17,7 @@
 
 #include <cassert>
 #include <algorithm>
+#include <cmath>
 #include "llvm/Support/Debug.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/InstrTypes.h"
@@ -65,9 +66,10 @@ propagateDiv(const FPInterval &R1, const AffineForm<inter_t> &E1,
   InvR2.Max = 1.0 / R2.Min;
 
   // Compute errors on 1/z.
-  AffineForm<inter_t> E1OverZ = (AffineForm<inter_t>(R2) + E2).inverse(true);
-  // Discard central value, only keep errors.
-  E1OverZ.setCentralValue(0.0);
+  AffineForm<inter_t> E1OverZ =
+    LinearErrorApproximationDecr([](inter_t x){ return static_cast<inter_t>(1) / x; },
+				 [](inter_t x){ return static_cast<inter_t>(-1) / (x * x); },
+				 R2, E2);
 
   // The error for y / z will be
   // x * err1/z + 1/z * errx + errx * err1/z
@@ -701,9 +703,107 @@ bool propagateRet(RangeErrorMap &RMap, Instruction &I) {
   }
 }
 
+bool isSqrt(Function &F) {
+  return F.getName() == "sqrtf"
+    || F.getName() == "sqrt"
+    || F.getName() == "_ZSt4sqrtf";
+}
+
+bool isLog(Function &F) {
+  return F.getName() == "log"
+    || F.getName() == "logf"
+    || F.getName() == "_ZSt3logf"
+    || F.getName() == "_ZSt3logf_fixp";
+}
+
+bool isExp(Function &F) {
+  return F.getName() == "expf"
+    || F.getName() == "exp"
+    || F.getName() == "_ZSt3expf"
+    || F.getName() == "_ZSt3expf_fixp";
+}
+
 bool isSpecialFunction(Function &F) {
   return F.arg_size() == 1U
-    && (F.empty() || !F.hasName() || F.getName().find("_fixp") != StringRef::npos);
+    && (F.empty() || !F.hasName() || F.getName().find("_fixp") != StringRef::npos
+	|| isSqrt(F) || isLog(F) || isExp(F));
+}
+
+bool propagateSqrt(RangeErrorMap &RMap, Instruction &I) {
+  DEBUG(dbgs() << "(special: sqrt) ");
+  auto *OpRE = getOperandRangeError(RMap, I, 0U);
+  if (OpRE == nullptr || !OpRE->second.hasValue()) {
+    DEBUG(dbgs() << "no data.\n");
+    return false;
+  }
+
+  AffineForm<inter_t> NewErr =
+    LinearErrorApproximationDecr([](inter_t x){ return std::sqrt(x); },
+				 [](inter_t x){ return static_cast<inter_t>(0.5) / std::sqrt(x); },
+				 OpRE->first, OpRE->second.getValue())
+    + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
+
+  RMap.setError(&I, NewErr);
+
+  DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
+  return true;
+}
+
+bool propagateLog(RangeErrorMap &RMap, Instruction &I) {
+  DEBUG(dbgs() << "(special: log) ");
+  auto *OpRE = getOperandRangeError(RMap, I, 0U);
+  if (OpRE == nullptr || !OpRE->second.hasValue()) {
+    DEBUG(dbgs() << "no data.\n");
+    return false;
+  }
+
+  AffineForm<inter_t> NewErr =
+    LinearErrorApproximationDecr([](inter_t x){ return std::log(x); },
+				 [](inter_t x){ return static_cast<inter_t>(1) / x; },
+				 OpRE->first, OpRE->second.getValue())
+    + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
+
+  RMap.setError(&I, NewErr);
+
+  DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
+  return true;
+}
+
+bool propagateExp(RangeErrorMap &RMap, Instruction &I) {
+  DEBUG(dbgs() << "(special: exp) ");
+  auto *OpRE = getOperandRangeError(RMap, I, 0U);
+  if (OpRE == nullptr || !OpRE->second.hasValue()) {
+    DEBUG(dbgs() << "no data.\n");
+    return false;
+  }
+
+  AffineForm<inter_t> NewErr =
+    LinearErrorApproximationIncr([](inter_t x){ return std::exp(x); },
+				 [](inter_t x){ return std::exp(x); },
+				 OpRE->first, OpRE->second.getValue())
+    + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
+
+  RMap.setError(&I, NewErr);
+
+  DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
+  return true;
+}
+
+bool propagateSpecialCall(RangeErrorMap &RMap, Instruction &I, Function &Called) {
+  assert(isSpecialFunction(Called));
+  if (isSqrt(Called)) {
+    return propagateSqrt(RMap, I);
+  }
+  else if (isLog(Called)) {
+    return propagateLog(RMap, I);
+  }
+  else if (isExp(Called)) {
+    return propagateExp(RMap, I);
+  }
+  else {
+    DEBUG(dbgs() << "(special pass-through) ");
+    return unOpErrorPassThrough(RMap, I);
+  }
 }
 
 bool propagateCall(RangeErrorMap &RMap, Instruction &I) {
@@ -721,8 +821,7 @@ bool propagateCall(RangeErrorMap &RMap, Instruction &I) {
   }
 
   if (F != nullptr && isSpecialFunction(*F)) {
-    DEBUG(dbgs() << "(special pass-through) ");
-    return unOpErrorPassThrough(RMap, I);
+    return propagateSpecialCall(RMap, I, *F);
   }
 
   if (RMap.getRangeError(&I) == nullptr) {

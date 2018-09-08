@@ -276,7 +276,6 @@ public:
 
     // If there are noise terms, we compute a linear approximation
     // similar to the implementation of rosa by Darulova et al.
-    // This might be improved by using interpolation.
 
     // We have f(x) = f(xu) + f'(xu)(x - xu)
     // or      f(x) = f(xl) + f'(xl)(x - xl)
@@ -285,8 +284,8 @@ public:
 
     Interval<T> X = this->toInterval();
 
-    T xl = std::min(std::abs(X.Min), std::abs(X.Max));
-    T xu = std::max(std::abs(X.Min), std::abs(X.Max));
+    T xl = X.Min;
+    T xu = X.Max;
 
     // First derivative of 1/x computed in xu (f'(xu))
     T d1ox = static_cast<T>(-1) / (xu * xu);
@@ -294,7 +293,6 @@ public:
     T rmin = (static_cast<T>(1) / xl) - d1ox * xl;
     T rmax = (static_cast<T>(1) / xu) - d1ox * xu;
     T ravg = (rmin + rmax) / static_cast<T>(2);
-    ravg = (X.Min < 0) ? -ravg : ravg;
     // New central value
     T NX0 = ravg + d1ox * this->X0;
 
@@ -307,11 +305,20 @@ public:
     }
 
     if (!ErrorOnly) {
-      T error = std::max(ravg - rmin, rmax - ravg);
+      T error = (rmax - rmin) / static_cast<T>(2);
       NXi.push_back(NoiseTerm<T>(error));
     }
 
     return AffineForm<T>(NX0, std::move(NXi));
+  }
+
+  AffineForm<T> scalarMultiply(T x) const {
+    noiseContainer NXi;
+    NXi.reserve(this->Xi.size());
+    for (const NoiseTerm<T> &NT : this->Xi) {
+      NXi.push_back(NoiseTerm<T>(NT.Symbol, NT.Magnitude * x));
+    }
+    return AffineForm<T>(this->X0 * x, std::move(NXi));
   }
 
 protected:
@@ -440,6 +447,35 @@ protected:
     return std::move(NXi);
   }
 };
+
+/// Compute the errors of a variable with range R and errors E
+/// after being passed as a parameter to function F, whose derivative is dF.
+/// The derivative is computed in the upper bound of the interval:
+/// best if dF is decreasing.
+template<typename T, typename Fun, typename FunDer>
+AffineForm<T>
+LinearErrorApproximationDecr(Fun F, FunDer dF, const Interval<T> &R, const AffineForm<T> &E) {
+  T dFx = dF(R.Max);
+  T Yl = F(R.Min) - dFx * R.Min;
+  T Yu = F(R.Max) - dFx * R.Max;
+  T Error = (Yu - Yl) / static_cast<T>(2);
+  return E.scalarMultiply(dFx) + AffineForm<T>(0.0, Error);
+}
+
+/// Compute the errors of a variable with range R and errors E
+/// after being passed as a parameter to function F, whose derivative is dF.
+/// The derivative is computed in the lower bound of the interval:
+/// best if dF is increasing.
+template<typename T, typename Fun, typename FunDer>
+AffineForm<T>
+LinearErrorApproximationIncr(Fun F, FunDer dF, const Interval<T> &R, const AffineForm<T> &E) {
+  T dFx = dF(R.Min);
+  T Yl = F(R.Min) - dFx * R.Min;
+  T Yu = F(R.Max) - dFx * R.Max;
+  T Error = (Yu - Yl) / static_cast<T>(2);
+  return E.scalarMultiply(dFx) + AffineForm<T>(0.0, Error);
+}
+
 
 } // end namespace ErrorProp
 

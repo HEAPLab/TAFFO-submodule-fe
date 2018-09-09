@@ -22,6 +22,9 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/Debug.h"
+
+#define DEBUG_TYPE "errorprop"
 
 #define DEFAULT_NOISE_SIZE 2
 
@@ -450,30 +453,32 @@ protected:
 
 /// Compute the errors of a variable with range R and errors E
 /// after being passed as a parameter to function F, whose derivative is dF.
-/// The derivative is computed in the upper bound of the interval:
-/// best if dF is decreasing.
-template<typename T, typename Fun, typename FunDer>
+/// This variant maximizes decreasing derivatives.
+template<typename T, typename FunDer>
 AffineForm<T>
-LinearErrorApproximationDecr(Fun F, FunDer dF, const Interval<T> &R, const AffineForm<T> &E) {
-  T dFx = dF(R.Max);
-  T Yl = F(R.Min) - dFx * R.Min;
-  T Yu = F(R.Max) - dFx * R.Max;
-  T Error = (Yu - Yl) / static_cast<T>(2);
-  return E.scalarMultiply(dFx) + AffineForm<T>(0.0, Error);
+LinearErrorApproximationDecr(FunDer dF, const Interval<T> &R, const AffineForm<T> &E) {
+  T X = std::min(std::abs(R.Min), std::abs(R.Max));
+  T dFx = dF(X);
+
+  DEBUG(llvm::dbgs() << "(R = [" << static_cast<double>(R.Min)
+	<< ", " << static_cast<double>(R.Max)
+	<< "], dFx = " << static_cast<double>(dFx) << ") ");
+  return E.scalarMultiply(dFx);
 }
 
 /// Compute the errors of a variable with range R and errors E
 /// after being passed as a parameter to function F, whose derivative is dF.
-/// The derivative is computed in the lower bound of the interval:
-/// best if dF is increasing.
-template<typename T, typename Fun, typename FunDer>
+/// This variant maximizes increasing derivatives.
+template<typename T, typename FunDer>
 AffineForm<T>
-LinearErrorApproximationIncr(Fun F, FunDer dF, const Interval<T> &R, const AffineForm<T> &E) {
-  T dFx = dF(R.Min);
-  T Yl = F(R.Min) - dFx * R.Min;
-  T Yu = F(R.Max) - dFx * R.Max;
-  T Error = (Yu - Yl) / static_cast<T>(2);
-  return E.scalarMultiply(dFx) + AffineForm<T>(0.0, Error);
+LinearErrorApproximationIncr(FunDer dF, const Interval<T> &R, const AffineForm<T> &E) {
+  T X = std::max(std::abs(R.Min), std::abs(R.Max));
+  T dFx = dF(X);
+
+  DEBUG(llvm::dbgs() << "(R = [" << static_cast<double>(R.Min)
+	<< ", " << static_cast<double>(R.Max)
+	<< "], dFx = " << static_cast<double>(dFx) << ") ");
+  return E.scalarMultiply(dFx);
 }
 
 

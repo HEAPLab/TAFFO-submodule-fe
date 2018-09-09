@@ -57,7 +57,8 @@ propagateMul(const FPInterval &R1, const AffineForm<inter_t> &E1,
 
 AffineForm<inter_t>
 propagateDiv(const FPInterval &R1, const AffineForm<inter_t> &E1,
-	     const FPInterval &R2, const AffineForm<inter_t> &E2) {
+	     const FPInterval &R2, const AffineForm<inter_t> &E2,
+	     bool AddTrunc = true) {
   // Compute y / z as y * 1/z.
 
   // Compute the range of 1/z.
@@ -67,17 +68,20 @@ propagateDiv(const FPInterval &R1, const AffineForm<inter_t> &E1,
 
   // Compute errors on 1/z.
   AffineForm<inter_t> E1OverZ =
-    LinearErrorApproximationDecr([](inter_t x){ return static_cast<inter_t>(1) / x; },
-				 [](inter_t x){ return static_cast<inter_t>(-1) / (x * x); },
+    LinearErrorApproximationDecr([](inter_t x){ return static_cast<inter_t>(-1) / (x * x); },
 				 R2, E2);
 
   // The error for y / z will be
   // x * err1/z + 1/z * errx + errx * err1/z
   // plus the rounding error due to truncation.
-  return AffineForm<inter_t>(R1) * E1OverZ
+  AffineForm<inter_t> Res = AffineForm<inter_t>(R1) * E1OverZ
     + AffineForm<inter_t>(InvR2) * E1
-    + E1 * E1OverZ
-    + AffineForm<inter_t>(0, R1.getRoundingError());
+    + E1 * E1OverZ;
+
+  if (AddTrunc)
+    return Res + AffineForm<inter_t>(0, R1.getRoundingError());
+  else
+    return std::move(Res);
 }
 
 AffineForm<inter_t>
@@ -207,7 +211,9 @@ bool propagateBinaryOp(RangeErrorMap &RMap, Instruction &I) {
 			  O2->first, *O2->second);
       break;
     case Instruction::FDiv:
-      // Fall-through.
+      ERes = propagateDiv(O1->first, *O1->second,
+			  O2->first, *O2->second, false);
+      break;
     case Instruction::UDiv:
       // Fall-through.
     case Instruction::SDiv:
@@ -738,8 +744,7 @@ bool propagateSqrt(RangeErrorMap &RMap, Instruction &I) {
   }
 
   AffineForm<inter_t> NewErr =
-    LinearErrorApproximationDecr([](inter_t x){ return std::sqrt(x); },
-				 [](inter_t x){ return static_cast<inter_t>(0.5) / std::sqrt(x); },
+    LinearErrorApproximationDecr([](inter_t x){ return static_cast<inter_t>(0.5) / std::sqrt(x); },
 				 OpRE->first, OpRE->second.getValue())
     + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
 
@@ -758,8 +763,7 @@ bool propagateLog(RangeErrorMap &RMap, Instruction &I) {
   }
 
   AffineForm<inter_t> NewErr =
-    LinearErrorApproximationDecr([](inter_t x){ return std::log(x); },
-				 [](inter_t x){ return static_cast<inter_t>(1) / x; },
+    LinearErrorApproximationDecr([](inter_t x){ return static_cast<inter_t>(1) / x; },
 				 OpRE->first, OpRE->second.getValue())
     + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
 
@@ -779,7 +783,6 @@ bool propagateExp(RangeErrorMap &RMap, Instruction &I) {
 
   AffineForm<inter_t> NewErr =
     LinearErrorApproximationIncr([](inter_t x){ return std::exp(x); },
-				 [](inter_t x){ return std::exp(x); },
 				 OpRE->first, OpRE->second.getValue())
     + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
 

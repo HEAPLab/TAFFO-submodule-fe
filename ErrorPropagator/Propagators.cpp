@@ -729,10 +729,20 @@ bool isExp(Function &F) {
     || F.getName() == "_ZSt3expf_fixp";
 }
 
+bool isAcos(Function &F) {
+  return F.getName() == "acos"
+    || F.getName() == "acosf";
+}
+
+bool isAsin(Function &F) {
+  return F.getName() == "asin"
+    || F.getName() == "asinf";
+}
+
 bool isSpecialFunction(Function &F) {
   return F.arg_size() == 1U
     && (F.empty() || !F.hasName() || F.getName().find("_fixp") != StringRef::npos
-	|| isSqrt(F) || isLog(F) || isExp(F));
+	|| isSqrt(F) || isLog(F) || isExp(F) || isAcos(F) || isAsin(F));
 }
 
 bool propagateSqrt(RangeErrorMap &RMap, Instruction &I) {
@@ -792,6 +802,44 @@ bool propagateExp(RangeErrorMap &RMap, Instruction &I) {
   return true;
 }
 
+bool propagateAcos(RangeErrorMap &RMap, Instruction &I) {
+  DEBUG(dbgs() << "(special: acos) ");
+  auto *OpRE = getOperandRangeError(RMap, I, 0U);
+  if (OpRE == nullptr || !OpRE->second.hasValue()) {
+    DEBUG(dbgs() << "no data.\n");
+    return false;
+  }
+
+  AffineForm<inter_t> NewErr =
+    LinearErrorApproximationIncr([](inter_t x){ return static_cast<inter_t>(-1) / std::sqrt(1 - x*x); },
+				 OpRE->first, OpRE->second.getValue())
+    + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
+
+  RMap.setError(&I, NewErr);
+
+  DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
+  return true;
+}
+
+bool propagateAsin(RangeErrorMap &RMap, Instruction &I) {
+  DEBUG(dbgs() << "(special: asin) ");
+  auto *OpRE = getOperandRangeError(RMap, I, 0U);
+  if (OpRE == nullptr || !OpRE->second.hasValue()) {
+    DEBUG(dbgs() << "no data.\n");
+    return false;
+  }
+
+  AffineForm<inter_t> NewErr =
+    LinearErrorApproximationIncr([](inter_t x){ return static_cast<inter_t>(1) / std::sqrt(1 - x*x); },
+				 OpRE->first, OpRE->second.getValue())
+    + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
+
+  RMap.setError(&I, NewErr);
+
+  DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
+  return true;
+}
+
 bool propagateSpecialCall(RangeErrorMap &RMap, Instruction &I, Function &Called) {
   assert(isSpecialFunction(Called));
   if (isSqrt(Called)) {
@@ -802,6 +850,12 @@ bool propagateSpecialCall(RangeErrorMap &RMap, Instruction &I, Function &Called)
   }
   else if (isExp(Called)) {
     return propagateExp(RMap, I);
+  }
+  else if (isAcos(Called)) {
+    return propagateAcos(RMap, I);
+  }
+  else if (isAsin(Called)) {
+    return propagateAsin(RMap, I);
   }
   else {
     DEBUG(dbgs() << "(special pass-through) ");

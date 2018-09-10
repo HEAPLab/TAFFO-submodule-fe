@@ -89,6 +89,9 @@ void RangeErrorMap::retrieveRangeErrors(const Function &F) {
   auto REIt = REs.begin(), REEnd = REs.end();
   for (Function::const_arg_iterator Arg = F.arg_begin(), ArgE = F.arg_end();
        Arg != ArgE && REIt != REEnd; ++Arg, ++REIt) {
+    if ((*REIt)->IRange == nullptr)
+      continue;
+
     FPInterval FPI(*REIt);
 
     DEBUG(dbgs() << "Retrieving data for Argument " << Arg->getName() << "... "

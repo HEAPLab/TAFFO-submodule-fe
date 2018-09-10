@@ -35,8 +35,6 @@
 #define NUM_RUNS 1
 
 typedef struct OptionData_ {
-        fptype s;          // spot price
-        fptype strike;     // strike price
         fptype r;          // risk-free interest rate
         fptype divq;       // dividend rate
         fptype v;          // volatility
@@ -48,6 +46,8 @@ typedef struct OptionData_ {
 } OptionData;
 
 OptionData *data;
+fptype __attribute((annotate("no_float 8 24 0.1 1"))) *s;      // spot price
+fptype __attribute((annotate("no_float 8 24 0.1 1"))) *stk; // strike price
 fptype __attribute((annotate("no_float 8 24 0.1 1"))) *prices;
 int numOptions;
 
@@ -302,10 +302,13 @@ int main (int argc, char **argv)
 
     // alloc spaces for the option data
     data = (OptionData*)malloc(numOptions*sizeof(OptionData));
+    s = (fptype*)malloc(numOptions*sizeof(fptype));
+    stk = (fptype*)malloc(numOptions*sizeof(fptype));
     prices = (fptype*)malloc(numOptions*sizeof(fptype));
     for ( loopnum = 0; loopnum < numOptions; ++ loopnum )
     {
-        rv = fscanf(file, "%f %f %f %f %f %f %c %f %f", &data[loopnum].s, &data[loopnum].strike, &data[loopnum].r, &data[loopnum].divq, &data[loopnum].v, &data[loopnum].t, &data[loopnum].OptionType, &data[loopnum].divs, &data[loopnum].DGrefval);
+        rv = fscanf(file, "%f %f ", &s[loopnum], &stk[loopnum]);
+        rv += fscanf(file, "%f %f %f %f %c %f %f", &data[loopnum].r, &data[loopnum].divq, &data[loopnum].v, &data[loopnum].t, &data[loopnum].OptionType, &data[loopnum].divs, &data[loopnum].DGrefval);
         if(rv != 9) {
           printf("ERROR: Unable to read from file `%s'.\n", inputFile);
           fclose(file);
@@ -333,10 +336,8 @@ int main (int argc, char **argv)
 
     for (i=0; i<numOptions; i++) {
         otype[i]      = (data[i].OptionType == 'P') ? 1 : 0;
-        float __attribute((annotate("no_float 20 12 48 108"))) *s = &(data[i].s);
-        sptprice[i]   = *s / DIVIDE;
-        float __attribute((annotate("no_float 20 12 48 108"))) *stk = &(data[i].strike);
-        strike[i]     = *stk / DIVIDE;
+        sptprice[i]   = s[i] / DIVIDE;
+        strike[i]     = stk[i] / DIVIDE;
         rate[i]       = data[i].r;
         volatility[i] = data[i].v;    
         otime[i]      = data[i].t;

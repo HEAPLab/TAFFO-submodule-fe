@@ -67,7 +67,7 @@ int numError = 0;
 // See Hull, Section 11.8, P.243-244
 #define inv_sqrt_2xPI 0.39894228040143270286
 
-fptype CNDF ( fptype InputX __attribute((annotate("range -1.6e-2 -1.3e-1"))))
+fptype CNDF ( fptype InputX __attribute((annotate("range -1.3e-1 -1.6e-2"))))
 {
     int sign;
 

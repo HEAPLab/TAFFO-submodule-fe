@@ -117,7 +117,8 @@ getConstantFPRangeError(RangeErrorMap &RMap, ConstantFP *VFP) {
 }
 
 const RangeErrorMap::RangeError *
-getConstantRangeError(RangeErrorMap &RMap, Instruction &I, ConstantInt *VInt) {
+getConstantRangeError(RangeErrorMap &RMap, Instruction &I, ConstantInt *VInt,
+		      bool DoublePP = false) {
 
   // We interpret the value of VInt with the same
   // fractional bits and sign of the result.
@@ -127,6 +128,7 @@ getConstantRangeError(RangeErrorMap &RMap, Instruction &I, ConstantInt *VInt) {
 
   const FPType *Ty = cast<FPType>(RInfo->getTType());
   unsigned PointPos = Ty->getPointPos();
+  if (DoublePP) PointPos *= 2U;
   int SPointPos = (Ty->isSigned()) ? -PointPos : PointPos;
   std::unique_ptr<FixedPointValue> VFPRange =
     FixedPointValue::createFromConstantInt(SPointPos, nullptr, VInt, VInt);
@@ -144,13 +146,13 @@ getConstantRangeError(RangeErrorMap &RMap, Instruction &I, ConstantInt *VInt) {
 }
 
 const RangeErrorMap::RangeError*
-getOperandRangeError(RangeErrorMap &RMap, Instruction &I, Value *V) {
+getOperandRangeError(RangeErrorMap &RMap, Instruction &I, Value *V, bool DoublePP = false) {
   assert(V != nullptr);
 
   // If V is a Constant Int extract its value.
   ConstantInt *VInt = dyn_cast<ConstantInt>(V);
   if (VInt != nullptr)
-    return getConstantRangeError(RMap, I, VInt);
+    return getConstantRangeError(RMap, I, VInt, DoublePP);
 
   ConstantFP *VFP = dyn_cast<ConstantFP>(V);
   if (VFP != nullptr)
@@ -161,12 +163,12 @@ getOperandRangeError(RangeErrorMap &RMap, Instruction &I, Value *V) {
 }
 
 const RangeErrorMap::RangeError*
-getOperandRangeError(RangeErrorMap &RMap, Instruction &I, unsigned Op) {
+getOperandRangeError(RangeErrorMap &RMap, Instruction &I, unsigned Op, bool DoublePP = false) {
   Value *V = I.getOperand(Op);
   if (V == nullptr)
     return nullptr;
 
-  return getOperandRangeError(RMap, I, V);
+  return getOperandRangeError(RMap, I, V, DoublePP);
 }
 
 } // end of anonymous namespace
@@ -182,7 +184,9 @@ bool propagateBinaryOp(RangeErrorMap &RMap, Instruction &I) {
   //   return false;
   // }
 
-  auto *O1 = getOperandRangeError(RMap, BI, 0U);
+  bool DoublePP = BI.getOpcode() == Instruction::UDiv
+    || BI.getOpcode() == Instruction::SDiv;
+  auto *O1 = getOperandRangeError(RMap, BI, 0U, DoublePP);
   auto *O2 = getOperandRangeError(RMap, BI, 1U);
   if (O1 == nullptr || !O1->second.hasValue()
       || O2 == nullptr || !O2->second.hasValue()) {
@@ -578,12 +582,16 @@ bool propagatePhi(RangeErrorMap &RMap, Instruction &I) {
   inter_t Max = -std::numeric_limits<inter_t>::infinity();
   for (const Use &IVal : PHI.incoming_values()) {
     auto *RE = getOperandRangeError(RMap, I, IVal);
-    if (RE == nullptr || !RE->second.hasValue()) {
+    if (RE == nullptr)
       continue;
-    }
-    AbsErr = std::max(AbsErr, RE->second->noiseTermsAbsSum());
+
     Min = std::min(Min, RE->first.Min);
     Max = std::max(Max, RE->first.Max);
+
+    if (!RE->second.hasValue())
+      continue;
+
+    AbsErr = std::max(AbsErr, RE->second->noiseTermsAbsSum());
   }
 
   if (AbsErr < 0.0) {
@@ -593,14 +601,14 @@ bool propagatePhi(RangeErrorMap &RMap, Instruction &I) {
   }
 
   AffineForm<inter_t> ERes(0, AbsErr);
-  FPInterval FPI(Interval<inter_t>(Min, Max));
 
   // Add error to RMap.
-  //RMap.setError(&I, ERes);
-  RMap.setRangeError(&I, std::make_pair(FPI, ERes));
-
-  // Add computed error metadata to the instruction.
-  // setErrorMetadata(I, ERes);
+  if (RMap.getRangeError(&I) == nullptr) {
+    FPInterval FPI(Interval<inter_t>(Min, Max));
+    RMap.setRangeError(&I, std::make_pair(FPI, ERes));
+  }
+  else
+    RMap.setError(&I, ERes);
 
   DEBUG(dbgs() << static_cast<double>(AbsErr) << ".\n");
 
@@ -712,7 +720,8 @@ bool propagateRet(RangeErrorMap &RMap, Instruction &I) {
 bool isSqrt(Function &F) {
   return F.getName() == "sqrtf"
     || F.getName() == "sqrt"
-    || F.getName() == "_ZSt4sqrtf";
+    || F.getName() == "_ZSt4sqrtf"
+    || F.getName() == "_ZSt4sqrtf_fixp";
 }
 
 bool isLog(Function &F) {
@@ -741,7 +750,7 @@ bool isAsin(Function &F) {
 
 bool isSpecialFunction(Function &F) {
   return F.arg_size() == 1U
-    && (F.empty() || !F.hasName() || F.getName().find("_fixp") != StringRef::npos
+    && (F.empty() || !F.hasName()
 	|| isSqrt(F) || isLog(F) || isExp(F) || isAcos(F) || isAsin(F));
 }
 

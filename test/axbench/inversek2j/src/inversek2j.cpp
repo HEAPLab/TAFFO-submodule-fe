@@ -38,7 +38,7 @@ int main(int argc, const char* argv[])
 
 
 
-	float* t1t2xy = (float*)malloc(n * 2 * 2 * sizeof(float));
+	float* __attribute((annotate("no_float 4 28")))t1t2xy = (float*)malloc(n * 2 * 2 * sizeof(float));
 
 	if(t1t2xy == NULL)
 	{

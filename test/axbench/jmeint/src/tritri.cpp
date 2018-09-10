@@ -108,7 +108,10 @@
 
 #define EDGE_AGAINST_TRI_EDGES(V0,V1,U0,U1,U2) \
 {                                              \
-  float Ax,Ay,Bx,By,Cx,Cy,e,d,f;               \
+  float __attribute__((annotate("no_float 8 24")))Ax,__attribute__((annotate("no_float 8 24")))Ay; \
+  float __attribute__((annotate("no_float 8 24")))Bx,__attribute__((annotate("no_float 8 24")))By; \
+  float __attribute__((annotate("no_float 8 24")))Cx,__attribute__((annotate("no_float 8 24")))Cy; \
+  float __attribute__((annotate("no_float 8 24")))e,__attribute__((annotate("no_float 8 24")))d,__attribute__((annotate("no_float 8 24")))f;   \
   Ax=V1[i0]-V0[i0];                            \
   Ay=V1[i1]-V0[i1];                            \
   /* test edge U0,U1 against V0,V1 */          \
@@ -121,7 +124,8 @@
 
 #define POINT_IN_TRI(V0,U0,U1,U2)           \
 {                                           \
-  float a,b,c,d0,d1,d2;                     \
+  float __attribute__((annotate("no_float 8 24")))a,__attribute__((annotate("no_float 8 24")))b,__attribute__((annotate("no_float 8 24")))c; \
+  float __attribute__((annotate("no_float 8 24")))d0,__attribute__((annotate("no_float 8 24")))d1,__attribute__((annotate("no_float 8 24")))d2;                     \
   /* is T1 completly inside T2? */          \
   /* check if V0 is inside tri(U0,U1,U2) */ \
   a=U1[i1]-U0[i1];                          \
@@ -147,7 +151,7 @@
 int coplanar_tri_tri(float N[3],float V0[3],float V1[3],float V2[3],
                      float U0[3],float U1[3],float U2[3])
 {
-   float A[3];
+   float  __attribute__((annotate("no_float 8 24"))) A[3];
    short i0,i1;
    /* first project onto an axis-aligned plane, that maximizes the area */
    /* of the triangles, compute indices: i0,i1. */
@@ -196,16 +200,18 @@ int coplanar_tri_tri(float N[3],float V0[3],float V1[3],float V2[3],
 int tri_tri_intersect(float V0[3],float V1[3],float V2[3],
                       float U0[3],float U1[3],float U2[3])
 {
+  #pragma clang attribute push( __attribute__((annotate("no_float 8 24"))) , apply_to = variable)
   float E1[3],E2[3];
   float N1[3],N2[3],d1,d2;
   float du0,du1,du2,dv0,dv1,dv2;
   float D[3];
   float isect1[2], isect2[2];
   float du0du1,du0du2,dv0dv1,dv0dv2;
-  short index;
   float vp0,vp1,vp2;
   float up0,up1,up2;
   float b,c,max;
+  #pragma clang attribute pop
+  short index;
   //int r;
 
   /* compute plane equation of triangle(V0,V1,V2) */

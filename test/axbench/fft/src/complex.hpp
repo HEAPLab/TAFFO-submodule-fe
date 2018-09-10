@@ -3,6 +3,9 @@
 
 #define PI 3.1415926535897931
 
+#define COMPLEX_REAL(v,i) v[i*2] 
+#define COMPLEX_IMAG(v,i) v[i*2+1] 
+
 typedef struct {
    float real;
    float imag;

@@ -25,8 +25,8 @@ void calcFftIndices(int K __attribute((annotate("range 0 100 0"))),
 
 void radix2DitCooleyTykeyFft(int K __attribute((annotate("range 0 100 0"))),
 			     int* indices __attribute((annotate("range 0 100 0"))),
-			     Complex* x __attribute((annotate("range 0 100 0"))),
-			     Complex* f __attribute((annotate("range 0 100 0"))))
+			     float* x __attribute((annotate("range 0 100 0"))),
+			     float* f __attribute((annotate("range 0 100 0"))))
 {
 
 	calcFftIndices(K, indices) ;
@@ -39,7 +39,8 @@ void radix2DitCooleyTykeyFft(int K __attribute((annotate("range 0 100 0"))),
 	float __attribute((annotate("no_float 20 12 signed -1.0 1.0 1e-4"))) fftSin;
 	float __attribute((annotate("no_float 20 12 signed -1.0 1.0 1e-4"))) fftCos;
 
-	Complex __attribute((annotate("range 0 100 0"))) t;
+	float __attribute((annotate("no_float 20 12 0 100 0"))) t_real;
+	float __attribute((annotate("no_float 20 12 0 100 0"))) t_imag;
 	int i ;
 	int __attribute((annotate("range 1 100 0"))) N ;
 	int j ;
@@ -75,12 +76,13 @@ void radix2DitCooleyTykeyFft(int K __attribute((annotate("range 0 100 0"))),
 
 
 				// Non-approximate
-				t =  x[indices[eI]] ;
-				x[indices[eI]].real = t.real + (x[indices[oI]].real * fftCos - x[indices[oI]].imag * fftSin);
-                x[indices[eI]].imag = t.imag + (x[indices[oI]].imag * fftCos + x[indices[oI]].real * fftSin);
+				t_real = COMPLEX_REAL(x,indices[eI]);
+				t_imag = COMPLEX_IMAG(x,indices[eI]);
+				COMPLEX_REAL(x,indices[eI]) = t_real + (COMPLEX_REAL(x,indices[oI]) * fftCos - COMPLEX_IMAG(x,indices[eI]) * fftSin);
+                COMPLEX_IMAG(x,indices[eI]) = t_imag + (COMPLEX_IMAG(x,indices[eI]) * fftCos + COMPLEX_REAL(x,indices[oI]) * fftSin);
 
-                x[indices[oI]].real = t.real - (x[indices[oI]].real * fftCos - x[indices[oI]].imag * fftSin);
-                x[indices[oI]].imag = t.imag - (x[indices[oI]].imag * fftCos + x[indices[oI]].real * fftSin);
+                COMPLEX_REAL(x,indices[oI]) = t_real - (COMPLEX_REAL(x,indices[oI]) * fftCos - COMPLEX_IMAG(x,indices[eI]) * fftSin);
+                COMPLEX_IMAG(x,indices[eI]) = t_imag - (COMPLEX_IMAG(x,indices[eI]) * fftCos + COMPLEX_REAL(x,indices[oI]) * fftSin);
 			}
 		}
 	}

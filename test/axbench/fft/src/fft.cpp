@@ -5,8 +5,8 @@
 #include <time.h>
 
 static int* indices;
-static Complex* x;
-static Complex* f;
+static float* __attribute((annotate("no_float 20 12"))) x;
+static float* __attribute((annotate("no_float 20 12"))) f;
 
 int main(int argc, char* argv[])
 {
@@ -21,8 +21,8 @@ int main(int argc, char* argv[])
 	outputFileHandler.precision(5);
 
 	// create the arrays
-	x 		= (Complex*)malloc(n * sizeof (Complex));
-	f 		= (Complex*)malloc(n * sizeof (Complex));
+	x 		= (float*)malloc(n * 2 * sizeof (float));
+	f 		= (float*)malloc(n * 2 * sizeof (float));
 	indices = (int*)malloc(n * sizeof (int));
 
 	if(x == NULL || f == NULL || indices == NULL)
@@ -35,14 +35,14 @@ int main(int argc, char* argv[])
 
 	for(i = 0;i < K ; i++)
 	{
-		x[i].real = i;
-		x[i].imag = 0 ;
+		COMPLEX_REAL(x,i) = i;
+		COMPLEX_IMAG(x,i) = 0 ;
 	}
 	radix2DitCooleyTykeyFft(K, indices, x, f) ;
 	
 	for(i = 0;i < K ; i++)
 	{
-		outputFileHandler << f[i].real << " " << f[i].imag << std::endl;
+		outputFileHandler << COMPLEX_REAL(f,i) << " " << COMPLEX_IMAG(f,i) << std::endl;
 	}
 
 

@@ -4,3 +4,8 @@ test/polybench-c-4.2.1-beta/output-data-32
 test/polybench-c-4.2.1-beta/output-data-64
 build
 *~
+test/axbench/*/obj/
+test/axbench/*/bin/
+test/axbench/*/data/output
+.idea/
+cmake-build-debug/

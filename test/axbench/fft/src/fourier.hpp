@@ -5,6 +5,6 @@
 #include "complex.hpp"
 #include <iostream>
 
-void radix2DitCooleyTykeyFft(int k, int* indices, Complex* x, Complex* f) ;
+void radix2DitCooleyTykeyFft(int k, int* indices, float* x, float* f) ;
 
 #endif

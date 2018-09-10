@@ -144,7 +144,7 @@ fptype BlkSchlsEqEuroNoDiv( fptype sptprice __attribute((annotate("range 0.4 0.9
                             int otype, float timet __attribute((annotate("range 0 1 0"))),
                             fptype*  N1, fptype* N2)
 {
-    fptype __attribute((annotate("target no_float 8 24 signed 0 0.25"))) OptionPrice;
+    fptype __attribute((annotate("no_float 8 24 signed 0 0.25"))) OptionPrice;
 
     // local private working variables for the calculation
     //fptype xStockPrice;
@@ -237,15 +237,15 @@ int bs_thread(void *tid_ptr) {
     int tid = *(int *)tid_ptr;
     int start = tid * (numOptions);
     int end = start + (numOptions);
-    fptype __attribute((annotate("no_float 8 24 0.1 1"))) price_orig;
+    fptype __attribute((annotate("target no_float 8 24 signed 0.1 1"))) price_orig;
 
     for (j=0; j<NUM_RUNS; j++) {
         for (i=start; i<end; i++) {
             /* Calling main function to calculate option value based on 
              * Black & Scholes's equation.
              */
-            fptype __attribute((annotate("no_float 8 24 0.1 1"))) N1, __attribute((annotate("no_float 8 24 0.1 1"))) N2;
-            float __attribute((annotate("no_float 8 24 0 1 0"))) timet = 0;
+            fptype __attribute((annotate("no_float 8 24 signed 0.1 1"))) N1, __attribute((annotate("no_float 8 24 signed 0.1 1"))) N2;
+            float __attribute((annotate("no_float 8 24 signed 0 1 0"))) timet = 0;
 
             double dataIn[6];
             double dataOut[1];

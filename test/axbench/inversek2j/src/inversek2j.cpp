@@ -14,6 +14,8 @@
 #include <iomanip>
 #include <string> 
 
+#include "benchmark.hpp"
+
 
 #define PI 3.141592653589
 
@@ -47,16 +49,20 @@ int main(int argc, const char* argv[])
 	}
 
 	srand (time(NULL));
-
-	int curr_index1 = 0;		
-	for(int i = 0 ; i < n * 2 * 2 ; i += 2 * 2)
-	{
+	
+	for (int i=0; i<n*2*2; i+=2*2) {
 		float theta1, theta2;
 		inputFileHandler >> theta1 >> theta2;
 
 		t1t2xy[i] = theta1;
 		t1t2xy[i + 1] = theta2;
+	}
 
+	AxBenchTimer timer;
+
+	int curr_index1 = 0;		
+	for(int i = 0 ; i < n * 2 * 2 ; i += 2 * 2)
+	{
 		forwardk2j(t1t2xy[i + 0], t1t2xy[i + 1], t1t2xy + (i + 2), t1t2xy + (i + 3));
 	}
 
@@ -64,6 +70,9 @@ int main(int argc, const char* argv[])
 	{
 		inversek2j(t1t2xy[i + 2], t1t2xy[i + 3], t1t2xy + (i + 0), t1t2xy + (i + 1));
 	}
+	
+	uint64_t time = timer.nanosecondsSinceInit();
+	std::cerr << "kernel time = " << time << " ns";
 
 	for(int i = 0 ; i < n * 2 * 2 ; i += 2 * 2)
 	{

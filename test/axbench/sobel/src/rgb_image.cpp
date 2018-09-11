@@ -69,7 +69,7 @@ int Image::loadRgbImage(std::string filename)
 	return 1 ;
 }
 
-int Image::saveRgbImage(std::string outFilename, float scale)
+int Image::saveRgbImage(std::string outFilename, float __attribute((annotate("no_float 12 20"))) scale)
 {
 	if(DEBUG)
 	{
@@ -126,11 +126,11 @@ int Image::saveRgbImage(std::string outFilename, float scale)
 void Image::makeGrayscale()
 {
 
-	float luminance ;
+	float __attribute((annotate("no_float 12 20"))) luminance ;
 
-	float rC = 0.30 / 256.0 ;
-	float gC = 0.59 / 256.0 ;
-	float bC = 0.11 / 256.0 ;
+	float __attribute((annotate("no_float 9 23"))) rC = 0.30 / 256.0 ;
+	float __attribute((annotate("no_float 9 23"))) gC = 0.59 / 256.0 ;
+	float __attribute((annotate("no_float 9 23"))) bC = 0.11 / 256.0 ;
 
 	for(int h = 0 ; h < this->height ; h++)
 	{

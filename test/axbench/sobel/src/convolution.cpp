@@ -9,14 +9,14 @@
 #include <cmath>
 
 int total = 0;
-static float kx[][3] =
+static float __attribute((annotate("no_float 8 24"))) kx[][3] =
 		{
 			{ -1, -2, -1 },
 			{  0,  0,  0 },
 			{  1,  2,  1 }
 		} ;
 
-static float ky[][3] =
+static float __attribute((annotate("no_float 8 24"))) ky[][3] =
 		{
 			{ -1, 0, 1 },
 			{ -2, 0, 2 },
@@ -25,7 +25,7 @@ static float ky[][3] =
 
 float convolve(float w[][3], float k[][3])
 {
-	float r ;
+	float __attribute((annotate("no_float 12 20"))) r ;
 	r = 0.0 ;
 	for( int j = 0 ; j < 3 ; j++ )
 		for ( int i = 0 ; i < 3 ; i++ )
@@ -37,9 +37,9 @@ float convolve(float w[][3], float k[][3])
 
 float sobel(float w[][3])
 {
-	float sx ;
-	float sy ;
-	float s  ;
+	float __attribute((annotate("no_float 8 24"))) sx ;
+	float __attribute((annotate("no_float 8 24"))) sy ;
+	float __attribute((annotate("no_float 8 24"))) s  ;
 
 	double dataIn[9];
 

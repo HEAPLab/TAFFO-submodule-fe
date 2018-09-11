@@ -16,13 +16,13 @@
 int main ( int argc, const char* argv[])
 {
 	int x, y;
-	float s = 0;
+	float __attribute((annotate("no_float 8 24"))) s = 0;
 
 	// Source and destination image	
 	boost::shared_ptr<Image> srcImagePtr(new Image());
 	boost::shared_ptr<Image> dstImagePtr(new Image());
 
-	float w[][3] = {
+	float __attribute((annotate("no_float 8 24"))) w[][3] = {
 		{0, 0, 0},
 		{0, 0, 0},
 		{0, 0, 0}

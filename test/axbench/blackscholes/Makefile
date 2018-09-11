@@ -2,6 +2,10 @@ CC			:= clang++
 LD			:= clang++
 LLVM_DIR			?= $(shell llvm-config --obj-root)
 
+ifeq ($(shell $(LLVM_DIR)/bin/llvm-config --build-mode),Debug)
+ISDEBUG = 1
+$(info debug mode on)
+endif
 
 OX          := -O3
 
@@ -43,13 +47,13 @@ obj/%.ll: src/%.c
 	$(CC) -S -emit-llvm $< -o $@
 
 obj/%.init.ll: obj/%.ll
-	$(LLVM_DIR)/bin/opt -load=$(INITLIB) -S -taffoinit -debug-only=flttofix,annotation -stats $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(INITLIB) -S -taffoinit $(if $(ISDEBUG), -debug-only=flttofix\,annotation) -stats $< -o $@
 
 obj/%.fixp.ll: obj/%.init.ll
-	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg -debug-only=flttofix -stats $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg $(if $(ISDEBUG), -debug-only=flttofix) -stats $< -o $@
 
 obj/%.err.ll: obj/%.fixp.ll
-	$(LLVM_DIR)/bin/opt -load=$(ERRORLIB) -S -errorprop -startonly -debug-only=errorprop $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(ERRORLIB) -S -errorprop -startonly $(if $(ISDEBUG), -debug-only=errorprop) $< -o $@
 
 obj/%.s: obj/%.ll
 	$(CC) -S  $< -o $@ $(OX)

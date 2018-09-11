@@ -2,6 +2,10 @@ CC			:= clang++
 LD			:= clang++
 LLVM_DIR			?= $(shell llvm-config --obj-root)
 
+ifeq ($(shell $(LLVM_DIR)/bin/llvm-config --build-mode),Debug)
+ISDEBUG = 1
+$(info debug mode on)
+endif
 
 OX          := -O3
 

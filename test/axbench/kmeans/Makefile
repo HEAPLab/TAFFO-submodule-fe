@@ -1,12 +1,14 @@
 CC			:= clang++
 LD			:= clang++
+LLVM_DIR			?= $(shell llvm-config --obj-root)
+
 
 OX          := -O3
 
-CFLAGS		:= -Wall -Wnarrowing -std=c++11
-LFLAGS		:= -lboost_regex
+CFLAGS		+= -Wall -Wnarrowing -std=c++11
+LFLAGS		+= -lboost_regex
 HEADERS     := src
-INCLUDE 	:= -I${HEADERS} 
+INCLUDE 	+= -I${HEADERS} 
 
 MODULE		:= kmeans.out
 
@@ -38,14 +40,14 @@ obj/%.ll : src/%.c
 	$(CC) -S -emit-llvm $(CFLAGS) $(INCLUDE) $< -o $@
 
 obj/main.ll : $(LL_FILES)
-	llvm-link -S $^ -o $@
+	$(LLVM_DIR)/bin/llvm-link -S $^ -o $@
 
 $(OBJ_FLOAT) : obj/main.ll
 	$(CC) -S $^ -o obj/main.s $(OX)
 	$(CC) -c obj/main.s -o $@
 
 obj/main.fixp.ll : obj/main.ll
-	opt -load=$(PASSLIB) -S -flttofix -dce -stats $(OX) $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -stats $(OX) $< -o $@
 
 $(OBJ_FIX) : obj/main.fixp.ll
 	$(CC) -S $^ -o obj/main.fixp.s $(OX)

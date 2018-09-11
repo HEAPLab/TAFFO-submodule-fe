@@ -1,5 +1,7 @@
 CC			:= clang++
 LD			:= clang++
+LLVM_DIR			?= $(shell llvm-config --obj-root)
+
 
 OX          := -O3
 
@@ -41,13 +43,13 @@ obj/%.ll: src/%.c
 	$(CC) -S -emit-llvm $< -o $@
 
 obj/%.init.ll: obj/%.ll
-	opt -load=$(INITLIB) -S -taffoinit -debug-only=flttofix,annotation -stats $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(INITLIB) -S -taffoinit -debug-only=flttofix,annotation -stats $< -o $@
 
 obj/%.fixp.ll: obj/%.init.ll
-	opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg -debug-only=flttofix -stats $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg -debug-only=flttofix -stats $< -o $@
 
 obj/%.err.ll: obj/%.fixp.ll
-	opt -load=$(ERRORLIB) -S -errorprop -startonly -debug-only=errorprop $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(ERRORLIB) -S -errorprop -startonly -debug-only=errorprop $< -o $@
 
 obj/%.s: obj/%.ll
 	$(CC) -S  $< -o $@ $(OX)

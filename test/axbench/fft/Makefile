@@ -1,5 +1,7 @@
 CC			:= clang++
 LD			:= clang++
+LLVM_DIR			?= $(shell llvm-config --obj-root)
+
 
 OX          := #-O3
 
@@ -39,21 +41,21 @@ obj/%.ll : src/%.cpp
 	$(CC) -S -emit-llvm $(CFLAGS) $(INCLUDE) $< -o $@
 
 obj/main.ll : $(LL_FILES)
-	llvm-link -S $^ -o $@
+	$(LLVM_DIR)/bin/llvm-link -S $^ -o $@
 
 $(OBJ_FLOAT) : obj/main.ll
 	$(CC) -S $^ -o obj/main.s $(OX)
 	$(CC) -c obj/main.s -o $@
 
 obj/main.init.ll : obj/main.ll
-	opt -load=$(INITLIB) -S -taffoinit -debug-only=flttofix,annotation -stats $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(INITLIB) -S -taffoinit -debug-only=flttofix,annotation -stats $< -o $@
 
 obj/main.fixp.ll : obj/main.init.ll
 	#opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg -debug-only=flttofix -stats $(OX) $< -o $@
-	opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg -simplifycfg -loop-simplify -loop-rotate -lcssa -indvars -debug-only=flttofix -stats $(OX) $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg -simplifycfg -loop-simplify -loop-rotate -lcssa -indvars -debug-only=flttofix -stats $(OX) $< -o $@
 
 obj/main.err.ll : obj/main.fixp.ll
-	opt -load=$(ERRORLIB) -S -errorprop -startonly -dunroll 5 -debug-only=errorprop,loop-unroll $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(ERRORLIB) -S -errorprop -startonly -dunroll 5 -debug-only=errorprop,loop-unroll $< -o $@
 
 $(OBJ_FIX) : obj/main.fixp.ll
 	$(CC) -S $^ -o obj/main.fixp.s $(OX)

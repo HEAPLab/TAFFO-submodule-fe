@@ -39,7 +39,7 @@
 #define SORT(a,b)       \
              if(a>b)    \
              {          \
-               float __attribute__((annotate("no_float 8 24"))) c; \
+               float __attribute__((annotate("no_float 8 24 signed 0.01 1"))) c; \
                c=a;     \
                a=b;     \
                b=c;     \
@@ -108,10 +108,10 @@
 
 #define EDGE_AGAINST_TRI_EDGES(V0,V1,U0,U1,U2) \
 {                                              \
-  float __attribute__((annotate("no_float 8 24")))Ax,__attribute__((annotate("no_float 8 24")))Ay; \
-  float __attribute__((annotate("no_float 8 24")))Bx,__attribute__((annotate("no_float 8 24")))By; \
-  float __attribute__((annotate("no_float 8 24")))Cx,__attribute__((annotate("no_float 8 24")))Cy; \
-  float __attribute__((annotate("no_float 8 24")))e,__attribute__((annotate("no_float 8 24")))d,__attribute__((annotate("no_float 8 24")))f;   \
+  float __attribute__((annotate("no_float 8 24 signed 0.01 1")))Ax,__attribute__((annotate("no_float 8 24 signed 0.01 1")))Ay; \
+  float __attribute__((annotate("no_float 8 24 signed 0.01 1")))Bx,__attribute__((annotate("no_float 8 24 signed 0.01 1")))By; \
+  float __attribute__((annotate("no_float 8 24 signed 0.01 1")))Cx,__attribute__((annotate("no_float 8 24 signed 0.01 1")))Cy; \
+  float __attribute__((annotate("no_float 8 24 signed 0.01 1")))e,__attribute__((annotate("no_float 8 24 signed 0.01 1")))d,__attribute__((annotate("no_float 8 24 signed 0.01 1")))f;   \
   Ax=V1[i0]-V0[i0];                            \
   Ay=V1[i1]-V0[i1];                            \
   /* test edge U0,U1 against V0,V1 */          \
@@ -124,8 +124,8 @@
 
 #define POINT_IN_TRI(V0,U0,U1,U2)           \
 {                                           \
-  float __attribute__((annotate("no_float 8 24")))a,__attribute__((annotate("no_float 8 24")))b,__attribute__((annotate("no_float 8 24")))c; \
-  float __attribute__((annotate("no_float 8 24")))d0,__attribute__((annotate("no_float 8 24")))d1,__attribute__((annotate("no_float 8 24")))d2;                     \
+  float __attribute__((annotate("no_float 8 24 signed 0.01 1")))a,__attribute__((annotate("no_float 8 24 signed 0.01 1")))b,__attribute__((annotate("no_float 8 24 signed 0.01 1")))c; \
+  float __attribute__((annotate("no_float 8 24 signed 0.01 1")))d0,__attribute__((annotate("no_float 8 24 signed 0.01 1")))d1,__attribute__((annotate("no_float 8 24 signed 0.01 1")))d2;                     \
   /* is T1 completly inside T2? */          \
   /* check if V0 is inside tri(U0,U1,U2) */ \
   a=U1[i1]-U0[i1];                          \
@@ -156,7 +156,7 @@ int coplanar_tri_tri(float N[3] __attribute__((annotate("range 0.01 1 0"))),
 		     float U1[3] __attribute__((annotate("range 0.01 1 0"))),
 		     float U2[3] __attribute__((annotate("range 0.01 1 0"))))
 {
-   float  __attribute__((annotate("no_float 8 24 0.01 1"))) A[3];
+   float  __attribute__((annotate("no_float 8 24 signed 0.01 1"))) A[3];
    short i0,i1;
    /* first project onto an axis-aligned plane, that maximizes the area */
    /* of the triangles, compute indices: i0,i1. */

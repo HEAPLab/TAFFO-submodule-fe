@@ -36,11 +36,11 @@ void radix2DitCooleyTykeyFft(int K __attribute((annotate("range 0 100 0"))),
 	int eI ;
 	int oI ;
 
-	float __attribute((annotate("no_float 20 12 signed -1.0 1.0 1e-4"))) fftSin;
-	float __attribute((annotate("no_float 20 12 signed -1.0 1.0 1e-4"))) fftCos;
+	float __attribute((annotate("no_float 20 12 signed -1.0 1.0 0"))) fftSin;
+	float __attribute((annotate("no_float 20 12 signed -1.0 1.0 0"))) fftCos;
 
-	float __attribute((annotate("no_float 20 12 0 100 0"))) t_real;
-	float __attribute((annotate("no_float 20 12 0 100 0"))) t_imag;
+	float __attribute((annotate("target no_float 20 12 signed 0 100 0"))) t_real;
+	float __attribute((annotate("target no_float 20 12 signed 0 100 0"))) t_imag;
 	int i ;
 	int __attribute((annotate("range 1 100 0"))) N ;
 	int j ;

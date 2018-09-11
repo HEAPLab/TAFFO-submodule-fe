@@ -25,11 +25,11 @@ void inversek2j(float __attribute((annotate("range -0.9 0.9 4e-9"))) x,
 		float* __attribute((annotate("target range -1.57 1.57 4e-9"))) theta1,
 		float*  __attribute((annotate("target range -1.57 1.57 4e-9"))) theta2) {
 
-	double dataIn[2];
+	__attribute((annotate("no_float 4 28 signed -0.9 0.9 4e-9"))) double dataIn[2];
 	dataIn[0] = x;
 	dataIn[1] = y;
-
-	double dataOut[2];
+	
+	__attribute((annotate("no_float 4 28 signed -0.9 0.9 4e-9"))) double dataOut[2];
 
 #pragma parrot(input, "inversek2j", [2]dataIn)
 

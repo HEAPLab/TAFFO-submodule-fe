@@ -55,7 +55,7 @@ obj/main.init.ll : obj/main.ll
 	$(LLVM_DIR)/bin/opt -load=$(INITLIB) -S -taffoinit $(if $(ISDEBUG), -debug-only=flttofix$(comma)annotation) -stats $< -o $@
 
 obj/main.fixp.ll : obj/main.init.ll
-	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce $(if $(ISDEBUG), -debug-only=flttofix) -stats $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg $(if $(ISDEBUG), -debug-only=flttofix) -stats $< -o $@
 
 $(OBJ_FIX) : obj/main.fixp.ll
 	$(CC) -S $^ -o obj/main.fixp.s $(OX)

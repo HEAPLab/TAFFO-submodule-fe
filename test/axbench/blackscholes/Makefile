@@ -6,6 +6,7 @@ ifeq ($(shell $(LLVM_DIR)/bin/llvm-config --build-mode),Debug)
 ISDEBUG = 1
 $(info debug mode on)
 endif
+comma :=,
 
 OX          := -O3
 
@@ -47,7 +48,7 @@ obj/%.ll: src/%.c
 	$(CC) -S -emit-llvm $< -o $@
 
 obj/%.init.ll: obj/%.ll
-	$(LLVM_DIR)/bin/opt -load=$(INITLIB) -S -taffoinit $(if $(ISDEBUG), -debug-only=flttofix\,annotation) -stats $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(INITLIB) -S -taffoinit $(if $(ISDEBUG), -debug-only=flttofix$(comma)annotation) -stats $< -o $@
 
 obj/%.fixp.ll: obj/%.init.ll
 	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg $(if $(ISDEBUG), -debug-only=flttofix) -stats $< -o $@

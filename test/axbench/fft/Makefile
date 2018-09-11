@@ -6,6 +6,7 @@ ifeq ($(shell $(LLVM_DIR)/bin/llvm-config --build-mode),Debug)
 ISDEBUG = 1
 $(info debug mode on)
 endif
+comma :=,
 
 OX          := #-O3
 
@@ -52,14 +53,14 @@ $(OBJ_FLOAT) : obj/main.ll
 	$(CC) -c obj/main.s -o $@
 
 obj/main.init.ll : obj/main.ll
-	$(LLVM_DIR)/bin/opt -load=$(INITLIB) -S -taffoinit $(if $(ISDEBUG), -debug-only=flttofix,annotation) -stats $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(INITLIB) -S -taffoinit $(if $(ISDEBUG), -debug-only=flttofix$(comma)annotation) -stats $< -o $@
 
 obj/main.fixp.ll : obj/main.init.ll
 	#opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg $(if $(ISDEBUG), -debug-only=flttofix) -stats $(OX) $< -o $@
 	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg -simplifycfg -loop-simplify -loop-rotate -lcssa -indvars $(if $(ISDEBUG), -debug-only=flttofix) -stats $(OX) $< -o $@
 
 obj/main.err.ll : obj/main.fixp.ll
-	$(LLVM_DIR)/bin/opt -load=$(ERRORLIB) -S -errorprop -startonly -dunroll 5 $(if $(ISDEBUG), -debug-only=errorprop,loop-unroll) $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(ERRORLIB) -S -errorprop -startonly -dunroll 5 $(if $(ISDEBUG), -debug-only=errorprop$(comma)loop-unroll) $< -o $@
 
 $(OBJ_FIX) : obj/main.fixp.ll
 	$(CC) -S $^ -o obj/main.fixp.s $(OX)

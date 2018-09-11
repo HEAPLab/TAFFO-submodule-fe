@@ -256,6 +256,8 @@ FunctionErrorPropagator::applyActualParametersErrors(RangeErrorMap &GlobRMap,
     if (Err == nullptr)
       continue;
 
+    DEBUG(dbgs() << "Setting actual parameter (" << **AArg
+	  << ") error " << static_cast<double>(Err->noiseTermsAbsSum()) << "\n");
     GlobRMap.setError(*AArg, *Err);
   }
 }

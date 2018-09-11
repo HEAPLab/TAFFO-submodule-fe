@@ -261,7 +261,7 @@ void updateArgumentRE(RangeErrorMap &RMap, MemorySSA &MemSSA, Value *Pointer,
     if (PointerRE == nullptr || !PointerRE->second.hasValue()
 	|| PointerRE->second->noiseTermsAbsSum() < NewRE->second->noiseTermsAbsSum()) {
       RMap.setRangeError(Pointer, *NewRE);
-      // DEBUG(dbgs() << "Error of argument "<< Pointer->getName() << " updated.\n");
+      DEBUG(dbgs() << "(Error of argument "<< Pointer->getName() << " updated.) ");
     }
   }
   else if (GetElementPtrInst *GEPI = dyn_cast<GetElementPtrInst>(Pointer)) {

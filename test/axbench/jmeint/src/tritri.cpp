@@ -39,7 +39,7 @@
 #define SORT(a,b)       \
              if(a>b)    \
              {          \
-               float c; \
+               float __attribute__((annotate("no_float 8 24"))) c; \
                c=a;     \
                a=b;     \
                b=c;     \

@@ -148,10 +148,15 @@
   }                                         \
 }
 
-int coplanar_tri_tri(float N[3],float V0[3],float V1[3],float V2[3],
-                     float U0[3],float U1[3],float U2[3])
+int coplanar_tri_tri(float N[3] __attribute__((annotate("range 0.01 1 0"))),
+		     float V0[3] __attribute__((annotate("range 0.01 1 0"))),
+		     float V1[3] __attribute__((annotate("range 0.01 1 0"))),
+		     float V2[3] __attribute__((annotate("range 0.01 1 0"))),
+                     float U0[3] __attribute__((annotate("range 0.01 1 0"))),
+		     float U1[3] __attribute__((annotate("range 0.01 1 0"))),
+		     float U2[3] __attribute__((annotate("range 0.01 1 0"))))
 {
-   float  __attribute__((annotate("no_float 8 24"))) A[3];
+   float  __attribute__((annotate("no_float 8 24 0.01 1"))) A[3];
    short i0,i1;
    /* first project onto an axis-aligned plane, that maximizes the area */
    /* of the triangles, compute indices: i0,i1. */
@@ -197,10 +202,10 @@ int coplanar_tri_tri(float N[3],float V0[3],float V1[3],float V2[3],
     return 0;
 }
 
-int tri_tri_intersect(float V0[3],float V1[3],float V2[3],
-                      float U0[3],float U1[3],float U2[3])
+int tri_tri_intersect(float V0[3] __attribute__((annotate("range 0.01 1 0"))),float V1[3] __attribute__((annotate("range 0.01 1 0"))),float V2[3] __attribute__((annotate("range 0.01 1 0"))),
+                      float U0[3] __attribute__((annotate("range 0.01 1 0"))),float U1[3] __attribute__((annotate("range 0.01 1 0"))),float U2[3] __attribute__((annotate("range 0.01 1 0"))))
 {
-  #pragma clang attribute push( __attribute__((annotate("no_float 8 24"))) , apply_to = variable)
+  #pragma clang attribute push( __attribute__((annotate("target no_float 8 24 signed 0.01 1"))) , apply_to = variable)
   float E1[3],E2[3];
   float N1[3],N2[3],d1,d2;
   float du0,du1,du2,dv0,dv1,dv2;

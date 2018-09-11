@@ -6,6 +6,7 @@ ifeq ($(shell $(LLVM_DIR)/bin/llvm-config --build-mode),Debug)
 ISDEBUG = 1
 $(info debug mode on)
 endif
+comma :=,
 
 OX          := -O3
 
@@ -22,7 +23,7 @@ OBJ_FLOAT := obj/main.o
 OBJ_FIX   := obj/main.fixp.o
 
 .PHONY: all clean
-	
+
 all: DIR $(MODULE)
 
 .PRECIOUS: obj/%.ll obj/%.o obj/%.s
@@ -36,7 +37,7 @@ DIR:
 		mkdir obj;				\
 	fi
 
-$(MODULE): $(OBJ_FLOAT) $(OBJ_FIX)
+$(MODULE): $(OBJ_FLOAT) $(OBJ_FIX) obj/main.err.ll
 	$(LD) $(OBJ_FLOAT) $(LFLAGS) -o bin/$@
 	$(LD) $(OBJ_FIX) $(LFLAGS) -o bin/$@.fixp
 
@@ -50,8 +51,14 @@ $(OBJ_FLOAT) : obj/main.ll
 	$(CC) -S $^ -o obj/main.s $(OX)
 	$(CC) -c obj/main.s -o $@
 
-obj/main.fixp.ll : obj/main.ll
-	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -stats $(OX) $< -o $@
+obj/main.init.ll : obj/main.ll
+	$(LLVM_DIR)/bin/opt -load=$(INITLIB) -S -taffoinit $(if $(ISDEBUG), -debug-only=flttofix$(comma)annotation) -stats $< -o $@
+
+obj/main.fixp.ll : obj/main.init.ll
+	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg -stats $< -o $@
+
+obj/main.err.ll : obj/main.fixp.ll
+	$(LLVM_DIR)/bin/opt -load=$(ERRORLIB) -S -errorprop -startonly $(if $(ISDEBUG), -debug-only=errorprop$(comma)loop-unroll) $< -o $@
 
 $(OBJ_FIX) : obj/main.fixp.ll
 	$(CC) -S $^ -o obj/main.fixp.s $(OX)

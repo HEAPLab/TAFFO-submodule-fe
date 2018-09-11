@@ -48,10 +48,10 @@ FunctionErrorPropagator::computeErrorsWithCopy(RangeErrorMap &GlobRMap,
   // Reset the error associated to this function.
   RMap.erase(FCopy);
 
-  CFLSteensAAWrapperPass *CFLSAA =
-    EPPass.getAnalysisIfAvailable<CFLSteensAAWrapperPass>();
-  if (CFLSAA != nullptr)
-    CFLSAA->getResult().scan(FCopy);
+  // CFLSteensAAWrapperPass *CFLSAA =
+  //   EPPass.getAnalysisIfAvailable<CFLSteensAAWrapperPass>();
+  // if (CFLSAA != nullptr)
+  //   CFLSAA->getResult().scan(FCopy);
 
   MemSSA = &(EPPass.getAnalysis<MemorySSAWrapperPass>(CF).getMSSA());
 
@@ -100,6 +100,11 @@ FunctionErrorPropagator::computeFunctionErrors(SmallVectorImpl<Value *> *ArgErrs
 
   // Compute errors for all instructions in the function
   BBScheduler BBSched(*FCopy, LInfo);
+
+  // Restore MemSSA
+  assert(FCopy != nullptr);
+  MemSSA = &(EPPass.getAnalysis<MemorySSAWrapperPass>(*FCopy).getMSSA());
+
   for (BasicBlock *BB : BBSched)
     for (Instruction &I : *BB)
       computeInstructionErrors(I);

@@ -229,7 +229,8 @@ FunctionErrorPropagator::prepareErrorsForCall(Instruction &I) {
   CFEP.computeErrorsWithCopy(RMap, &Args, false);
 
   // Restore MemorySSA
-  EPPass.getAnalysis<MemorySSAWrapperPass>(*I.getFunction());
+  assert(FCopy != nullptr);
+  MemSSA = &(EPPass.getAnalysis<MemorySSAWrapperPass>(*FCopy).getMSSA());
 }
 
 void

@@ -15,19 +15,11 @@ namespace ErrorProp {
 
 void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
   // Prepare required analyses
-  DominatorTree &DomTree =
-    P.getAnalysis<DominatorTreeWrapperPass>(F).getDomTree();
-  LoopInfo &LInfo =
-    P.getAnalysis<LoopInfoWrapperPass>(F).getLoopInfo();
-  AssumptionCache &AssC =
-    P.getAnalysis<AssumptionCacheTracker>().getAssumptionCache(F);
-  ScalarEvolution &SE =
-    P.getAnalysis<ScalarEvolutionWrapperPass>(F).getSE();
-  OptimizationRemarkEmitter &ORE =
-    P.getAnalysis<OptimizationRemarkEmitterWrapperPass>(F).getORE();
+  LoopInfo &LInfo = P.getAnalysis<LoopInfoWrapperPass>(F).getLoopInfo();
 
   // Now try to unroll all loops
   for (Loop *L : LInfo) {
+    ScalarEvolution &SE = P.getAnalysis<ScalarEvolutionWrapperPass>(F).getSE();
     // Compute loop trip count
     unsigned TripCount = SE.getSmallConstantTripCount(L);
     // Get user supplied unroll count
@@ -48,6 +40,10 @@ void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
       TripMult = UnrollCount;
 
     // Actually unroll loop
+    DominatorTree &DomTree = P.getAnalysis<DominatorTreeWrapperPass>(F).getDomTree();
+    AssumptionCache &AssC = P.getAnalysis<AssumptionCacheTracker>().getAssumptionCache(F);
+    OptimizationRemarkEmitter &ORE = P.getAnalysis<OptimizationRemarkEmitterWrapperPass>(F).getORE();
+    
     LoopUnrollResult URes = UnrollLoop(L, UnrollCount, TripCount,
     				       true, false, true, false, false,
     				       TripMult, 0U,

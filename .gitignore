@@ -12,3 +12,5 @@ test/axbench/*/stats/
 cmake-build-debug/
 test/axbench/raw-times
 test/axbench/results
+test/axbench/*_results
+test/axbench/*_results.zip

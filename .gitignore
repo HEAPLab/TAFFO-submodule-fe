@@ -7,5 +7,6 @@ build
 test/axbench/*/obj/
 test/axbench/*/bin/
 test/axbench/*/data/output
+test/axbench/*/stats/
 .idea/
 cmake-build-debug/

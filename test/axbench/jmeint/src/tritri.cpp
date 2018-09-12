@@ -205,7 +205,7 @@ int coplanar_tri_tri(float N[3] __attribute__((annotate("range 0.1 1 0"))),
 int tri_tri_intersect(float V0[3] __attribute__((annotate("range 0.1 1 0"))),float V1[3] __attribute__((annotate("range 0.1 1 0"))),float V2[3] __attribute__((annotate("range 0.1 1 0"))),
                       float U0[3] __attribute__((annotate("range 0.1 1 0"))),float U1[3] __attribute__((annotate("range 0.1 1 0"))),float U2[3] __attribute__((annotate("range 0.1 1 0"))))
 {
-  #pragma clang attribute push( __attribute__((annotate("target no_float 8 24 signed 0.1 1"))) , apply_to = variable)
+  #pragma clang attribute push( __attribute__((annotate("target:all no_float 8 24 signed 0.1 1"))) , apply_to = variable)
   float E1[3],E2[3];
   float N1[3],N2[3],d1,d2;
   float du0,du1,du2,dv0,dv1,dv2;

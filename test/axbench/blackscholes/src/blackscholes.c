@@ -237,7 +237,7 @@ int bs_thread(void *tid_ptr) {
     int tid = *(int *)tid_ptr;
     int start = tid * (numOptions);
     int end = start + (numOptions);
-    fptype __attribute((annotate("target no_float 8 24 signed 0.1 1"))) price_orig;
+    fptype __attribute((annotate("target:price_orig no_float 8 24 signed 0.1 1"))) price_orig;
 
     for (j=0; j<NUM_RUNS; j++) {
         for (i=start; i<end; i++) {

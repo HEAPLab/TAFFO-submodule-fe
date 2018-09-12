@@ -354,6 +354,7 @@ int tri_tri_intersect(float V0[3] __attribute__((annotate("range 0.1 1 0"))),flo
         } \
 }
 
+#if 0
 int NoDivTriTriIsect(float V0[3],float V1[3],float V2[3],
                      float U0[3],float U1[3],float U2[3])
 {
@@ -464,11 +465,13 @@ int NoDivTriTriIsect(float V0[3],float V1[3],float V2[3],
   return 1;
 }
 
+#endif
+
 /* sort so that a<=b */
 #define SORT2(a,b,smallest)       \
              if(a>b)       \
              {             \
-               float c;    \
+               float __attribute__((annotate("no_float 8 24 signed 0.1 1"))) c;    \
                c=a;        \
                a=b;        \
                b=c;        \
@@ -480,8 +483,8 @@ int NoDivTriTriIsect(float V0[3],float V1[3],float V2[3],
 inline void isect2(float VTX0[3],float VTX1[3],float VTX2[3],float VV0,float VV1,float VV2,
 	    float D0,float D1,float D2,float *isect0,float *isect1,float isectpoint0[3],float isectpoint1[3]) 
 {
-  float tmp=D0/(D0-D1);          
-  float diff[3];
+  float __attribute__((annotate("range 0.1 1 0"))) tmp=D0/(D0-D1);          
+  float __attribute__((annotate("range 0.1 1 0"))) diff[3];
   *isect0=VV0+(VV1-VV0)*tmp;         
   SUB(diff,VTX1,VTX0);              
   MULT(diff,diff,tmp);               

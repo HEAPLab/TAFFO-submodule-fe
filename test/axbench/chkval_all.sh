@@ -31,6 +31,7 @@ done
 check 'blackscholes'
 check 'fft'
 check 'inversek2j'
+check 'jmeint'
 
 
 

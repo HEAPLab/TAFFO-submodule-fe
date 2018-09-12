@@ -15,6 +15,8 @@
 
 #include <boost/algorithm/string/regex.hpp>
 
+#include "benchmark.hpp"
+
 
 int main(int argc, char* argv[])
 {
@@ -65,10 +67,12 @@ int main(int argc, char* argv[])
 
 	//double output = 0.0;
 
+  uint64_t kernel_time = 0;
+  AxBenchTimer timer;
 
 	for(i = 0 ; i < (n * 6 * 3); i += 6 * 3)
 	{
-
+    
 		double dataIn[18];
 		double dataOut[2];
 		dataIn[0] 	= xyz[i + 0];
@@ -115,10 +119,17 @@ int main(int argc, char* argv[])
 			x = 0;
 		else
 			x = 1;
+			
+		kernel_time += timer.nanosecondsSinceInit();
 
 		outputFileHandler << x << std::endl;
+		
+		timer.reset();
 	}
-
+	
+	kernel_time += timer.nanosecondsSinceInit();
+	
+  std::cout << "kernel time = " << ((double)kernel_time) / 1000000000.0 << " s" << std::endl;
 
 	outputFileHandler.close();
 	inputFileHandler.close();

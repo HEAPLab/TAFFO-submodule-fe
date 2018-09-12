@@ -32,6 +32,7 @@ main()
   collect 'blackscholes'
   collect 'fft'
   collect 'inversek2j'
+  collect 'jmeint'
 
   ./chkval_all.sh > "$RESULTS_DIR/error.txt"
   ./chkval_all_better.py 5 > "$RESULTS_DIR/times.txt"

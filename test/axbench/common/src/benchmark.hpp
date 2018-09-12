@@ -23,6 +23,12 @@ class AxBenchTimer {
 public:
   AxBenchTimer() 
   {
+    reset();
+  }
+  
+  
+  void reset()
+  {
     #ifdef __APPLE__
       stime = mach_absolute_time();
     #elif _WIN32
@@ -31,6 +37,7 @@ public:
       clock_gettime(CLOCK_MONOTONIC_RAW, &stime);
     #endif
   }
+  
   
   uint64_t nanosecondsSinceInit()
   {

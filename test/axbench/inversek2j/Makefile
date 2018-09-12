@@ -34,7 +34,7 @@ DIR:
 	mkdir -p obj
 	mkdir -p stats
 
-$(MODULE): $(OBJ_FLOAT) $(OBJ_FIX) stats/main.fixp.mix.txt stats/main.mix.txt stats/main.llvm.txt
+$(MODULE): $(OBJ_FLOAT) $(OBJ_FIX) obj/main.err.ll stats/main.fixp.mix.txt stats/main.mix.txt stats/main.llvm.txt
 	$(LD) $(OBJ_FLOAT) $(LFLAGS) -o bin/$@
 	$(LD) $(OBJ_FIX) $(LFLAGS) -o bin/$@.fixp
 
@@ -49,17 +49,17 @@ $(OBJ_FLOAT) : obj/main.ll
 	$(CC) -c obj/main.s -o $@
 
 obj/main.init.ll : obj/main.ll
-	$(LLVM_DIR)/bin/opt -load=$(INITLIB) -S -taffoinit $(if $(ISDEBUG), -debug-only=flttofix$(comma)annotation) -stats $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(INITLIB) -S -taffoinit $(if $(ISDEBUG), -debug-only=flttofix$(comma)annotation) -stats $< -o $@ 2> stats/init.log
 
 obj/main.fixp.ll : obj/main.init.ll
-	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg $(if $(ISDEBUG), -debug-only=flttofix) -stats $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg $(if $(ISDEBUG), -debug-only=flttofix) -stats $< -o $@ 2> stats/flttofix.log
 
 $(OBJ_FIX) : obj/main.fixp.ll
 	$(CC) -S $^ -o obj/main.fixp.s $(OX)
 	$(CC) -c obj/main.fixp.s -o $@
 
 obj/main.err.ll : obj/main.fixp.ll
-	$(LLVM_DIR)/bin/opt -load=$(ERRORLIB) -S -errorprop -startonly $(if $(ISDEBUG), -debug-only=errorprop) $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(ERRORLIB) -S -errorprop -startonly $(if $(ISDEBUG), -debug-only=errorprop) $< -o $@ 2> stats/errorprop.log
 
 stats/%.mix.txt: obj/%.ll
 	$(INSTMIX) $< > $@

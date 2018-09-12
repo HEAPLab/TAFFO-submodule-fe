@@ -108,6 +108,8 @@ public:
 
   virtual llvm::MDNode *toMetadata(llvm::LLVMContext &) const = 0;
 
+  virtual ~FixedPointValue() = default;
+
   static std::unique_ptr<FixedPointValue>
   createFromConstantInt(int SPrec,
 			const llvm::IntegerType *IT,

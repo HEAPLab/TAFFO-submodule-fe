@@ -12,8 +12,8 @@ OX          := #-O3
 
 CFLAGS		:= -Wall -Wnarrowing -std=c++11
 LFLAGS		+= #-lboost_regex
-HEADERS     := src
-INCLUDE 	+= -I${HEADERS} -I../common/src
+HEADERS		:= src
+INCLUDE		+= -I${HEADERS} -I../common/src
 
 MODULE		:= inversek2j.out
 

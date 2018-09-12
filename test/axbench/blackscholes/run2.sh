@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [[ -z $FORMAT ]]; then
-  FORMAT='%25s %12s %12s%5s%6s%7s%12s\n'
+  FORMAT='%40s %12s %12s%5s%6s%7s%12s\n'
 fi
 
 
@@ -27,7 +27,7 @@ match_error()
 
 rm -rf data/output
 mkdir data/output
-benchmark=inversek2j
+benchmark=blackscholes
 
 for f in data/input/*.data
 do
@@ -36,10 +36,10 @@ do
   filename="${filename%.*}"
   
   if [[ -z $NORUN ]]; then
-    float=$(./bin/inversek2j.out ${f} data/output/${filename}_${benchmark}_out.data)
+    float=$(./bin/${benchmark}.out ${f} data/output/${filename}_${benchmark}_out.data)
     mfloat=$(match_time "$float")
   
-    fix=$(./bin/inversek2j.out.fixp ${f} data/output/${filename}_${benchmark}_out.data.fixp)
+    fix=$(./bin/${benchmark}.out.fixp ${f} data/output/${filename}_${benchmark}_out.data.fixp)
     mfix=$(match_time "$fix")
   else
     mfloat='0'
@@ -47,7 +47,7 @@ do
   fi
   
   if [[ -z $NOERROR ]]; then
-    error=$(python ./scripts/qos.py data/output/${filename}_${benchmark}_out.data data/output/${filename}_${benchmark}_out.data.fixp)
+    error=$(./scripts/qos.py data/output/${filename}_${benchmark}_out.data data/output/${filename}_${benchmark}_out.data.fixp)
     merror=$(match_error "$error")
   else
     merror='0'

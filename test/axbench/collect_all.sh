@@ -12,11 +12,24 @@ collect()
 
 main()
 {
+  if [[ -z $1 ]]; then
+    RESULTS_DIR="./results"
+  else
+    RESULTS_DIR="$1"
+  fi
+  
+  if [[ -e "$RESULTS_DIR" ]]; then
+    echo 'results dir already exists; archive or remove first please'
+    return;
+  fi
+
   rm -r ./raw-times
-  RESULTS_DIR=$(pwd)/results
   mkdir -p "$RESULTS_DIR"
   mkdir -p "$RESULTS_DIR/stats"
+  
+  RESULTS_DIR=$(cd ${RESULTS_DIR} 2> /dev/null && pwd -P)
 
+  collect 'blackscholes'
   collect 'inversek2j'
 
   ./chkval_all.sh > "$RESULTS_DIR/error.txt"
@@ -27,5 +40,5 @@ main()
 
 
 trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM
-main & wait
+main "$1" & wait
 

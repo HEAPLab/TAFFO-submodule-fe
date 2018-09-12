@@ -15,6 +15,7 @@
 #include <iostream>
 #include <vector>
 #include <iomanip>
+#include "benchmark.hpp"
 
 
 //double max_otype, min_otype ;
@@ -200,13 +201,15 @@ fptype BlkSchlsEqEuroNoDiv( fptype sptprice __attribute((annotate("range 0.33 0.
     
     NofXd1 = CNDF( d1 );
 
-    if(NofXd1 > 1.0)
-        std::cerr << "Greater than one!" << std::endl ;
+    if(NofXd1 > 1.0) {
+        //std::cerr << "Greater than one!" << std::endl ;
+    }
     //printf("# d1: %10.10f\n", NofXd1);
 
     NofXd2 = CNDF( d2 );
-    if(NofXd2 > 1.0)
-         std::cerr << "Greater than one!" << std::endl ;
+    if(NofXd2 > 1.0) {
+         // std::cerr << "Greater than one!" << std::endl ;
+    }
     //printf("# d2: %10.10f\n", NofXd2);
 
     *N1 = NofXd1 ;
@@ -346,8 +349,14 @@ int main (int argc, char **argv)
     }
 
     //serial version
+    
+    AxBenchTimer timer;
+    
     int tid=0;
     bs_thread(&tid);
+    
+    uint64_t time = timer.nanosecondsSinceInit();
+	  std::cout << "kernel time = " << ((double)time) / 1000000000.0 << " s\n";
 
 
     //Write prices to output file

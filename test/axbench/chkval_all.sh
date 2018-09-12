@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export FORMAT='%25s %12s %12s%11s%11s%11s%14s\n'
+export FORMAT='%40s %12s %12s%11s%11s%11s%14s\n'
 
 
 # $1 benchmark to check
@@ -28,6 +28,7 @@ for arg; do
   esac
 done
 
+check 'blackscholes'
 check 'inversek2j'
 
 

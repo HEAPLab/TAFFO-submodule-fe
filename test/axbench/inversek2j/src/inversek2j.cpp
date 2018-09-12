@@ -72,7 +72,7 @@ int main(int argc, const char* argv[])
 	}
 	
 	uint64_t time = timer.nanosecondsSinceInit();
-	std::cerr << "kernel time = " << time << " ns";
+	std::cout << "kernel time = " << ((double)time) / 1000000000.0 << " s\n";
 
 	for(int i = 0 ; i < n * 2 * 2 ; i += 2 * 2)
 	{

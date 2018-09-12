@@ -9,6 +9,7 @@ void fftSinCos(float __attribute((annotate("range 0 2048 0"))) x,
     *c = cos(-2 * PI * x);
 }
 
+#if 0
 float abs(const Complex* x) {
 	return sqrt(x->real * x->real + x->imag * x->imag);
 }
@@ -34,3 +35,4 @@ float arg(const Complex* x) {
 
 	return 0;
 }
+#endif

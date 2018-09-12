@@ -3,6 +3,7 @@
 #include "fourier.hpp"
 #include <fstream>
 #include <time.h>
+#include "benchmark.hpp"
 
 static int* indices;
 static float* __attribute((annotate("no_float 20 12"))) x;
@@ -32,6 +33,8 @@ int main(int argc, char* argv[])
 	}
 
 	int K = n;
+	
+	AxBenchTimer timer;
 
 	for(i = 0;i < K ; i++)
 	{
@@ -39,6 +42,9 @@ int main(int argc, char* argv[])
 		COMPLEX_IMAG(x,i) = 0 ;
 	}
 	radix2DitCooleyTykeyFft(K, indices, x, f) ;
+	
+	uint64_t time = timer.nanosecondsSinceInit();
+	std::cout << "kernel time = " << ((double)time) / 1000000000.0 << " s\n";
 	
 	for(i = 0;i < K ; i++)
 	{

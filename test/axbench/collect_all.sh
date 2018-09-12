@@ -30,6 +30,7 @@ main()
   RESULTS_DIR=$(cd ${RESULTS_DIR} 2> /dev/null && pwd -P)
 
   collect 'blackscholes'
+  collect 'fft'
   collect 'inversek2j'
 
   ./chkval_all.sh > "$RESULTS_DIR/error.txt"

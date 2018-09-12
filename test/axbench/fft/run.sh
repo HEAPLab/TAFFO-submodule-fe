@@ -1,7 +1,7 @@
 #!/bin/bash
 
 rm -rf data/output
-mkdir data/output
+mkdir -p data/output
 benchmark=fft
 
 input=( 2048 8192 65536 4194304)

@@ -32,6 +32,8 @@ nnLines			= open(nnFilename).readlines()
 
 e = 0.0
 absError = 0.0
+trueAbsError = 0.0
+numNaN = 0
 
 for i in range(len(origLines)):
 
@@ -61,6 +63,11 @@ for i in range(len(origLines)):
  		e = nominator / denominator
 
  	absError += e
+        if math.isnan(nominator):
+                numNaN += 1;
+        else:
+            trueAbsError += nominator
 pass;
 
-print bcolors.WARNING	+ "*** Error: %1.8f" % (absError/len(origLines)) + bcolors.ENDC
+print bcolors.WARNING	+ "*** Relative Error: %1.8f" % (absError/len(origLines)) + bcolors.ENDC
+print bcolors.WARNING	+ "*** Absolute Error: %1.8f" % (trueAbsError/(len(origLines)-numNaN)) + bcolors.ENDC

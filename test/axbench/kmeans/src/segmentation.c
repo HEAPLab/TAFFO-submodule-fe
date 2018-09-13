@@ -12,7 +12,7 @@
 
 #include "distance.h"
 
-int initClusters(Clusters* clusters, int k, float scale) {
+int initClusters(Clusters* __attribute__((annotate("range " RANGE_CENTROID))) clusters, int k, float __attribute__((annotate("range 1.0 0.0"))) scale /* = 1 */) {
 	int i;
 	float __attribute__((annotate(ANNOTATION_CENTROID))) x;
 	
@@ -53,7 +53,7 @@ void freeClusters(Clusters* clusters) {
 		free(clusters->centroids);
 }
 
-void segmentImage(RgbImage* image, Clusters* clusters, int n) {
+void segmentImage(RgbImage* __attribute__((annotate("range " RANGE_RGBPIXEL))) image, Clusters* __attribute__((annotate("range " RANGE_CENTROID))) clusters, int n) {
 	int i;
 	int x, y;
 	int c;
@@ -95,9 +95,10 @@ void segmentImage(RgbImage* image, Clusters* clusters, int n) {
 
 	for (y = 0; y < image->h; y++) {
 		for (x = 0; x < image->w; x++) {
-			RGBPIXEL_R(pixels[y], x) = CENTROID_R(centroids, RGBPIXEL2_CLUSTER(pixels2[y], x));
-			RGBPIXEL_G(pixels[y], x) = CENTROID_G(centroids, RGBPIXEL2_CLUSTER(pixels2[y], x));
-			RGBPIXEL_B(pixels[y], x) = CENTROID_B(centroids, RGBPIXEL2_CLUSTER(pixels2[y], x));
+		  float __attribute__((annotate("target:component " ANNOTATION_RGBPIXEL))) r, g, b;
+			RGBPIXEL_R(pixels[y], x) = r = CENTROID_R(centroids, RGBPIXEL2_CLUSTER(pixels2[y], x));
+			RGBPIXEL_G(pixels[y], x) = g = CENTROID_G(centroids, RGBPIXEL2_CLUSTER(pixels2[y], x));
+			RGBPIXEL_B(pixels[y], x) = b = CENTROID_B(centroids, RGBPIXEL2_CLUSTER(pixels2[y], x));
 		}
 	}
 }

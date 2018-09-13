@@ -16,8 +16,8 @@
 
 int main (int argc, const char* argv[]) {
 
-	RgbImage srcImage;
-	Clusters clusters;
+	RgbImage srcImage __attribute__((annotate("range " RANGE_RGBPIXEL)));
+	Clusters clusters __attribute__((annotate("range " RANGE_CENTROID)));
 
 	initRgbImage(&srcImage);
 
@@ -28,7 +28,7 @@ int main (int argc, const char* argv[]) {
 
 	initClusters(&clusters, 6, 1);
 	segmentImage(&srcImage, &clusters, 1);
-	
+		
 	saveRgbImage(&srcImage, outImageName.c_str(), 255);
 
 

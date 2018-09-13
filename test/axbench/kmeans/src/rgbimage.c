@@ -11,7 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-void initRgbImage(RgbImage* image) {
+void initRgbImage(RgbImage* __attribute__((annotate("range " RANGE_RGBPIXEL))) image) {
 	image->w = 0;
 	image->h = 0;
 	image->pixels = NULL;
@@ -47,7 +47,7 @@ int readCell(FILE *fp, char* w) {
 	return c;
 }
 
-int loadRgbImage(const char* fileName, RgbImage* image, float scale) {
+int loadRgbImage(const char* fileName, RgbImage* __attribute__((annotate("range " RANGE_RGBPIXEL))) image, float __attribute__((annotate("range 1.0 0.0")))scale) {
 	int c;
 	int i;
 	int j;
@@ -144,7 +144,7 @@ int loadRgbImage(const char* fileName, RgbImage* image, float scale) {
 	return 1;
 }
 
-int saveRgbImage(RgbImage* image, const char* fileName, float __attribute__((annotate("no_float 24 8"))) scale) {
+int saveRgbImage(RgbImage* __attribute__((annotate("range " RANGE_RGBPIXEL))) image, const char* fileName, float __attribute__((annotate("no_float 24 8"))) scale) {
 	int i;
 	int j;
 	FILE *fp;
@@ -177,7 +177,7 @@ int saveRgbImage(RgbImage* image, const char* fileName, float __attribute__((ann
 	return 1;
 }
 
-void freeRgbImage(RgbImage* image) {
+void freeRgbImage(RgbImage* __attribute__((annotate("range " RANGE_RGBPIXEL))) image) {
 	int i;
 
 	if (image->meta != NULL)
@@ -193,7 +193,7 @@ void freeRgbImage(RgbImage* image) {
 	free(image->pixels);
 }
 
-void makeGrayscale(RgbImage* image) {
+void makeGrayscale(RgbImage* __attribute__((annotate("range " RANGE_RGBPIXEL))) image) {
 	int i;
 	int j;
 	float __attribute__((annotate(ANNOTATION_RGBPIXEL))) luminance;

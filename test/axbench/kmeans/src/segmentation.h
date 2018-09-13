@@ -20,13 +20,21 @@ typedef struct {
 } Centroid;
 #endif
 
-#define ANNOTATION_CENTROID "no_float 24 8"
+#define RANGE_CENTROID      "1572864.0 0.0"
+#define ANNOTATION_CENTROID "no_float 20 12 signed " RANGE_CENTROID
 #define SIZEOF_CENTROID     (4 * __SIZEOF_FLOAT__)
 #define CENTROID(c, i)      (((c)[(i) * 4]))
 #define CENTROID_R(c, i)    (((c)[(i) * 4 + 0]))
 #define CENTROID_G(c, i)    (((c)[(i) * 4 + 1]))
 #define CENTROID_B(c, i)    (((c)[(i) * 4 + 2]))
 #define CENTROID2_N(c, i)   (((c)[(i) * 4 + 3]))
+
+#define DUMP_CENTROIDS(centroids, n) do { \
+  float __attribute__((annotate(ANNOTATION_CENTROID))) *c = (float *)(centroids); \
+  for (int i=0; i<(n); i++) \
+    printf("%f, %f, %f\n", CENTROID_R(c,i), CENTROID_G(c,i), CENTROID_B(c,i)); \
+} while (0)
+   
 
 typedef struct {
    int k;

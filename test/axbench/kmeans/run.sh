@@ -26,7 +26,7 @@ do
 	python3 ./../common/scripts/png2rgb.py png data/output/${filename}_${benchmark}.rgb data/output/${filename}_${benchmark}.png > out1.tmp
 	python3 ./../common/scripts/png2rgb.py png data/output/${filename}_${benchmark}.rgb.fixp data/output/${filename}_${benchmark}.fixp.png > out2.tmp
 	
-	compare -metric RMSE data/output/${filename}_${benchmark}.png data/output/${filename}_${benchmark}.fixp.png null > tmp.log 2> tmp.err
+	compare -metric RMSE data/output/${filename}_${benchmark}.png data/output/${filename}_${benchmark}.fixp.png /dev/null > tmp.log 2> tmp.err
 	awk '{ printf("*** Error: %0.6f%%\n",substr($2, 2, length($2) - 2) * 100) }' tmp.err
 	
 done

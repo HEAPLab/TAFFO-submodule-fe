@@ -12,6 +12,6 @@
 #include "rgbimage.h"
 #include "segmentation.h"
 
-void assignCluster(RgbPixel* p, Clusters* clusters);
+void assignCluster(float* p, Clusters* clusters);
 
 #endif /* DISTANCE_H_ */

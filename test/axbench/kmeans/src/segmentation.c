@@ -15,8 +15,11 @@
 int initClusters(Clusters* clusters, int k, float scale) {
 	int i;
 	float x;
+	
+	float *centroids = (float *)malloc(k * SIZEOF_CENTROID);
+	int *centroids2 = (int *)centroids;
 
-	clusters->centroids = (Centroid*)malloc(k * sizeof(Centroid));
+	clusters->centroids = (void *)centroids;
 
 	if (clusters == NULL) {
 		printf("Warning: Oops! Cannot allocate memory for the clusters!\n");
@@ -27,15 +30,15 @@ int initClusters(Clusters* clusters, int k, float scale) {
 	clusters->k = k;
 	for (i = 0; i < clusters->k; i ++) {
 		x = (((float)rand())/RAND_MAX) * scale;
-		clusters->centroids[i].r = x;
+		CENTROID_R(centroids, i) = x;
 
 		x = (((float)rand())/RAND_MAX) * scale;
-		clusters->centroids[i].g = x;
+		CENTROID_G(centroids, i) = x;
 
 		x = (((float)rand())/RAND_MAX) * scale;
-		clusters->centroids[i].b = x;
+		CENTROID_B(centroids, i) = x;
 
-		clusters->centroids[i].n = 0;
+		CENTROID2_N(centroids2, i) = 0;
 	}
 
 
@@ -51,43 +54,47 @@ void segmentImage(RgbImage* image, Clusters* clusters, int n) {
 	int i;
 	int x, y;
 	int c;
+	float **pixels = (float **)image->pixels;
+	int **pixels2 = (int **)image->pixels;
+	float *centroids = (float *)clusters->centroids;
+	int *centroids2 = (int *)clusters->centroids;
 
 	for (i = 0; i < n; ++i) {
 		for (y = 0; y < image->h; y++) {
 			for (x = 0; x < image->w; x++) {
-				assignCluster(&image->pixels[y][x], clusters);
+				assignCluster(&RGBPIXEL(pixels[y], x), clusters);
 			}
 		}
 
 		/** Recenter */
 		for (c  = 0; c < clusters->k; ++c) {
-			clusters->centroids[c].r = 0.;
-			clusters->centroids[c].g = 0.;
-			clusters->centroids[c].b = 0.;
-			clusters->centroids[c].n = 0;
+			CENTROID_R(centroids, c) = 0.;
+			CENTROID_G(centroids, c) = 0.;
+			CENTROID_B(centroids, c) = 0.;
+			CENTROID2_N(centroids2, c) = 0;
 		}
 		for (y = 0; y < image->h; y++) {
 			for (x = 0; x < image->w; x++) {
-				clusters->centroids[image->pixels[y][x].cluster].r += image->pixels[y][x].r;
-				clusters->centroids[image->pixels[y][x].cluster].g += image->pixels[y][x].g;
-				clusters->centroids[image->pixels[y][x].cluster].b += image->pixels[y][x].b;
-				clusters->centroids[image->pixels[y][x].cluster].n += 1;
+				CENTROID_R(centroids, RGBPIXEL2_CLUSTER(pixels2[y], x)) += RGBPIXEL_R(pixels[y], x);
+				CENTROID_G(centroids, RGBPIXEL2_CLUSTER(pixels2[y], x)) += RGBPIXEL_G(pixels[y], x);
+				CENTROID_B(centroids, RGBPIXEL2_CLUSTER(pixels2[y], x)) += RGBPIXEL_B(pixels[y], x);
+				CENTROID2_N(centroids2, RGBPIXEL2_CLUSTER(pixels2[y], x)) += 1;
 			}
 		}
 		for (c  = 0; c < clusters->k; ++c) {
-			if (clusters->centroids[c].n != 0) {
-				clusters->centroids[c].r = clusters->centroids[c].r / clusters->centroids[c].n;
-				clusters->centroids[c].g = clusters->centroids[c].g / clusters->centroids[c].n;
-				clusters->centroids[c].b = clusters->centroids[c].b / clusters->centroids[c].n;
+			if (CENTROID2_N(centroids2, c) != 0) {
+				CENTROID_R(centroids, c) = CENTROID_R(centroids, c) / CENTROID2_N(centroids2, c);
+				CENTROID_G(centroids, c) = CENTROID_G(centroids, c) / CENTROID2_N(centroids2, c);
+				CENTROID_B(centroids, c) = CENTROID_B(centroids, c) / CENTROID2_N(centroids2, c);
 			}
 		}
 	}
 
 	for (y = 0; y < image->h; y++) {
 		for (x = 0; x < image->w; x++) {
-			image->pixels[y][x].r = clusters->centroids[image->pixels[y][x].cluster].r;
-			image->pixels[y][x].g = clusters->centroids[image->pixels[y][x].cluster].g;
-			image->pixels[y][x].b = clusters->centroids[image->pixels[y][x].cluster].b;
+			RGBPIXEL_R(pixels[y], x) = CENTROID_R(centroids, RGBPIXEL2_CLUSTER(pixels2[y], x));
+			RGBPIXEL_G(pixels[y], x) = CENTROID_G(centroids, RGBPIXEL2_CLUSTER(pixels2[y], x));
+			RGBPIXEL_B(pixels[y], x) = CENTROID_B(centroids, RGBPIXEL2_CLUSTER(pixels2[y], x));
 		}
 	}
 }

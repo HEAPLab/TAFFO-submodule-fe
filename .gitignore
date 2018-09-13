@@ -14,3 +14,5 @@ test/axbench/raw-times
 test/axbench/results
 test/axbench/*_results
 test/axbench/*_results.zip
+test/axbench/kmeans/correct_output
+test/axbench/kmeans/src_before

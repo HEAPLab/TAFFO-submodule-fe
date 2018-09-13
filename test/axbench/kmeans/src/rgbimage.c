@@ -52,7 +52,9 @@ int loadRgbImage(const char* fileName, RgbImage* image, float scale) {
 	int i;
 	int j;
 	char w[256];
-	RgbPixel** pixels;
+	//RgbPixel** pixels;
+	float** pixels;
+	int** pixels2;
 	FILE *fp;
 
 	//printf("Loading %s ...\n", fileName);
@@ -70,7 +72,8 @@ int loadRgbImage(const char* fileName, RgbImage* image, float scale) {
 
 	//printf("%d x %d\n", image->w, image->h);
 
-	pixels = (RgbPixel**)malloc(image->h * sizeof(RgbPixel*));
+	pixels = (float**)malloc(image->h * SIZEOF_RGBPIXEL);
+	pixels2 = (int **)pixels;
 
 	if (pixels == NULL) {
 		printf("Warning: Oops! Cannot allocate memory for the pixels!\n");
@@ -82,7 +85,7 @@ int loadRgbImage(const char* fileName, RgbImage* image, float scale) {
 
 	c = 0;
 	for(i = 0; i < image->h; i++) {
-		pixels[i] = (RgbPixel*)malloc(image->w * sizeof(RgbPixel));
+		pixels[i] = (float*)malloc(image->w * SIZEOF_RGBPIXEL);
 		if (pixels[i] == NULL) {
 			c = 1;
 			break;
@@ -104,16 +107,16 @@ int loadRgbImage(const char* fileName, RgbImage* image, float scale) {
 	for(i = 0; i < image->h; i++) {
 		for(j = 0; j < image->w; j++) {
 			c = readCell(fp, w);
-			pixels[i][j].r = atoi(w) / scale;
+			RGBPIXEL_R(pixels[i], j) = atoi(w) / scale;
 
 			c = readCell(fp, w);
-			pixels[i][j].g = atoi(w) / scale;
+			RGBPIXEL_G(pixels[i], j) = atoi(w) / scale;
 
 			c = readCell(fp, w);
-			pixels[i][j].b = atoi(w) / scale;
+			RGBPIXEL_B(pixels[i], j) = atoi(w) / scale;
 
-			pixels[i][j].cluster = 0;
-			pixels[i][j].distance = 0.;
+			RGBPIXEL2_CLUSTER(pixels2[i], j) = 0;
+			RGBPIXEL_DISTANCE(pixels[i], j) = 0.;
 		}
 	}
 	image->pixels = pixels;
@@ -145,6 +148,8 @@ int saveRgbImage(RgbImage* image, const char* fileName, float scale) {
 	int i;
 	int j;
 	FILE *fp;
+	float **pixels = (float **)image->pixels;
+	//int **pixels2 = (int **)image->pixels;
 
 	//printf("Saving %s ...\n", fileName);
 
@@ -159,9 +164,9 @@ int saveRgbImage(RgbImage* image, const char* fileName, float scale) {
 
 	for(i = 0; i < image->h; i++) {
 		for(j = 0; j < (image->w - 1); j++) {
-			fprintf(fp, "%d,%d,%d,", int(image->pixels[i][j].r * scale), int(image->pixels[i][j].g * scale), int(image->pixels[i][j].b * scale));
+			fprintf(fp, "%d,%d,%d,", int(RGBPIXEL_R(pixels[i], j) * scale), int(RGBPIXEL_G(pixels[i], j) * scale), int(RGBPIXEL_B(pixels[i], j) * scale));
 		}
-		fprintf(fp, "%d,%d,%d\n", int(image->pixels[i][j].r * scale), int(image->pixels[i][j].g * scale), int(image->pixels[i][j].b * scale));
+		fprintf(fp, "%d,%d,%d\n", int(RGBPIXEL_R(pixels[i], j) * scale), int(RGBPIXEL_G(pixels[i], j) * scale), int(RGBPIXEL_B(pixels[i], j) * scale));
 	}
 
 	fprintf(fp, "%s", image->meta);
@@ -183,7 +188,7 @@ void freeRgbImage(RgbImage* image) {
 
 	for (i = 0; i < image->h; i++)
 		if (image->pixels != NULL)
-			free(image->pixels[i]);
+			free(((void**)image->pixels)[i]);
 
 	free(image->pixels);
 }
@@ -192,6 +197,7 @@ void makeGrayscale(RgbImage* image) {
 	int i;
 	int j;
 	float luminance;
+	float **pixels = (float **)image->pixels;
 
 	float rC = 0.30;
 	float gC = 0.59;
@@ -200,13 +206,13 @@ void makeGrayscale(RgbImage* image) {
 	for(i = 0; i < image->h; i++) {
 		for(j = 0; j < image->w; j++) {
 			luminance =
-				rC * image->pixels[i][j].r +
-				gC * image->pixels[i][j].g +
-				bC * image->pixels[i][j].b;
+				rC * RGBPIXEL_R(pixels[i], j) +
+				gC * RGBPIXEL_G(pixels[i], j) +
+				bC * RGBPIXEL_B(pixels[i], j);
 
-			image->pixels[i][j].r = (unsigned char)luminance;
-			image->pixels[i][j].g = (unsigned char)luminance;
-			image->pixels[i][j].b = (unsigned char)luminance;
+			RGBPIXEL_R(pixels[i], j) = (unsigned char)luminance;
+			RGBPIXEL_G(pixels[i], j) = (unsigned char)luminance;
+			RGBPIXEL_B(pixels[i], j) = (unsigned char)luminance;
 		}
 	}
 }

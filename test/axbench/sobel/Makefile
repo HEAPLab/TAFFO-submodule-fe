@@ -10,7 +10,7 @@ endif
 OX          := -O3
 
 CFLAGS		+= -Wall -Wnarrowing -std=c++11
-LFLAGS		+= -lboost_regex
+LFLAGS		+= #-lboost_regex
 HEADERS     := src
 INCLUDE 	+= -I${HEADERS} 
 
@@ -51,7 +51,7 @@ $(OBJ_FLOAT) : obj/main.ll
 	$(CC) -c obj/main.s -o $@
 
 obj/main.fixp.ll : obj/main.ll
-	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -stats $(OX) $< -o $@
+	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -stats $< -o $@
 
 $(OBJ_FIX) : obj/main.fixp.ll
 	$(CC) -S $^ -o obj/main.fixp.s $(OX)

@@ -20,3 +20,6 @@ test/axbench/kmeans/out1.tmp
 test/axbench/kmeans/out2.tmp
 test/axbench/kmeans/tmp.err
 test/axbench/kmeans/tmp.log
+test/axbench/sobel/*.tmp
+test/axbench/sobel/tmp.err
+test/axbench/sobel/tmp.log

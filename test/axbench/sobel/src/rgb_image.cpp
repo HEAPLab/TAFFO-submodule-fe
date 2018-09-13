@@ -6,6 +6,7 @@
  */
 
 #include "rgb_image.hpp"
+#include <cstdlib>
 
 void Image::printPixel(int x, int y)
 {
@@ -13,6 +14,34 @@ void Image::printPixel(int x, int y)
 	std::cout << "# Green: 	" << this->pixels[x][y]->g << std::endl;
 	std::cout << "# Blue: 	" << this->pixels[x][y]->b << std::endl; 
 }
+
+
+const char *readInt(const char *line, int *out)
+{
+  while (*line != '\0') {
+    if ('0' <= *line && *line <= '9') {
+      char *end;
+      *out = strtol(line, &end, 0);
+      return end;
+    } else {
+      line++;
+    }
+  }
+  return nullptr;
+}
+
+
+void tokenize(std::vector<int>& out, std::string& line)
+{
+  const char *str = line.c_str();
+  int v;
+  str = readInt(str, &v);
+  while (str) {
+    out.push_back(v);
+    str = readInt(str, &v);
+  }
+}
+
 
 int Image::loadRgbImage(std::string filename)
 {
@@ -31,10 +60,10 @@ int Image::loadRgbImage(std::string filename)
 	// Read first line and split based on the , and any spaces before or after
 	std::string line ;
 	std::getline(imageFile, line) ;
-	std::vector<std::string> imageInfo ;
-	boost::algorithm::split_regex(imageInfo, line, boost::regex("\t*,\t*")) ;
-	this->width  = atoi(imageInfo[0].c_str()) ;
-	this->height = atoi(imageInfo[1].c_str()) ;
+	std::vector<int> imageInfo ;
+	tokenize(imageInfo, line);
+	this->width  = imageInfo[0];
+	this->height = imageInfo[1];
 
 	if(DEBUG)
 	{
@@ -46,17 +75,17 @@ int Image::loadRgbImage(std::string filename)
 	for (int h = 0 ; h < this->height ; h++)
 	{
 		std::getline(imageFile, line) ;
-		std::vector<std::string> currRowString ;
-		boost::algorithm::split_regex(currRowString, line, boost::regex("\t*,\t*")) ;
+		std::vector<int> currRowString;
+		tokenize(currRowString, line);
 
 		std::vector<boost::shared_ptr<Pixel> > currRow ;
 
 		for(int w = 0 ; w < this->width ; w++)
 		{
 			int index = w * 3 ;
-			float r = atoi(currRowString[index++].c_str()) ;
-			float g = atoi(currRowString[index++].c_str()) ;
-			float b = atoi(currRowString[index++].c_str()) ;
+			float r = currRowString[index++];
+			float g = currRowString[index++];
+			float b = currRowString[index++];
 			// Add pixel to the current row
 			boost::shared_ptr<Pixel> currPixel(new Pixel(r, g, b)) ;
 			currRow.push_back(currPixel) ;

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# fix awk decimal number parser
+export LANG=en_US.UTF-8
+
 rm -rf data/output
 mkdir -p data/output
 benchmark=kmeans
@@ -8,6 +11,7 @@ do
 	filename=$(basename "$f")
 	extension="${filename##*.}"
 	filename="${filename%.*}"
+	
 	
 	echo -e "\e[95m------ ${filename} ------\e[0m"
 	
@@ -19,10 +23,10 @@ do
 	
 	echo -e "\e[32m### QoS ###\e[0m"
 	
-	python ./../common/scripts/png2rgb.py png data/output/${filename}_${benchmark}.rgb data/output/${filename}_${benchmark}.png > out1.tmp
-	python ./../common/scripts/png2rgb.py png data/output/${filename}_${benchmark}.rgb.fixp data/output/${filename}_${benchmark}.fixp.png > out2.tmp
+	python3 ./../common/scripts/png2rgb.py png data/output/${filename}_${benchmark}.rgb data/output/${filename}_${benchmark}.png > out1.tmp
+	python3 ./../common/scripts/png2rgb.py png data/output/${filename}_${benchmark}.rgb.fixp data/output/${filename}_${benchmark}.fixp.png > out2.tmp
 	
-	compare -metric RMSE data/output/${filename}_${benchmark}.png data/output/${filename}_${benchmark}.png.fixp null > tmp.log 2> tmp.err
-	awk '{ printf("*** Error: %0.2f%\n",substr($2, 2, length($2) - 2) * 100) }' tmp.err
+	compare -metric RMSE data/output/${filename}_${benchmark}.png data/output/${filename}_${benchmark}.fixp.png null > tmp.log 2> tmp.err
+	awk '{ printf("*** Error: %0.6f%%\n",substr($2, 2, length($2) - 2) * 100) }' tmp.err
 	
 done

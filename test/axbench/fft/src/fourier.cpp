@@ -23,10 +23,10 @@ void calcFftIndices(int K __attribute((annotate("range 0 100 0"))),
 	}
 }
 
-void radix2DitCooleyTykeyFft(int K __attribute((annotate("range 0 100 0"))),
-			     int* indices __attribute((annotate("range 0 100 0"))),
-			     float* x __attribute((annotate("range 0 100 0"))),
-			     float* f __attribute((annotate("range 0 100 0"))))
+void radix2DitCooleyTykeyFft(int K __attribute((annotate("range 0 2048 0"))),
+			     int* indices __attribute((annotate("range 0 2048 0"))),
+			     float* x __attribute((annotate("range -600000 350000 0"))),
+			     float* f __attribute((annotate("range -600000 350000 0"))))
 {
 
 	calcFftIndices(K, indices) ;
@@ -39,12 +39,12 @@ void radix2DitCooleyTykeyFft(int K __attribute((annotate("range 0 100 0"))),
 	float __attribute((annotate("no_float 20 12 signed -1.0 1.0 0"))) fftSin;
 	float __attribute((annotate("no_float 20 12 signed -1.0 1.0 0"))) fftCos;
 
-	float __attribute((annotate("target:t_real no_float 20 12 signed 0 100 0"))) t_real;
-	float __attribute((annotate("target:t_imag no_float 20 12 signed 0 100 0"))) t_imag;
+	float __attribute((annotate("target:t_real no_float 20 12 signed -300000 200000 0"))) t_real;
+	float __attribute((annotate("target:t_imag no_float 20 12 signed -600000 350000 0"))) t_imag;
 	int i ;
-	int __attribute((annotate("range 1 100 0"))) N ;
+	int __attribute((annotate("range 1 2048 0"))) N ;
 	int j ;
-	int __attribute((annotate("range 0 100 0"))) k ;
+	int __attribute((annotate("range 0 2048 0"))) k ;
 
 	double __attribute((annotate("range -1.0 1.0"))) dataIn[1];
 	double __attribute((annotate("target:dataOut range -1.0 1.0"))) dataOut[2];

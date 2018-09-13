@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
 	
 	for(i = 0;i < K ; i++)
 	{
-		outputFileHandler << COMPLEX_REAL(f,i) << " " << COMPLEX_IMAG(f,i) << std::endl;
+	  outputFileHandler << COMPLEX_REAL(f,i) << " " << COMPLEX_IMAG(f,i) << " " << indices[i] << std::endl;
 	}
 
 

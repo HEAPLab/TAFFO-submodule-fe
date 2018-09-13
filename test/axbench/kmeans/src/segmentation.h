@@ -20,12 +20,13 @@ typedef struct {
 } Centroid;
 #endif
 
-#define SIZEOF_CENTROID   (4 * __SIZEOF_FLOAT__)
-#define CENTROID(c, i)    (((c)[(i) * 4]))
-#define CENTROID_R(c, i)  (((c)[(i) * 4 + 0]))
-#define CENTROID_G(c, i)  (((c)[(i) * 4 + 1]))
-#define CENTROID_B(c, i)  (((c)[(i) * 4 + 2]))
-#define CENTROID2_N(c, i) (((c)[(i) * 4 + 3]))
+#define ANNOTATION_CENTROID "no_float 24 8"
+#define SIZEOF_CENTROID     (4 * __SIZEOF_FLOAT__)
+#define CENTROID(c, i)      (((c)[(i) * 4]))
+#define CENTROID_R(c, i)    (((c)[(i) * 4 + 0]))
+#define CENTROID_G(c, i)    (((c)[(i) * 4 + 1]))
+#define CENTROID_B(c, i)    (((c)[(i) * 4 + 2]))
+#define CENTROID2_N(c, i)   (((c)[(i) * 4 + 3]))
 
 typedef struct {
    int k;

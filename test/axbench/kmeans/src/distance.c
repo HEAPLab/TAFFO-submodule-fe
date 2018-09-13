@@ -13,12 +13,13 @@
 int count = 0;
 #define MAX_COUNT 1200000
 
-float euclideanDistance(float* p, float* c1) {
-	float r;
+float euclideanDistance(float* __attribute__((annotate(ANNOTATION_RGBPIXEL))) p, float* __attribute__((annotate(ANNOTATION_CENTROID))) c1) {
+	float __attribute__((annotate("no_float 24 8"))) r;
 
 	r = 0;
-	double r_tmp;
+	double __attribute__((annotate("no_float 24 8"))) r_tmp;
 	
+	/*
 	double dataIn[6];
 	dataIn[0] = RGBPIXEL_R(p, 0);
 	dataIn[1] = RGBPIXEL_G(p, 0);
@@ -26,8 +27,9 @@ float euclideanDistance(float* p, float* c1) {
 	dataIn[3] = CENTROID_R(c1, 0);
 	dataIn[4] = CENTROID_G(c1, 0);
 	dataIn[5] = CENTROID_B(c1, 0);
+	*/
 
-#pragma parrot(input, "kmeans", [6]dataIn)
+//#pragma parrot(input, "kmeans", [6]dataIn)
 
 	r += (RGBPIXEL_R(p, 0) - CENTROID_R(c1, 0)) * (RGBPIXEL_R(p, 0) - CENTROID_R(c1, 0));
 	r += (RGBPIXEL_G(p, 0) - CENTROID_G(c1, 0)) * (RGBPIXEL_G(p, 0) - CENTROID_G(c1, 0));
@@ -35,12 +37,12 @@ float euclideanDistance(float* p, float* c1) {
 
 	r_tmp = sqrt(r);
 
-#pragma parrot(output, "kmeans", <0.0; 1.0>r_tmp)
+//#pragma parrot(output, "kmeans", <0.0; 1.0>r_tmp)
 
 	return r_tmp;
 }
 
-int pickCluster(float* p, float* c1) {
+int pickCluster(float* __attribute__((annotate(ANNOTATION_RGBPIXEL))) p, float* __attribute__((annotate(ANNOTATION_CENTROID))) c1) {
 	float d1;
 
 	d1 = euclideanDistance(p, c1);
@@ -51,12 +53,12 @@ int pickCluster(float* p, float* c1) {
 	return 1;
 }
 
-void assignCluster(float* p, Clusters* clusters) {
+void assignCluster(float* __attribute__((annotate(ANNOTATION_RGBPIXEL))) p, Clusters* clusters) {
 	int i = 0;
 	int *p2 = (int *)p;
-	float *centroids = (float *)clusters->centroids;
+	float __attribute__((annotate(ANNOTATION_CENTROID))) *centroids = (float *)clusters->centroids;
 
-	float d;
+	float __attribute__((annotate(ANNOTATION_RGBPIXEL))) d;
 	d = euclideanDistance(p, &CENTROID(centroids, i));
 	RGBPIXEL_DISTANCE(p, 0) = d;
 

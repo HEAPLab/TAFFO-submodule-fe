@@ -23,7 +23,7 @@ typedef struct {
 } RgbPixel;
 #endif
 
-
+#define ANNOTATION_RGBPIXEL         "no_float 24 8"
 #define SIZEOF_RGBPIXEL             (5*__SIZEOF_FLOAT__)
 #define RGBPIXEL(pix, i)            (((pix)[((i)) * 5 + 0]))
 #define RGBPIXEL_R(pix, i)          (((pix)[((i)) * 5 + 0]))

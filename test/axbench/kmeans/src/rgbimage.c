@@ -53,7 +53,7 @@ int loadRgbImage(const char* fileName, RgbImage* image, float scale) {
 	int j;
 	char w[256];
 	//RgbPixel** pixels;
-	float** pixels;
+	float** __attribute__((annotate(ANNOTATION_RGBPIXEL))) pixels;
 	int** pixels2;
 	FILE *fp;
 
@@ -144,11 +144,11 @@ int loadRgbImage(const char* fileName, RgbImage* image, float scale) {
 	return 1;
 }
 
-int saveRgbImage(RgbImage* image, const char* fileName, float scale) {
+int saveRgbImage(RgbImage* image, const char* fileName, float __attribute__((annotate("no_float 24 8"))) scale) {
 	int i;
 	int j;
 	FILE *fp;
-	float **pixels = (float **)image->pixels;
+	float __attribute__((annotate(ANNOTATION_RGBPIXEL))) **pixels = (float **)image->pixels;
 	//int **pixels2 = (int **)image->pixels;
 
 	//printf("Saving %s ...\n", fileName);
@@ -196,12 +196,12 @@ void freeRgbImage(RgbImage* image) {
 void makeGrayscale(RgbImage* image) {
 	int i;
 	int j;
-	float luminance;
-	float **pixels = (float **)image->pixels;
+	float __attribute__((annotate(ANNOTATION_RGBPIXEL))) luminance;
+	float __attribute__((annotate(ANNOTATION_RGBPIXEL))) **pixels = (float **)image->pixels;
 
-	float rC = 0.30;
-	float gC = 0.59;
-	float bC = 0.11;
+	float __attribute__((annotate(ANNOTATION_RGBPIXEL))) rC = 0.30;
+	float __attribute__((annotate(ANNOTATION_RGBPIXEL))) gC = 0.59;
+	float __attribute__((annotate(ANNOTATION_RGBPIXEL))) bC = 0.11;
 
 	for(i = 0; i < image->h; i++) {
 		for(j = 0; j < image->w; j++) {

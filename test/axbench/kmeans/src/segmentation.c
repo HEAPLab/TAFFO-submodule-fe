@@ -14,9 +14,9 @@
 
 int initClusters(Clusters* clusters, int k, float scale) {
 	int i;
-	float x;
+	float __attribute__((annotate(ANNOTATION_CENTROID))) x;
 	
-	float *centroids = (float *)malloc(k * SIZEOF_CENTROID);
+	float __attribute__((annotate(ANNOTATION_CENTROID))) *centroids = (float *)malloc(k * SIZEOF_CENTROID);
 	int *centroids2 = (int *)centroids;
 
 	clusters->centroids = (void *)centroids;
@@ -29,13 +29,16 @@ int initClusters(Clusters* clusters, int k, float scale) {
 
 	clusters->k = k;
 	for (i = 0; i < clusters->k; i ++) {
-		x = (((float)rand())/RAND_MAX) * scale;
+		x = ((float)rand())/RAND_MAX;
+		x *= scale;
 		CENTROID_R(centroids, i) = x;
 
-		x = (((float)rand())/RAND_MAX) * scale;
+		x = ((float)rand())/RAND_MAX;
+		x *= scale;
 		CENTROID_G(centroids, i) = x;
 
-		x = (((float)rand())/RAND_MAX) * scale;
+		x = ((float)rand())/RAND_MAX;
+		x *= scale;
 		CENTROID_B(centroids, i) = x;
 
 		CENTROID2_N(centroids2, i) = 0;
@@ -54,9 +57,9 @@ void segmentImage(RgbImage* image, Clusters* clusters, int n) {
 	int i;
 	int x, y;
 	int c;
-	float **pixels = (float **)image->pixels;
+	float __attribute__((annotate(ANNOTATION_RGBPIXEL))) **pixels = (float **)image->pixels;
 	int **pixels2 = (int **)image->pixels;
-	float *centroids = (float *)clusters->centroids;
+	float __attribute__((annotate(ANNOTATION_CENTROID))) *centroids = (float *)clusters->centroids;
 	int *centroids2 = (int *)clusters->centroids;
 
 	for (i = 0; i < n; ++i) {

@@ -1,7 +1,10 @@
 #!/bin/bash
 
+# fix awk decimal number parser
+export LANG=en_US.UTF-8
+
 rm -rf data/output
-mkdir data/output
+mkdir -p data/output
 benchmark=sobel
 for f in ./../common/img/*.rgb
 do
@@ -20,8 +23,8 @@ do
 	echo -e "\e[32m### QoS ###\e[0m"
 	
 	python ./../common/scripts/png2rgb.py png data/output/${filename}_${benchmark}.rgb data/output/${filename}_${benchmark}.png > out1.tmp
-	python ./../common/scripts/png2rgb.py png data/output/${filename}_${benchmark}.rgb.fixp data/output/${filename}_${benchmark}.png.fixp > out2.tmp
+	python ./../common/scripts/png2rgb.py png data/output/${filename}_${benchmark}.rgb.fixp data/output/${filename}_${benchmark}.fixp.png > out2.tmp
 	
-	compare -metric RMSE data/output/${filename}_${benchmark}.png data/output/${filename}_${benchmark}.png.fixp null > tmp.log 2> tmp.err
-	awk '{ printf("*** Error: %0.2f%\n",substr($2, 2, length($2) - 2) * 100) }' tmp.err
+	compare -metric RMSE data/output/${filename}_${benchmark}.png data/output/${filename}_${benchmark}.fixp.png /dev/null > tmp.log 2> tmp.err
+	awk '{ printf("*** Error: %0.2f%%\n",substr($2, 2, length($2) - 2) * 100) }' tmp.err
 done

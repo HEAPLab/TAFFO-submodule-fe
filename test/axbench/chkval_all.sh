@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export FORMAT='%40s %12s %12s%11s%11s%11s%14s\n'
+export FORMAT='%40s %12s %12s%11s%11s%14s%20s\n'
 
 
 # $1 benchmark to check

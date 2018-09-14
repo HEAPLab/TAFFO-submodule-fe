@@ -45,4 +45,5 @@ for i in range(len(origLines)):
 
 pass;
 
-print bcolors.WARNING	+ "*** Error: %1.8f" % (missPred/float(len(origLines))) + bcolors.ENDC
+print bcolors.WARNING	+ "*** Absolute error: %d" % (missPred) + bcolors.ENDC
+print bcolors.WARNING	+ "*** Relative error: %1.8f %%" % (missPred/float(len(origLines)) * 100.0) + bcolors.ENDC

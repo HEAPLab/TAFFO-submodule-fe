@@ -30,9 +30,9 @@
  		this->g = g ;
  		this->b = b ;
  	}
- 	float r ;
- 	float g ;
- 	float b ;
+ 	float r __attribute((annotate("range 0 1 0")));
+ 	float g __attribute((annotate("range 0 1 0")));
+ 	float b __attribute((annotate("range 0 1 0")));
  } ;
 
  class Image {

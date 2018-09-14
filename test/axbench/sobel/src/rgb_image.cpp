@@ -155,11 +155,11 @@ int Image::saveRgbImage(std::string outFilename, float __attribute((annotate("no
 void Image::makeGrayscale()
 {
 
-	float __attribute((annotate("no_float 12 20"))) luminance ;
+	float __attribute((annotate("no_float 12 20 signed 0 1"))) luminance ;
 
-	float __attribute((annotate("no_float 9 23"))) rC = 0.30 / 256.0 ;
-	float __attribute((annotate("no_float 9 23"))) gC = 0.59 / 256.0 ;
-	float __attribute((annotate("no_float 9 23"))) bC = 0.11 / 256.0 ;
+	float __attribute((annotate("no_float 9 23 signed 1.171875e-3 1.171875e-3"))) rC = 0.30 / 256.0 ;
+	float __attribute((annotate("no_float 9 23 signed 2.304688e-3 2.304688e-3"))) gC = 0.59 / 256.0 ;
+	float __attribute((annotate("no_float 9 23 signed 4.29687e-4 4.29687e-4"))) bC = 0.11 / 256.0 ;
 
 	for(int h = 0 ; h < this->height ; h++)
 	{

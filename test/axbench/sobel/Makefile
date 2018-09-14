@@ -22,7 +22,7 @@ OBJ_FLOAT := obj/main.o
 OBJ_FIX   := obj/main.fixp.o
 
 .PHONY: all clean
-	
+
 all: DIR $(MODULE)
 
 .PRECIOUS: obj/%.ll obj/%.o obj/%.s
@@ -36,7 +36,7 @@ DIR:
 		mkdir obj;				\
 	fi
 
-$(MODULE): $(OBJ_FLOAT) $(OBJ_FIX)
+$(MODULE): $(OBJ_FLOAT) $(OBJ_FIX) obj/main.err.ll
 	$(LD) $(OBJ_FLOAT) $(LFLAGS) -o bin/$@
 	$(LD) $(OBJ_FIX) $(LFLAGS) -o bin/$@.fixp
 
@@ -50,12 +50,18 @@ $(OBJ_FLOAT) : obj/main.ll
 	$(CC) -S $^ -o obj/main.s $(OX)
 	$(CC) -c obj/main.s -o $@
 
-obj/main.fixp.ll : obj/main.ll
-	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -stats $< -o $@
+obj/main.init.ll : obj/main.ll
+	$(LLVM_DIR)/bin/opt -load=$(INITLIB) -S -taffoinit $(if $(ISDEBUG), -debug-only=flttofix$(comma)annotation) -stats $< -o $@ 2> stats/init.log
+
+obj/main.fixp.ll : obj/main.init.ll
+	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg -stats $(if $(ISDEBUG), -debug-only=flttofix) $< -o $@ 2> stats/flttofix.log
 
 $(OBJ_FIX) : obj/main.fixp.ll
 	$(CC) -S $^ -o obj/main.fixp.s $(OX)
 	$(CC) -c obj/main.fixp.s -o $@
+
+obj/main.err.ll : obj/main.fixp.ll
+	$(LLVM_DIR)/bin/opt -load=$(ERRORLIB) -S -errorprop -startonly -nounroll $(if $(ISDEBUG), -debug-only=errorprop) $< -o $@ 2> stats/errorprop.log
 
 clean:
 	@rm -rf *.o

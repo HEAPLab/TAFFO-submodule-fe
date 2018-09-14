@@ -9,23 +9,24 @@
 #include <cmath>
 
 int total = 0;
-static float __attribute((annotate("no_float 8 24"))) kx[][3] =
+static float __attribute((annotate("no_float 8 24 signed -2 2 0"))) kx[][3] =
 		{
 			{ -1, -2, -1 },
 			{  0,  0,  0 },
 			{  1,  2,  1 }
 		} ;
 
-static float __attribute((annotate("no_float 8 24"))) ky[][3] =
+static float __attribute((annotate("no_float 8 24 signed -2 2 0"))) ky[][3] =
 		{
 			{ -1, 0, 1 },
 			{ -2, 0, 2 },
 			{ -1, 0, 1 }
 		} ;
 
-float convolve(float w[][3], float k[][3])
+float convolve(float w[][3] __attribute((annotate("range 0 1"))),
+               float k[][3] __attribute((annotate("range -2 2 0"))))
 {
-	float __attribute((annotate("no_float 12 20"))) r ;
+	float __attribute((annotate("no_float 12 20 signed -1 1"))) r ;
 	r = 0.0 ;
 	for( int j = 0 ; j < 3 ; j++ )
 		for ( int i = 0 ; i < 3 ; i++ )
@@ -35,11 +36,11 @@ float convolve(float w[][3], float k[][3])
 	return r ;
 }
 
-float sobel(float w[][3])
+float sobel(float w[][3] __attribute((annotate("range 0 1 1e-8"))))
 {
-	float __attribute((annotate("no_float 8 24"))) sx ;
-	float __attribute((annotate("no_float 8 24"))) sy ;
-	float __attribute((annotate("no_float 8 24"))) s  ;
+	float __attribute((annotate("no_float 8 24 signed -1 1 0"))) sx ;
+	float __attribute((annotate("no_float 8 24 signed -1 1 0"))) sy ;
+	float __attribute((annotate("target:asd no_float 8 24 signed 0 0.7"))) s  ;
 
 	double dataIn[9];
 

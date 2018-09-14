@@ -65,5 +65,5 @@ for i in range(len(origLines)):
         trueAbsError += nominator
 pass;
 
-print bcolors.WARNING	+ "*** Relative error: %1.8f" % (absError/float(len(origLines))) + bcolors.ENDC
+print bcolors.WARNING	+ "*** Relative error: %1.8f %%" % (absError/float(len(origLines)) * 100.0) + bcolors.ENDC
 print bcolors.WARNING	+ "*** Absolute error: %1.8f" % (trueAbsError/float(len(origLines))) + bcolors.ENDC

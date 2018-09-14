@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [[ -z $FORMAT ]]; then
-  FORMAT='%40s %12s %12s%5s%6s%7s%12s\n'
+  FORMAT='%40s %12s %12s%5s%6s%20s%12s\n'
 fi
 
 
@@ -15,15 +15,17 @@ match_time()
   fi
 }
 
+
 match_error()
 {
-  regex='^[^E]*Error[^0-9]*([0-9.]+)'
+  regex="^[^${2:0:1}]*$2[^0-9]*([0-9.]+)"
   if [[ ( $1 =~ $regex ) ]]; then
     echo ${BASH_REMATCH[1]}
   else
     echo -1
   fi
 }
+
 
 rm -rf data/output
 mkdir -p data/output
@@ -46,10 +48,12 @@ do
   
   if [[ -z $NOERROR ]]; then
     error=$(python ./scripts/qos.py data/output/${f}_${benchmark}_out.data data/output/${f}_${benchmark}_out.data.fixp)
-    merror=$(match_error "$error")
+    mabs_error=$(match_error "$error" 'Absolute error')
+    mrel_error=$(match_error "$error" 'Relative error')
   else
-    merror='0'
+    mabs_error='0'
+    mrel_error='0'
   fi
   
-  printf "$FORMAT" "${benchmark}_${f}" $mfix $mfloat 0 0 '-' "$merror"
+  printf "$FORMAT" "${benchmark}_${f}" $mfix $mfloat 0 0 "$mrel_error" "$mabs_error" 
 done

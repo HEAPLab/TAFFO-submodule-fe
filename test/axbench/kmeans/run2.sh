@@ -24,7 +24,7 @@ rm -rf data/output
 mkdir -p data/output
 benchmark=kmeans
 
-for f in ./../common/img/01.rgb
+for f in ./../common/img/*.rgb
 do
   filename=$(basename "$f")
   extension="${filename##*.}"

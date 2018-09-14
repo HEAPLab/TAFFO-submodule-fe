@@ -10,9 +10,9 @@
 
 void Image::printPixel(int x, int y)
 {
-	std::cout << "# Red: 	" << this->pixels[x][y]->r << std::endl;
-	std::cout << "# Green: 	" << this->pixels[x][y]->g << std::endl;
-	std::cout << "# Blue: 	" << this->pixels[x][y]->b << std::endl; 
+	std::cout << "# Red: 	" << this->getPixel_r(x, y) << std::endl;
+	std::cout << "# Green: 	" << this->getPixel_g(x, y) << std::endl;
+	std::cout << "# Blue: 	" << this->getPixel_b(x, y) << std::endl; 
 }
 
 
@@ -71,14 +71,14 @@ int Image::loadRgbImage(std::string filename)
 		std::cout << "# Height: " << this->height  << std::endl ;
 	} 
 
+  this->_pixels = (void*)malloc(this->height * (this->width * 3) * sizeof(float));
+
 	// We assume there is a newline after each row
 	for (int h = 0 ; h < this->height ; h++)
 	{
 		std::getline(imageFile, line) ;
 		std::vector<int> currRowString;
 		tokenize(currRowString, line);
-
-		std::vector<boost::shared_ptr<Pixel> > currRow ;
 
 		for(int w = 0 ; w < this->width ; w++)
 		{
@@ -87,10 +87,10 @@ int Image::loadRgbImage(std::string filename)
 			float g = currRowString[index++];
 			float b = currRowString[index++];
 			// Add pixel to the current row
-			boost::shared_ptr<Pixel> currPixel(new Pixel(r, g, b)) ;
-			currRow.push_back(currPixel) ;
+			putPixel_r(w, h, r);
+			putPixel_g(w, h, g);
+			putPixel_b(w, h, b);
 		}
-		this->pixels.push_back(currRow) ;
 	}
 
 	std::getline(imageFile, line) ;
@@ -102,7 +102,7 @@ int Image::saveRgbImage(std::string outFilename, float __attribute((annotate("no
 {
 	if(DEBUG)
 	{
-		std::cout << "# Savint into " << outFilename << " ..." << std::endl ;
+		std::cout << "# Saving into " << outFilename << " ..." << std::endl ;
 	}
 
 	std::ofstream outFile ;
@@ -115,9 +115,9 @@ int Image::saveRgbImage(std::string outFilename, float __attribute((annotate("no
 		for(int w = 0 ; w < (this->width - 1); w++)
 		{
 			// Write Red
-			int red   = (int)(this->pixels[h][w]->r * scale) ;
-			int green = (int)(this->pixels[h][w]->g * scale) ;
-			int blue  = (int)(this->pixels[h][w]->b * scale) ;
+			int red   = (int)(this->getPixel_r(w, h) * scale) ;
+			int green = (int)(this->getPixel_g(w, h) * scale) ;
+			int blue  = (int)(this->getPixel_b(w, h) * scale) ;
 
 			//if ( red > 255 )
 		//		red = 255 ;
@@ -133,9 +133,9 @@ int Image::saveRgbImage(std::string outFilename, float __attribute((annotate("no
 			
 		}
 
-		int red   = (int)(this->pixels[h][this->width - 1]->r * scale) ;
-		int green = (int)(this->pixels[h][this->width - 1]->g * scale);
-		int blue  = (int)(this->pixels[h][this->width - 1]->b * scale) ;
+		int red   = (int)(this->getPixel_r(this->width - 1, h) * scale) ;
+		int green = (int)(this->getPixel_g(this->width - 1, h) * scale);
+		int blue  = (int)(this->getPixel_b(this->width - 1, h) * scale) ;
 
 
 		// Write Red
@@ -165,13 +165,13 @@ void Image::makeGrayscale()
 	{
 		for(int w = 0 ; w < this->width ; w++)
 		{
-			luminance = ( rC * this->pixels[h][w]->r ) + 
-						( gC * this->pixels[h][w]->g ) + 
-						( bC * this->pixels[h][w]->b ) ;
+			luminance = ( rC * this->getPixel_b(w, h) ) + 
+						( gC * this->getPixel_g(w, h) ) + 
+						( bC * this->getPixel_b(w, h) ) ;
 
-			this->pixels[h][w]->r = luminance ;
-			this->pixels[h][w]->g = luminance ; 
-			this->pixels[h][w]->b = luminance ; 
+			this->putPixel_r(w, h, luminance) ;
+			this->putPixel_g(w, h, luminance) ; 
+			this->putPixel_b(w, h, luminance) ; 
 		}
 	}
 }

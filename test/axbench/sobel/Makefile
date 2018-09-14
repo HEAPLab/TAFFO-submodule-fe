@@ -6,13 +6,14 @@ ifeq ($(shell $(LLVM_DIR)/bin/llvm-config --build-mode),Debug)
 ISDEBUG = 1
 $(info debug mode on)
 endif
+comma :=,
 
 OX          := -O3
 
 CFLAGS		+= -Wall -Wnarrowing -std=c++11
 LFLAGS		+= #-lboost_regex
-HEADERS     := src
-INCLUDE 	+= -I${HEADERS} 
+HEADERS		:= src
+INCLUDE		+= -I${HEADERS} -I../common/src
 
 MODULE		:= sobel.out
 
@@ -29,14 +30,11 @@ all: DIR $(MODULE)
 
 DIR:
 	@echo ${CPP_FILES}
-	if [ ! -d "./bin" ];then 	\
-		mkdir bin;				\
-	fi
-	if [ ! -d "./obj" ];then 	\
-		mkdir obj;				\
-	fi
+	mkdir -p bin
+	mkdir -p obj
+	mkdir -p stats
 
-$(MODULE): $(OBJ_FLOAT) $(OBJ_FIX) obj/main.err.ll
+$(MODULE): $(OBJ_FLOAT) $(OBJ_FIX) obj/main.err.ll stats/main.fixp.mix.txt stats/main.mix.txt stats/main.llvm.txt
 	$(LD) $(OBJ_FLOAT) $(LFLAGS) -o bin/$@
 	$(LD) $(OBJ_FIX) $(LFLAGS) -o bin/$@.fixp
 
@@ -63,9 +61,16 @@ $(OBJ_FIX) : obj/main.fixp.ll
 obj/main.err.ll : obj/main.fixp.ll
 	$(LLVM_DIR)/bin/opt -load=$(ERRORLIB) -S -errorprop -startonly -nounroll $(if $(ISDEBUG), -debug-only=errorprop) $< -o $@ 2> stats/errorprop.log
 
+stats/%.mix.txt: obj/%.ll
+	$(INSTMIX) $< > $@
+
+stats/%.llvm.txt: obj/%.ll
+	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -stats $< -o /dev/null 2> $@
+
 clean:
-	@rm -rf *.o
-	@rm -rf *.d
-	@rm -rf *.out
-	@rm -rf bin
-	@rm -rf obj
+	rm -rf *.o
+	rm -rf *.d
+	rm -rf *.out
+	rm -rf bin
+	rm -rf obj
+	rm -rf stats

@@ -33,6 +33,7 @@ check 'fft'
 check 'inversek2j'
 check 'jmeint'
 check 'kmeans'
+check 'sobel'
 
 
 

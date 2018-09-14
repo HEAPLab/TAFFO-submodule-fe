@@ -8,6 +8,7 @@
 #include "convolution.hpp"
 #include <iostream>
 #include <cmath>
+#include "benchmark.hpp"
 
 #ifdef NPU_FANN
  #include "floatfann.h"
@@ -37,6 +38,8 @@ int main ( int argc, const char* argv[])
 	srcImagePtr->makeGrayscale( ); // convert the source file to grayscale
 
 	y = 0 ;
+	
+	AxBenchTimer timer;
 	
 	// Start performing Sobel operation
 	for( x = 0 ; x < srcImagePtr->width ; x++ ) {
@@ -97,6 +100,9 @@ int main ( int argc, const char* argv[])
 		dstImagePtr->putPixel_b(x, y, s) ;
 
 	}
+	
+	uint64_t kernel_time = timer.nanosecondsSinceInit();
+	std::cout << "kernel time = " << ((double)kernel_time) / 1000000000.0 << " s" << std::endl;
 
 	dstImagePtr->saveRgbImage(argv[2], std::sqrt(256 * 256 + 256 * 256)) ;
 

@@ -19,8 +19,10 @@ int main ( int argc, const char* argv[])
 	float __attribute((annotate("no_float 8 24"))) s = 0;
 
 	// Source and destination image	
-	boost::shared_ptr<Image> srcImagePtr(new Image());
-	boost::shared_ptr<Image> dstImagePtr(new Image());
+	Image srcImage;
+	Image dstImage;
+	Image *srcImagePtr = &srcImage;
+	Image *dstImagePtr = &dstImage;
 
 	float __attribute((annotate("no_float 8 24"))) w[][3] = {
 		{0, 0, 0},
@@ -44,9 +46,9 @@ int main ( int argc, const char* argv[])
 			s = sobel(w);
 
 
-		dstImagePtr->pixels[y][x]->r = s ;
-		dstImagePtr->pixels[y][x]->g = s ;
-		dstImagePtr->pixels[y][x]->b = s ;
+		dstImagePtr->putPixel_r(x, y, s) ;
+		dstImagePtr->putPixel_g(x, y, s) ;
+		dstImagePtr->putPixel_b(x, y, s) ;
 	}
 
 	for (y = 1 ; y < (srcImagePtr->height - 1) ; y++) {
@@ -56,9 +58,9 @@ int main ( int argc, const char* argv[])
 			s = sobel(w);
 
 	
-		dstImagePtr->pixels[y][x]->r = s ;
-		dstImagePtr->pixels[y][x]->g = s ;
-		dstImagePtr->pixels[y][x]->b = s ;
+		dstImagePtr->putPixel_r(x, y, s) ;
+		dstImagePtr->putPixel_g(x, y, s) ;
+		dstImagePtr->putPixel_b(x, y, s) ;
 
 
 		for( x = 1 ; x < srcImagePtr->width - 1 ; x++ ) {
@@ -66,9 +68,9 @@ int main ( int argc, const char* argv[])
 				
 				s = sobel(w);
 
-			dstImagePtr->pixels[y][x]->r = s ;
-			dstImagePtr->pixels[y][x]->g = s ;
-			dstImagePtr->pixels[y][x]->b = s ;
+			dstImagePtr->putPixel_r(x, y, s) ;
+			dstImagePtr->putPixel_g(x, y, s) ;
+			dstImagePtr->putPixel_b(x, y, s) ;
 
 		}
 
@@ -78,9 +80,9 @@ int main ( int argc, const char* argv[])
 
 			s = sobel(w);
 
-		dstImagePtr->pixels[y][x]->r = s ;
-		dstImagePtr->pixels[y][x]->g = s ;
-		dstImagePtr->pixels[y][x]->b = s ;
+		dstImagePtr->putPixel_r(x, y, s) ;
+		dstImagePtr->putPixel_g(x, y, s) ;
+		dstImagePtr->putPixel_b(x, y, s) ;
 	}
 
 	y = srcImagePtr->height - 1;
@@ -90,9 +92,9 @@ int main ( int argc, const char* argv[])
 		
 			s = sobel(w);
 
-		dstImagePtr->pixels[y][x]->r = s ;
-		dstImagePtr->pixels[y][x]->g = s ;
-		dstImagePtr->pixels[y][x]->b = s ;
+		dstImagePtr->putPixel_r(x, y, s) ;
+		dstImagePtr->putPixel_g(x, y, s) ;
+		dstImagePtr->putPixel_b(x, y, s) ;
 
 	}
 

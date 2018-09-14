@@ -335,6 +335,8 @@ void findLOEError(RangeErrorMap &RMap, Instruction *I,
     case Instruction::GetElementPtr:
       Pointer = (cast<GetElementPtrInst>(I))->getPointerOperand();
       break;
+    case Instruction::BitCast:
+      Pointer = (cast<BitCastInst>(I))->getOperand(0U);
     default:
       return;
   }

@@ -38,9 +38,9 @@ float convolve(float w[][3] __attribute((annotate("range 0 1"))),
 
 float sobel(float w[][3] __attribute((annotate("range 0 1 1e-8"))))
 {
-	float __attribute((annotate("no_float 8 24"))) sx ;
-	float __attribute((annotate("no_float 8 24"))) sy ;
-	float __attribute((annotate("no_float 8 24"))) s  ;
+	float __attribute((annotate("no_float 8 24 signed -1 1 0"))) sx ;
+	float __attribute((annotate("no_float 8 24 signed -1 1 0"))) sy ;
+	float __attribute((annotate("no_float 8 24 signed 0 0.7"))) s  ;
 /*
 	double dataIn[9];
 

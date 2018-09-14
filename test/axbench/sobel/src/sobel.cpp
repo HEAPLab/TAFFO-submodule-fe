@@ -17,15 +17,15 @@
 int main ( int argc, const char* argv[])
 {
 	int x, y;
-	float __attribute((annotate("no_float 8 24 signed 0 0.7"))) s = 0;
+	float __attribute((annotate("target:s no_float 8 24 signed 0 0.7"))) s = 0;
 
 	// Source and destination image	
 	Image srcImage;
 	Image dstImage;
-	Image *srcImagePtr = &srcImage;
-	Image *dstImagePtr = &dstImage;
+	Image __attribute((annotate("range 0 1 0"))) *srcImagePtr = &srcImage;
+	Image __attribute((annotate("range 0 1 0"))) *dstImagePtr = &dstImage;
 
-	float __attribute((annotate("no_float 8 24 signed 0 1 0"))) w[][3] = {
+	float __attribute((annotate("target:s no_float 8 24 signed 0 1 0"))) w[][3] = {
 		{0, 0, 0},
 		{0, 0, 0},
 		{0, 0, 0}

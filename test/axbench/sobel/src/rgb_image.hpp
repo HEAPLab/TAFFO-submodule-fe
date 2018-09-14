@@ -31,7 +31,7 @@ public:
 } ;
 */
 
-#define ANNOTATION_PIXEL "no_float 8 24 unsigned"
+#define ANNOTATION_PIXEL "no_float 8 24 unsigned 0 1 0"
 
 class Image {
 public:

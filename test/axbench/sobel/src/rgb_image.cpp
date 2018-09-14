@@ -98,7 +98,7 @@ int Image::loadRgbImage(std::string filename)
 	return 1 ;
 }
 
-int Image::saveRgbImage(std::string outFilename, float __attribute((annotate("force_no_float 12 20"))) scale)
+int Image::saveRgbImage(std::string outFilename, float __attribute((annotate("target:out force_no_float 12 20 signed 362 362 0"))) scale)
 {
 	if(DEBUG)
 	{

@@ -41,7 +41,7 @@ $(MODULE): $(OBJ_FLOAT) $(OBJ_FIX) obj/main.err.ll
 	$(LD) $(OBJ_FIX) $(LFLAGS) -o bin/$@.fixp
 
 obj/%.ll : src/%.cpp
-	$(CC) -S -emit-llvm $(CFLAGS) $(INCLUDE) -O0 $< -o $@
+	$(CC) -S -emit-llvm $(CFLAGS) $(INCLUDE) $< -o $@
 
 obj/main.ll : $(LL_FILES)
 	$(LLVM_DIR)/bin/llvm-link -S $^ -o $@

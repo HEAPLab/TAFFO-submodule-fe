@@ -38,10 +38,10 @@ float convolve(float w[][3] __attribute((annotate("range 0 1"))),
 
 float sobel(float w[][3] __attribute((annotate("range 0 1 1e-8"))))
 {
-	float __attribute((annotate("no_float 8 24 signed -1 1 0"))) sx ;
-	float __attribute((annotate("no_float 8 24 signed -1 1 0"))) sy ;
-	float __attribute((annotate("target:asd no_float 8 24 signed 0 0.7"))) s  ;
-
+	float __attribute((annotate("no_float 8 24"))) sx ;
+	float __attribute((annotate("no_float 8 24"))) sy ;
+	float __attribute((annotate("no_float 8 24"))) s  ;
+/*
 	double dataIn[9];
 
 	dataIn[0] = w[0][0];
@@ -55,7 +55,7 @@ float sobel(float w[][3] __attribute((annotate("range 0 1 1e-8"))))
 	dataIn[8] = w[2][2];
 
 #pragma parrot(input, "sobel", [9]dataIn)
-
+*/
 	for(int i = 0 ; i < 3 ; i++)
 		for(int j = 0 ; j < 3 ; j++)
 			if(DEBUG) std::cout << "w_ " << i << j << ": " << w[i][j] << std::endl;
@@ -67,8 +67,8 @@ float sobel(float w[][3] __attribute((annotate("range 0 1 1e-8"))))
 	s = sqrt(sx * sx + sy * sy) ;
 	if (s >= (256 / sqrt(256 * 256 + 256 * 256)))
 		s = 255 / sqrt(256 * 256 + 256 * 256);
-
+/*
 #pragma parrot(output, "sobel", <0.0; 1.0>s)
-	
+	*/
 	return s ;
 }

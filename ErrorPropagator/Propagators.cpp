@@ -275,6 +275,9 @@ void updateArgumentRE(RangeErrorMap &RMap, MemorySSA &MemSSA, Value *Pointer,
   else if (GetElementPtrInst *GEPI = dyn_cast<GetElementPtrInst>(Pointer)) {
     updateArgumentRE(RMap, MemSSA, GEPI->getPointerOperand(), NewRE);
   }
+  else if (BitCastInst *BCI = dyn_cast<BitCastInst>(Pointer)) {
+    updateArgumentRE(RMap, MemSSA, BCI->getOperand(0U), NewRE);
+  }
   else if (LoadInst *LI = dyn_cast<LoadInst>(Pointer)) {
     MemorySSAWalker *MSSAWalker = MemSSA.getWalker();
     assert(MSSAWalker != nullptr && "Null MemorySSAWalker.");
@@ -284,6 +287,7 @@ void updateArgumentRE(RangeErrorMap &RMap, MemorySSA &MemSSA, Value *Pointer,
       }
     }
     // TODO: Handle MemoryPHI
+    updateArgumentRE(RMap, MemSSA, LI->getPointerOperand(), NewRE);
   }
 }
 

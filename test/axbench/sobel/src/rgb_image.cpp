@@ -71,7 +71,7 @@ int Image::loadRgbImage(std::string filename)
 		std::cout << "# Height: " << this->height  << std::endl ;
 	} 
 
-  this->_pixels = (void**)malloc(this->height * sizeof(void*));
+  this->_pixels = (void*)malloc(this->height * (this->width * 3) * sizeof(float));
 
 	// We assume there is a newline after each row
 	for (int h = 0 ; h < this->height ; h++)
@@ -79,9 +79,6 @@ int Image::loadRgbImage(std::string filename)
 		std::getline(imageFile, line) ;
 		std::vector<int> currRowString;
 		tokenize(currRowString, line);
-
-    float *_currRow = (float*)malloc(this->width * sizeof(float*) * 3);
-    this->_pixels[h] = _currRow;
 
 		for(int w = 0 ; w < this->width ; w++)
 		{

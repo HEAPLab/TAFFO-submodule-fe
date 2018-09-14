@@ -36,7 +36,7 @@ class Image {
 public:
 	int 			width ;
 	int 			height ;
-	void    **_pixels;
+	void     *_pixels;
 	//std::vector 	<std::vector<boost::shared_ptr<Pixel> > > pixels ;
 	std::string 	meta ;
 
@@ -53,29 +53,23 @@ public:
 	void printPixel(int x, int y) ;
 	
 	float getPixel_r(int x, int y) {
-	  float *row = (float*)_pixels[y];
-	  return row[x*3];
+	  return ((float*)_pixels)[y * (width * 3) + x * 3 + 0];
 	}
 	float getPixel_g(int x, int y) {
-	  float *row = (float*)_pixels[y];
-	  return row[x*3+1];
+	  return ((float*)_pixels)[y * (width * 3) + x * 3 + 1];
 	}
 	float getPixel_b(int x, int y) {
-	  float *row = (float*)_pixels[y];
-	  return row[x*3+2];
+	  return ((float*)_pixels)[y * (width * 3) + x * 3 + 2];
 	}
 	
 	void putPixel_r(int x, int y, float v) {
-	  float *row = (float*)_pixels[y];
-	  row[x*3] = v;
+	  ((float*)_pixels)[y * (width * 3) + x * 3 + 0] = v;
 	}
 	void putPixel_g(int x, int y, float v) {
-	  float *row = (float*)_pixels[y];
-	  row[x*3+1] = v;
+	  ((float*)_pixels)[y * (width * 3) + x * 3 + 1] = v;
 	}
 	void putPixel_b(int x, int y, float v) {
-	  float *row = (float*)_pixels[y];
-	  row[x*3+2] = v;
+	  ((float*)_pixels)[y * (width * 3) + x * 3 + 2] = v;
 	}
 } ;
 

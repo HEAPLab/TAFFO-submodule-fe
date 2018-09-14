@@ -118,41 +118,48 @@ getConstantFPRangeError(RangeErrorMap &RMap, ConstantFP *VFP) {
 
 const RangeErrorMap::RangeError *
 getConstantRangeError(RangeErrorMap &RMap, Instruction &I, ConstantInt *VInt,
-		      bool DoublePP = false) {
+		      bool DoublePP = false, const FPType *FallbackTy = nullptr) {
 
   // We interpret the value of VInt with the same
   // fractional bits and sign of the result.
   const FPInterval *RInfo = RMap.getRange(&I);
-  if (RInfo == nullptr)
-    return nullptr;
+  const FPType *Ty = nullptr;
+  if (RInfo != nullptr)
+    Ty = dyn_cast_or_null<FPType>(RInfo->getTType());
+  if (Ty == nullptr && FallbackTy != nullptr)
+    Ty = FallbackTy;
 
-  const FPType *Ty = cast<FPType>(RInfo->getTType());
-  unsigned PointPos = Ty->getPointPos();
-  if (DoublePP) PointPos *= 2U;
-  int SPointPos = (Ty->isSigned()) ? -PointPos : PointPos;
-  std::unique_ptr<FixedPointValue> VFPRange =
-    FixedPointValue::createFromConstantInt(SPointPos, nullptr, VInt, VInt);
-  FPInterval VRange = VFPRange->getInterval();
-
-#if 1
-  // We use the rounding error of this format as the only error.
-  AffineForm<inter_t> Error(0, RInfo->getRoundingError());
-#else
+  FPInterval VRange;
   AffineForm<inter_t> Error;
-#endif
+  if (Ty != nullptr) {
+    unsigned PointPos = Ty->getPointPos();
+    if (DoublePP) PointPos *= 2U;
+    int SPointPos = (Ty->isSigned()) ? -PointPos : PointPos;
+    std::unique_ptr<FixedPointValue> VFPRange =
+      FixedPointValue::createFromConstantInt(SPointPos, nullptr, VInt, VInt);
+    VRange = VFPRange->getInterval();
+    // We use the rounding error of this format as the only error.
+    Error = AffineForm<inter_t>(0, RInfo->getRoundingError());
+  }
+  else {
+    VRange.Min = VRange.Max = VInt->getSExtValue();
+    DEBUG(dbgs() << "(WARNING: interpreting ConstantInt " << *VInt
+	  << " as integer.)");
+  }
 
   RMap.setRangeError(VInt, std::make_pair(VRange, Error));
   return RMap.getRangeError(VInt);
 }
 
 const RangeErrorMap::RangeError*
-getOperandRangeError(RangeErrorMap &RMap, Instruction &I, Value *V, bool DoublePP = false) {
+getOperandRangeError(RangeErrorMap &RMap, Instruction &I, Value *V,
+		     bool DoublePP = false, const FPType *FallbackTy = nullptr) {
   assert(V != nullptr);
 
   // If V is a Constant Int extract its value.
   ConstantInt *VInt = dyn_cast<ConstantInt>(V);
   if (VInt != nullptr)
-    return getConstantRangeError(RMap, I, VInt, DoublePP);
+    return getConstantRangeError(RMap, I, VInt, DoublePP, FallbackTy);
 
   ConstantFP *VFP = dyn_cast<ConstantFP>(V);
   if (VFP != nullptr)
@@ -163,12 +170,13 @@ getOperandRangeError(RangeErrorMap &RMap, Instruction &I, Value *V, bool DoubleP
 }
 
 const RangeErrorMap::RangeError*
-getOperandRangeError(RangeErrorMap &RMap, Instruction &I, unsigned Op, bool DoublePP = false) {
+getOperandRangeError(RangeErrorMap &RMap, Instruction &I, unsigned Op,
+		     bool DoublePP = false, const FPType *FallbackTy = nullptr) {
   Value *V = I.getOperand(Op);
   if (V == nullptr)
     return nullptr;
 
-  return getOperandRangeError(RMap, I, V, DoublePP);
+  return getOperandRangeError(RMap, I, V, DoublePP, FallbackTy);
 }
 
 } // end of anonymous namespace
@@ -327,7 +335,7 @@ void findLOEError(RangeErrorMap &RMap, Instruction *I,
       return;
   }
   const RangeErrorMap::RangeError *RE = RMap.getRangeError(Pointer);
-  if (RE != nullptr)
+  if (RE != nullptr && RE->second.hasValue())
     Res.push_back(RE);
   else {
     Instruction *PI = dyn_cast<Instruction>(Pointer);
@@ -571,17 +579,25 @@ bool propagatePhi(RangeErrorMap &RMap, Instruction &I) {
 
   DEBUG(dbgs() << "Propagating error for PHI node " << I.getName() << "... ");
 
-  // if (RMap.getRangeError(&I) == nullptr) {
-  //   DEBUG(dbgs() << "ignored (no range data).\n");
-  //   return false;
-  // }
+  const FPType *ConstFallbackTy = nullptr;
+  if (RMap.getRangeError(&I) == nullptr) {
+    for (const Use &IVal : PHI.incoming_values()) {
+      auto *RE = getOperandRangeError(RMap, I, IVal);
+      if (RE == nullptr)
+	continue;
+
+      ConstFallbackTy = dyn_cast_or_null<FPType>(RE->first.getTType());
+      if (ConstFallbackTy != nullptr)
+	break;
+    }
+  }
 
   // Iterate over values and choose the largest absolute error.
   inter_t AbsErr = -1.0;
   inter_t Min = std::numeric_limits<inter_t>::infinity();
   inter_t Max = -std::numeric_limits<inter_t>::infinity();
   for (const Use &IVal : PHI.incoming_values()) {
-    auto *RE = getOperandRangeError(RMap, I, IVal);
+    auto *RE = getOperandRangeError(RMap, I, IVal, false, ConstFallbackTy);
     if (RE == nullptr)
       continue;
 

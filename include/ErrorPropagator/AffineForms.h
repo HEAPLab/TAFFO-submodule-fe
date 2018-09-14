@@ -462,7 +462,9 @@ LinearErrorApproximationDecr(FunDer dF, const Interval<T> &R, const AffineForm<T
 
   DEBUG(llvm::dbgs() << "(R = [" << static_cast<double>(R.Min)
 	<< ", " << static_cast<double>(R.Max)
-	<< "], dFx = " << static_cast<double>(dFx) << ") ");
+	<< "], dFx = " << static_cast<double>(dFx)
+	<< ", E = " << static_cast<double>(E.noiseTermsAbsSum())
+	<< ") ");
   return E.scalarMultiply(dFx);
 }
 

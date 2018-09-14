@@ -313,14 +313,19 @@ void BBScheduler::enqueueChildren(BasicBlock *BB) {
 	enqueueChildren(DestBB);
     }
     else {
-      // Part of a loop: visit exiting blocks first,
-      // so they are scheduled at the end.
+      // Part of a loop:
+      // visit exiting blocks first, so they are scheduled at the end.
       SmallVector<BasicBlock *, 2U> BodyQueue;
       for (BasicBlock *DestBB : TI->successors())
 	if (isExiting(DestBB, L))
 	  enqueueChildren(DestBB);
 	else
 	  BodyQueue.push_back(DestBB);
+
+      // If the header is also the exit, but not a latch,
+      // it is visited also after the loop body
+      if (L->isLoopExiting(BB) && !L->isLoopLatch(BB))
+	Queue.push_back(BB);
 
       for (BasicBlock *BodyBB : BodyQueue)
 	enqueueChildren(BodyBB);

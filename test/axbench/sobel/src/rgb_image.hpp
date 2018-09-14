@@ -31,6 +31,7 @@ public:
 } ;
 */
 
+#define ANNOTATION_PIXEL "no_float 8 24 unsigned"
 
 class Image {
 public:
@@ -52,24 +53,30 @@ public:
 	void makeGrayscale() ;
 	void printPixel(int x, int y) ;
 	
-	float getPixel_r(int x, int y) {
-	  return ((float*)_pixels)[y * (width * 3) + x * 3 + 0];
+	float getPixel_r(int x, int y) __attribute((always_inline)) {
+	  float *pixels __attribute((annotate(ANNOTATION_PIXEL))) = ((float*)_pixels);
+	  return pixels[y * (width * 3) + x * 3 + 0];
 	}
-	float getPixel_g(int x, int y) {
-	  return ((float*)_pixels)[y * (width * 3) + x * 3 + 1];
+	inline float getPixel_g(int x, int y)  __attribute((always_inline)) {
+	  float *pixels __attribute((annotate(ANNOTATION_PIXEL))) = ((float*)_pixels);
+	  return pixels[y * (width * 3) + x * 3 + 1];
 	}
-	float getPixel_b(int x, int y) {
-	  return ((float*)_pixels)[y * (width * 3) + x * 3 + 2];
+	inline float getPixel_b(int x, int y)  __attribute((always_inline)) {
+	  float *pixels __attribute((annotate(ANNOTATION_PIXEL))) = ((float*)_pixels);
+	  return pixels[y * (width * 3) + x * 3 + 2];
 	}
 	
-	void putPixel_r(int x, int y, float v) {
-	  ((float*)_pixels)[y * (width * 3) + x * 3 + 0] = v;
+	inline void putPixel_r(int x, int y, float __attribute((annotate(ANNOTATION_PIXEL))) v)  __attribute((always_inline)) {
+	  float *pixels __attribute((annotate(ANNOTATION_PIXEL))) = ((float*)_pixels);
+	  pixels[y * (width * 3) + x * 3 + 0] = v;
 	}
-	void putPixel_g(int x, int y, float v) {
-	  ((float*)_pixels)[y * (width * 3) + x * 3 + 1] = v;
+	inline void putPixel_g(int x, int y, float __attribute((annotate(ANNOTATION_PIXEL))) v)  __attribute((always_inline)) {
+	  float *pixels __attribute((annotate(ANNOTATION_PIXEL))) = ((float*)_pixels);
+	  pixels[y * (width * 3) + x * 3 + 1] = v;
 	}
-	void putPixel_b(int x, int y, float v) {
-	  ((float*)_pixels)[y * (width * 3) + x * 3 + 2] = v;
+	inline void putPixel_b(int x, int y, float __attribute((annotate(ANNOTATION_PIXEL))) v)  __attribute((always_inline)) {
+	  float *pixels __attribute((annotate(ANNOTATION_PIXEL))) = ((float*)_pixels);
+	  pixels[y * (width * 3) + x * 3 + 2] = v;
 	}
 } ;
 

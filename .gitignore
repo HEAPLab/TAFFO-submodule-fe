@@ -23,3 +23,4 @@ test/axbench/kmeans/tmp.log
 test/axbench/sobel/*.tmp
 test/axbench/sobel/tmp.err
 test/axbench/sobel/tmp.log
+test/axbench/fft/orig_src

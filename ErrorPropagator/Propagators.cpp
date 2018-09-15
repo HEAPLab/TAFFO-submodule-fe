@@ -753,27 +753,37 @@ bool isSqrt(Function &F) {
 }
 
 bool isLog(Function &F) {
-  return F.getName() == "log"
-    || F.getName() == "logf"
-    || F.getName() == "_ZSt3logf"
-    || F.getName() == "_ZSt3logf_fixp";
+  StringRef FName = F.getName();
+  return FName == "log"
+    || FName == "logf"
+    || FName == "_ZSt3logf"
+    || (FName.find("log") != StringRef::npos
+	&& FName.find("fixp") != StringRef::npos);
 }
 
 bool isExp(Function &F) {
-  return F.getName() == "expf"
-    || F.getName() == "exp"
-    || F.getName() == "_ZSt3expf"
-    || F.getName() == "_ZSt3expf_fixp";
+  StringRef FName = F.getName();
+  return FName == "expf"
+    || FName == "exp"
+    || FName == "_ZSt3expf"
+    || (FName.find("exp") != StringRef::npos
+	&& FName.find("fixp") != StringRef::npos);
 }
 
 bool isAcos(Function &F) {
+  StringRef FName = F.getName();
   return F.getName() == "acos"
-    || F.getName() == "acosf";
+    || F.getName() == "acosf"
+    || (FName.find("acos") != StringRef::npos
+	&& FName.find("fixp") != StringRef::npos);
 }
 
 bool isAsin(Function &F) {
+  StringRef FName = F.getName();
   return F.getName() == "asin"
-    || F.getName() == "asinf";
+    || F.getName() == "asinf"
+    || (FName.find("asin") != StringRef::npos
+	&& FName.find("fixp") != StringRef::npos);;
 }
 
 bool isSpecialFunction(Function &F) {

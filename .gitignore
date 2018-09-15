@@ -24,3 +24,4 @@ test/axbench/sobel/*.tmp
 test/axbench/sobel/tmp.err
 test/axbench/sobel/tmp.log
 test/axbench/fft/orig_src
+test/axbench/blackscholes/orig_src

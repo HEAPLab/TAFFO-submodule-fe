@@ -29,6 +29,8 @@
 
 #define DIVIDE 120.0
 
+#define OPTIONDATA_ANNOTATION "no_float 7 25 signed"
+
 
 //Precision to use for calculations
 #define fptype float
@@ -43,21 +45,21 @@ typedef struct OptionData_ {
                            //     (1yr = 1.0, 6mos = 0.5, 3mos = 0.25, ..., etc)  
         char OptionType;   // Option type.  "P"=PUT, "C"=CALL
         fptype divs;       // dividend vals (not used in this test)
-        fptype DGrefval;   // DerivaGem Reference Value
+        fptype DGrefval;   // DerivaGem Reference Value (unused)
 } OptionData;
 
 OptionData *data;
-fptype __attribute((annotate("no_float 8 24 signed 0.1 1"))) *s;      // spot price
-fptype __attribute((annotate("no_float 8 24 signed 0.1 1"))) *stk; // strike price
-fptype __attribute((annotate("no_float 8 24 signed 0.1 1"))) *prices;
+fptype *s;      // spot price  // TEMPORARY: USED ONLY BY PARSER
+fptype *stk;    // strike price // TEMPORARY: USED ONLY BY PARSER
+fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.1 1"))) *prices;
 int numOptions;
 
 int    * otype;
-fptype __attribute((annotate("no_float 8 24 signed 0.4 0.9 1e-8"))) *sptprice;
-fptype __attribute((annotate("no_float 8 24 signed 0.4 0.9 1e-8"))) *strike;
-fptype __attribute((annotate("no_float 8 24 signed 0 0.1 1e-8"))) *rate;
-fptype __attribute((annotate("no_float 8 24 signed 0.05 6.5e-1 1e-8"))) *volatility;
-fptype __attribute((annotate("no_float 8 24 signed 0.1 1 1e-8"))) *otime;
+fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.4 0.9 1e-8"))) *sptprice;
+fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.4 0.9 1e-8"))) *strike;
+fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0 0.1 1e-8"))) *rate;
+fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.05 6.5e-1 1e-8"))) *volatility;
+fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.1 1 1e-8"))) *otime;
 int numError = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -72,15 +74,15 @@ fptype CNDF ( fptype InputX __attribute((annotate("range -1.3e-1 -1.6e-2"))))
 {
     int sign;
 
-    fptype __attribute((annotate("no_float 8 24 signed 0 1")))OutputX;
-    fptype __attribute((annotate("no_float 8 24 signed 0.18 0.52")))xInput;
-    fptype __attribute((annotate("no_float 8 24 signed 0.33 0.23")))xNPrimeofX;
-    fptype __attribute((annotate("no_float 8 24 signed 0.59 0.83")))expValues;
-    fptype __attribute((annotate("no_float 8 24 signed 0.9 0.96")))xK2;
-    fptype __attribute((annotate("no_float 8 24 signed 0.66 0.77")))xK2_2, __attribute((annotate("no_float 8 24 signed 0.54 0.68")))xK2_3;
-    fptype __attribute((annotate("no_float 8 24 signed 0.44 0.6")))xK2_4, __attribute((annotate("no_float 8 24 signed 0.35 0.52")))xK2_5;
-    fptype __attribute((annotate("no_float 8 24 signed 0.57 0.73")))xLocal, __attribute((annotate("no_float 8 24 signed 0.65 0.82")))xLocal_1;
-    fptype __attribute((annotate("no_float 8 24 signed 0.39 0.54")))xLocal_2, __attribute((annotate("no_float 8 24 signed 0.47 0.7")))xLocal_3;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0 1")))OutputX;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.18 0.52")))xInput;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.33 0.23")))xNPrimeofX;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.59 0.83")))expValues;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.9 0.96")))xK2;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.66 0.77")))xK2_2, __attribute((annotate(OPTIONDATA_ANNOTATION " 0.54 0.68")))xK2_3;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.44 0.6")))xK2_4, __attribute((annotate(OPTIONDATA_ANNOTATION " 0.35 0.52")))xK2_5;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.57 0.73")))xLocal, __attribute((annotate(OPTIONDATA_ANNOTATION " 0.65 0.82")))xLocal_1;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.39 0.54")))xLocal_2, __attribute((annotate(OPTIONDATA_ANNOTATION " 0.47 0.7")))xLocal_3;
 
     // Check for negative value of InputX
     if (InputX < 0.0) {
@@ -145,29 +147,30 @@ fptype BlkSchlsEqEuroNoDiv( fptype sptprice __attribute((annotate("range 0.33 0.
                             int otype, float timet __attribute((annotate("range 0 1 0"))),
                             fptype*  N1, fptype* N2)
 {
-    fptype __attribute((annotate("no_float 8 24 signed 0 0.25"))) OptionPrice;
+    //printf("BlkSchlsEqEuroNoDiv %f %f %f %f %f %f\n", sptprice, strike, rate, volatility, time, timet);
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0 0.25"))) OptionPrice;
 
     // local private working variables for the calculation
     //fptype xStockPrice;
     //fptype xStrikePrice;
-    fptype __attribute((annotate("no_float 8 24 signed 0.03 0.1"))) xRiskFreeRate;
-    fptype __attribute((annotate("no_float 8 24 signed 0.05 0.65 0"))) xVolatility;
-    fptype __attribute((annotate("no_float 8 24 signed 0.05 1"))) xTime;
-    fptype __attribute((annotate("no_float 8 24 signed 0.4 1")))xSqrtTime;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.03 0.1"))) xRiskFreeRate;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.05 0.65 0"))) xVolatility;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.05 1"))) xTime;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.4 1")))xSqrtTime;
 
-    fptype __attribute((annotate("no_float 8 24 signed 0.6 1")))logValues;
-    fptype __attribute((annotate("no_float 8 24 signed 0.6 1")))xLogTerm;
-    fptype __attribute((annotate("no_float 8 24 signed -1.12 1.33"))) xD1; 
-    fptype __attribute((annotate("no_float 8 24 signed 0.6 0.37")))xD2;
-    fptype __attribute((annotate("no_float 8 24 signed 1.25e-2 0.21"))) xPowerTerm;
-    fptype __attribute((annotate("no_float 8 24 signed 0.015 6.5e-1")))xDen;
-    fptype __attribute((annotate("no_float 8 24 signed 0.6 1.02")))d1;
-    fptype __attribute((annotate("no_float 8 24 signed 0.3 0.37")))d2;
-    fptype __attribute((annotate("no_float 8 24 signed 0.33 0.83")))FutureValueX;
-    fptype __attribute((annotate("no_float 8 24 signed 0.01 0.1")))NofXd1;
-    fptype __attribute((annotate("no_float 8 24 signed 0.01 0.1")))NofXd2;
-    fptype __attribute((annotate("no_float 8 24 signed 0.01 0.1")))NegNofXd1;
-    fptype __attribute((annotate("no_float 8 24 signed 0.01 0.1")))NegNofXd2;  
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.6 1")))logValues;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.6 1")))xLogTerm;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " -1.12 1.33"))) xD1; 
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.6 0.37")))xD2;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 1.25e-2 0.21"))) xPowerTerm;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.015 6.5e-1")))xDen;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.6 1.02")))d1;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.3 0.37")))d2;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.33 0.83")))FutureValueX;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.01 0.1")))NofXd1;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.01 0.1")))NofXd2;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.01 0.1")))NegNofXd1;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.01 0.1")))NegNofXd2;  
     
     //xStockPrice = sptprice;
     //xStrikePrice = strike;
@@ -247,9 +250,9 @@ int bs_thread(void *tid_ptr) {
             /* Calling main function to calculate option value based on 
              * Black & Scholes's equation.
              */
-            fptype __attribute((annotate("no_float 8 24 signed 0.1 1"))) N1, __attribute((annotate("no_float 8 24 signed 0.1 1"))) N2;
-            float __attribute((annotate("no_float 8 24 signed 0 1 0"))) timet = 0;
-
+            fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.1 1"))) N1, __attribute((annotate(OPTIONDATA_ANNOTATION " 0.1 1"))) N2;
+            float __attribute((annotate(OPTIONDATA_ANNOTATION " 0 1 0"))) timet = 0;
+/*
             double dataIn[6];
             double dataOut[1];
 
@@ -261,14 +264,15 @@ int bs_thread(void *tid_ptr) {
             dataIn[5]   = otype[i];
 
 #pragma parrot(input, "blackscholes", [6]dataIn)
-
+*/
                 price_orig = BlkSchlsEqEuroNoDiv( sptprice[i], strike[i],
                                          rate[i], volatility[i], otime[i], 
                                          otype[i], timet, &N1, &N2);
+/*
                 dataOut[0] = price_orig;
 
 #pragma parrot(output, "blackscholes", [1]<0.1; 0.9>dataOut)
-
+*/
                 prices[i] = price_orig;
         }
     }
@@ -312,6 +316,7 @@ int main (int argc, char **argv)
     prices = (fptype*)malloc(numOptions*sizeof(fptype));
     for ( loopnum = 0; loopnum < numOptions; ++ loopnum )
     {
+        
         rv = fscanf(file, "%f %f ", &s[loopnum], &stk[loopnum]);
         rv += fscanf(file, "%f %f %f %f %c %f %f", &data[loopnum].r, &data[loopnum].divq, &data[loopnum].v, &data[loopnum].t, &data[loopnum].OptionType, &data[loopnum].divs, &data[loopnum].DGrefval);
         if(rv != 9) {

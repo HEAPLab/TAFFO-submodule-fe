@@ -743,10 +743,13 @@ bool propagateRet(RangeErrorMap &RMap, Instruction &I) {
 }
 
 bool isSqrt(Function &F) {
-  return F.getName() == "sqrtf"
-    || F.getName() == "sqrt"
-    || F.getName() == "_ZSt4sqrtf"
-    || F.getName() == "_ZSt4sqrtf_fixp";
+  StringRef FName = F.getName();
+  return FName == "sqrtf"
+    || FName == "sqrt"
+    || FName == "_ZSt4sqrtf"
+    || (FName.find("sqrt") != StringRef::npos
+	&& FName.find("fixp") != StringRef::npos)
+    || FName == "_ZSt4sqrtf_fixp";
 }
 
 bool isLog(Function &F) {

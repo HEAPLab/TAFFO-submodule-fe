@@ -12,7 +12,7 @@
 
 #include "distance.h"
 
-int initClusters(Clusters* __attribute__((annotate("range " RANGE_CENTROID))) clusters, int k, float __attribute__((annotate("range 1.0 0.0"))) scale /* = 1 */) {
+int initClusters(Clusters* __attribute__((annotate("range " RANGE_CENTROID))) clusters, int k, float __attribute__((annotate("range 0 1"))) scale /* = 1 */) {
 	int i;
 	float __attribute__((annotate(ANNOTATION_CENTROID))) x;
 	
@@ -53,7 +53,7 @@ void freeClusters(Clusters* clusters) {
 		free(clusters->centroids);
 }
 
-void segmentImage(RgbImage* __attribute__((annotate("range " RANGE_RGBPIXEL))) image, Clusters* __attribute__((annotate("range " RANGE_CENTROID))) clusters, int n) {
+void segmentImage(RgbImage* __attribute__((annotate("range " RANGE_RGBPIXEL " 1e-8"))) image, Clusters* __attribute__((annotate("range " RANGE_CENTROID " 0"))) clusters, int n) {
 	int i;
 	int x, y;
 	int c;

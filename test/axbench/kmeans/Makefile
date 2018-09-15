@@ -23,8 +23,8 @@ OBJ_FLOAT := obj/main.o
 OBJ_FIX   := obj/main.fixp.o
 
 .PHONY: all clean
-	
-all: DIR $(MODULE) 
+
+all: DIR $(MODULE)
 
 .PRECIOUS: obj/%.ll obj/%.o obj/%.s
 
@@ -52,7 +52,7 @@ obj/main.init.ll : obj/main.ll
 	$(LLVM_DIR)/bin/opt -load=$(INITLIB) -S -taffoinit $(if $(ISDEBUG), -debug-only=flttofix$(comma)annotation) -stats $< -o $@ 2> stats/init.log
 
 obj/main.fixp.ll : obj/main.init.ll
-	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -stats $< -o $@ 2> stats/flttofix.log
+	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg -stats $< -o $@ 2> stats/flttofix.log
 
 obj/main.err.ll : obj/main.fixp.ll
 	$(LLVM_DIR)/bin/opt -load=$(ERRORLIB) -S -errorprop -startonly $(if $(ISDEBUG), -debug-only=errorprop) $< -o $@ 2> stats/errorprop.log

@@ -14,10 +14,10 @@ int count = 0;
 #define MAX_COUNT 1200000
 
 float euclideanDistance(float* __attribute__((annotate(ANNOTATION_RGBPIXEL))) p, float* __attribute__((annotate(ANNOTATION_CENTROID))) c1) {
-	float __attribute__((annotate("no_float 24 8 signed 1.0 0.0"))) r;
+	float __attribute__((annotate("no_float 24 8 signed 0.1 1"))) r;
 
 	r = 0;
-	double __attribute__((annotate("no_float 24 8 signed 1.0 0.0"))) r_tmp;
+	double __attribute__((annotate("no_float 24 8 signed 0.1 1"))) r_tmp;
 	
 	/*
 	double dataIn[6];
@@ -58,7 +58,7 @@ void assignCluster(float* __attribute__((annotate(ANNOTATION_RGBPIXEL))) p, Clus
 	int *p2 = (int *)p;
 	float __attribute__((annotate(ANNOTATION_CENTROID))) *centroids = (float *)clusters->centroids;
 
-	float __attribute__((annotate(ANNOTATION_RGBPIXEL))) d;
+	float __attribute__((annotate("target:distance" ANNOTATION_RGBPIXEL))) d;
 	d = euclideanDistance(p, &CENTROID(centroids, i));
 	RGBPIXEL_DISTANCE(p, 0) = d;
 

@@ -282,7 +282,10 @@ void updateArgumentRE(RangeErrorMap &RMap, MemorySSA &MemSSA, Value *Pointer,
     MemorySSAWalker *MSSAWalker = MemSSA.getWalker();
     assert(MSSAWalker != nullptr && "Null MemorySSAWalker.");
     if (MemoryDef *MD = dyn_cast<MemoryDef>(MSSAWalker->getClobberingMemoryAccess(LI))) {
-      if (StoreInst *SI = dyn_cast<StoreInst>(MD->getMemoryInst())) {
+      if (MemSSA.isLiveOnEntryDef(MD)) {
+	updateArgumentRE(RMap, MemSSA, LI->getPointerOperand(), NewRE);
+      }
+      else if (StoreInst *SI = dyn_cast<StoreInst>(MD->getMemoryInst())) {
 	updateArgumentRE(RMap, MemSSA, SI->getValueOperand(), NewRE);
       }
     }

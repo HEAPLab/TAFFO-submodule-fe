@@ -163,7 +163,7 @@ fptype BlkSchlsEqEuroNoDiv( fptype sptprice __attribute((annotate("range 0.33 0.
     fptype __attribute((annotate(OPTIONDATA_ANNOTATION " -1.12 1.33"))) xD1; 
     fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.6 0.37")))xD2;
     fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 1.25e-2 0.21"))) xPowerTerm;
-    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.015 6.5e-1")))xDen;
+    fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.1 6.5e-1")))xDen;
     fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.6 1.02")))d1;
     fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.3 0.37")))d2;
     fptype __attribute((annotate(OPTIONDATA_ANNOTATION " 0.33 0.83")))FutureValueX;

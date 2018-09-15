@@ -259,38 +259,48 @@ bool propagateBinaryOp(RangeErrorMap &RMap, Instruction &I) {
   return true;
 }
 
-void updateArgumentRE(RangeErrorMap &RMap, MemorySSA &MemSSA, Value *Pointer,
-		      const RangeErrorMap::RangeError *NewRE) {
+Value *getOriginPointer(MemorySSA &MemSSA, Value *Pointer) {
   assert(Pointer != nullptr);
-  assert(NewRE != nullptr);
 
-  if (isa<Argument>(Pointer)) {
-    auto *PointerRE = RMap.getRangeError(Pointer);
-    if (PointerRE == nullptr || !PointerRE->second.hasValue()
-	|| PointerRE->second->noiseTermsAbsSum() < NewRE->second->noiseTermsAbsSum()) {
-      RMap.setRangeError(Pointer, *NewRE);
-      DEBUG(dbgs() << "(Error of argument "<< Pointer->getName() << " updated.) ");
-    }
+  if (isa<Argument>(Pointer) || isa<AllocaInst>(Pointer)) {
+    return Pointer;
   }
   else if (GetElementPtrInst *GEPI = dyn_cast<GetElementPtrInst>(Pointer)) {
-    updateArgumentRE(RMap, MemSSA, GEPI->getPointerOperand(), NewRE);
+    return getOriginPointer(MemSSA, GEPI->getPointerOperand());
   }
   else if (BitCastInst *BCI = dyn_cast<BitCastInst>(Pointer)) {
-    updateArgumentRE(RMap, MemSSA, BCI->getOperand(0U), NewRE);
+    return getOriginPointer(MemSSA, BCI->getOperand(0U));
   }
   else if (LoadInst *LI = dyn_cast<LoadInst>(Pointer)) {
     MemorySSAWalker *MSSAWalker = MemSSA.getWalker();
     assert(MSSAWalker != nullptr && "Null MemorySSAWalker.");
     if (MemoryDef *MD = dyn_cast<MemoryDef>(MSSAWalker->getClobberingMemoryAccess(LI))) {
       if (MemSSA.isLiveOnEntryDef(MD)) {
-	updateArgumentRE(RMap, MemSSA, LI->getPointerOperand(), NewRE);
+	return getOriginPointer(MemSSA, LI->getPointerOperand());
       }
       else if (StoreInst *SI = dyn_cast<StoreInst>(MD->getMemoryInst())) {
-	updateArgumentRE(RMap, MemSSA, SI->getValueOperand(), NewRE);
+	return getOriginPointer(MemSSA, SI->getValueOperand());
       }
     }
     // TODO: Handle MemoryPHI
-    updateArgumentRE(RMap, MemSSA, LI->getPointerOperand(), NewRE);
+    return getOriginPointer(MemSSA, LI->getPointerOperand());
+  }
+  return nullptr;
+}
+
+void updateArgumentRE(RangeErrorMap &RMap, MemorySSA &MemSSA, Value *Pointer,
+		      const RangeErrorMap::RangeError *NewRE) {
+  assert(Pointer != nullptr);
+  assert(NewRE != nullptr);
+
+  Pointer = getOriginPointer(MemSSA, Pointer);
+  if (Pointer != nullptr) {
+    auto *PointerRE = RMap.getRangeError(Pointer);
+    if (PointerRE == nullptr || !PointerRE->second.hasValue()
+	|| PointerRE->second->noiseTermsAbsSum() < NewRE->second->noiseTermsAbsSum()) {
+      RMap.setRangeError(Pointer, *NewRE);
+      DEBUG(dbgs() << "(Error of pointer "<< Pointer->getName() << " updated.) ");
+    }
   }
 }
 
@@ -344,8 +354,9 @@ void findLOEError(RangeErrorMap &RMap, Instruction *I,
       return;
   }
   const RangeErrorMap::RangeError *RE = RMap.getRangeError(Pointer);
-  if (RE != nullptr && RE->second.hasValue())
+  if (RE != nullptr && RE->second.hasValue()) {
     Res.push_back(RE);
+  }
   else {
     Instruction *PI = dyn_cast<Instruction>(Pointer);
     if (PI != nullptr)
@@ -431,7 +442,7 @@ bool propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
     const RangeErrorMap::RangeError *RE = REs.front();
     RMap.setRangeError(&I, *RE);
     DEBUG(if (RE->second.hasValue())
-	    dbgs() << static_cast<double>(RE->second->noiseTermsAbsSum()) << ".\n";
+	    dbgs() << "(one value) " << static_cast<double>(RE->second->noiseTermsAbsSum()) << ".\n";
 	  else
 	    dbgs() << "no data.\n");
     return true;
@@ -462,7 +473,8 @@ bool propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
   // If we have no other error info, we take the rounding error.
   AffineForm<inter_t> Error(0, SrcR->getRoundingError());
   RMap.setRangeError(&I, std::make_pair(*SrcR, Error));
-  DEBUG(dbgs() << static_cast<double>(Error.noiseTermsAbsSum()) << ".\n");
+  DEBUG(dbgs() << "(no data, falling back to rounding error) "
+	<< static_cast<double>(Error.noiseTermsAbsSum()) << ".\n");
 
   return true;
 }

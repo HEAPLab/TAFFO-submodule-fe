@@ -79,6 +79,8 @@ bool propagateGetElementPtr(RangeErrorMap &RMap, Instruction &I);
 
 #define DEFAULT_RE_COUNT 8U
 
+Value *getOriginPointer(MemorySSA &MemSSA, Value *Pointer);
+
 void findMemSSAError(RangeErrorMap &RMap, MemorySSA &MemSSA,
 		     Instruction *I, MemoryAccess *MA,
 		     SmallSet<MemoryAccess *, DEFAULT_RE_COUNT> &Visited,

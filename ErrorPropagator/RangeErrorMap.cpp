@@ -122,14 +122,19 @@ void RangeErrorMap::applyArgumentErrors(Function &F,
   for (auto AArg = Args->begin(), AArgEnd = Args->end();
        AArg != AArgEnd && FArg != FArgEnd;
        ++AArg, ++FArg) {
-    const AffineForm<inter_t> *Err = this->getError(*AArg);
-    if (Err == nullptr)
+    Value *AArgV = *AArg;
+    const AffineForm<inter_t> *Err = this->getError(AArgV);
+    if (Err == nullptr) {
+      DEBUG(dbgs() << "No pre-computed error available for formal parameter (" << *FArg
+	    << ") from actual parameter (" << *AArgV << ").\n");
       continue;
+    }
 
     this->setError(&*FArg, *Err);
 
-    DEBUG(dbgs() << "Pre-computed error applied to argument " << FArg->getName()
-	  << ": " << static_cast<double>(Err->noiseTermsAbsSum()) << ".\n");
+    DEBUG(dbgs() << "Pre-computed error applied to formal parameter (" << *FArg
+	  << ") from actual parameter (" << *AArgV
+	  << "): " << static_cast<double>(Err->noiseTermsAbsSum()) << ".\n");
   }
 }
 

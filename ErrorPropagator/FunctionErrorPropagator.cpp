@@ -15,6 +15,7 @@
 #include "ErrorPropagator/FunctionErrorPropagator.h"
 
 #include "llvm/IR/InstIterator.h"
+#include "llvm/IR/CallSite.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 #include "llvm/Analysis/LoopInfo.h"
@@ -205,17 +206,23 @@ FunctionErrorPropagator::dispatchInstruction(Instruction &I) {
 
 void
 FunctionErrorPropagator::prepareErrorsForCall(Instruction &I) {
-  Function *CalledF = nullptr;
+  CallSite CS(&I);
+  Function *CalledF = CS.getCalledFunction();
   SmallVector<Value *, 0U> Args;
-  if (isa<CallInst>(I)) {
-    CallInst &CI = cast<CallInst>(I);
-    CalledF = CI.getCalledFunction();
-    Args.append(CI.arg_begin(), CI.arg_end());
-  }
-  else if (isa<InvokeInst>(I)) {
-    InvokeInst &II = cast<InvokeInst>(I);
-    CalledF = II.getCalledFunction();
-    Args.append(II.arg_begin(), II.arg_end());
+  for (Use &U : CS.args()) {
+    Value *Arg = U.get();
+    if (Arg->getType()->isPointerTy()) {
+      auto RE = RMap.getRangeError(Arg);
+      if (RE != nullptr && RE->second.hasValue())
+	Args.push_back(Arg);
+      else {
+	Value *OrigPointer = getOriginPointer(*MemSSA, Arg);
+	Args.push_back(OrigPointer);
+      }
+    }
+    else {
+      Args.push_back(Arg);
+    }
   }
 
   if (CalledF == nullptr || isSpecialFunction(*CalledF))
@@ -253,8 +260,12 @@ FunctionErrorPropagator::applyActualParametersErrors(RangeErrorMap &GlobRMap,
       continue;
 
     const AffineForm<inter_t> *Err = RMap.getError(&*FArg);
-    if (Err == nullptr)
-      continue;
+    if (Err == nullptr) {
+      Value *OrigPointer = getOriginPointer(*MemSSA, &*FArg);
+      Err = RMap.getError(OrigPointer);
+      if (Err == nullptr)
+	continue;
+    }
 
     DEBUG(dbgs() << "Setting actual parameter (" << **AArg
 	  << ") error " << static_cast<double>(Err->noiseTermsAbsSum()) << "\n");

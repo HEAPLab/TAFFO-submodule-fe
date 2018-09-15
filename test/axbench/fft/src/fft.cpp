@@ -6,8 +6,8 @@
 #include "benchmark.hpp"
 
 static int* indices;
-static float* __attribute((annotate("no_float 20 12"))) x;
-static float* __attribute((annotate("no_float 20 12"))) f;
+static float* __attribute((annotate(ANNOTATION_COMPLEX))) x;
+static float* __attribute((annotate(ANNOTATION_COMPLEX))) f;
 
 int main(int argc, char* argv[])
 {
@@ -34,13 +34,14 @@ int main(int argc, char* argv[])
 
 	int K = n;
 	
-	AxBenchTimer timer;
-
 	for(i = 0;i < K ; i++)
 	{
-		COMPLEX_REAL(x,i) = i;
+		COMPLEX_REAL(x,i) = i < (K / 100) ? 1.0 : 0.0;
 		COMPLEX_IMAG(x,i) = 0 ;
 	}
+	
+	AxBenchTimer timer;
+	
 	radix2DitCooleyTykeyFft(K, indices, x, f) ;
 	
 	uint64_t time = timer.nanosecondsSinceInit();

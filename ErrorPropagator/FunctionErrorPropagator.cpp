@@ -248,18 +248,19 @@ FunctionErrorPropagator::prepareErrorsForCall(Instruction &I) {
 void
 FunctionErrorPropagator::applyActualParametersErrors(RangeErrorMap &GlobRMap,
 						     SmallVectorImpl<Value *> *Args) {
+  assert(FCopy != nullptr);
   if (Args == nullptr)
     return;
 
-  auto FArg = F.arg_begin();
-  auto FArgEnd = F.arg_end();
+  auto FArg = FCopy->arg_begin();
+  auto FArgEnd = FCopy->arg_end();
   for (auto AArg = Args->begin(), AArgEnd = Args->end();
        AArg != AArgEnd && FArg != FArgEnd;
        ++AArg, ++FArg) {
     if (!FArg->getType()->isPointerTy())
       continue;
 
-    const AffineForm<inter_t> *Err = RMap.getError(&*FArg);
+    const AffineForm<inter_t> *Err = RMap.getError(&(*FArg));
     if (Err == nullptr) {
       Value *OrigPointer = getOriginPointer(*MemSSA, &*FArg);
       Err = RMap.getError(OrigPointer);

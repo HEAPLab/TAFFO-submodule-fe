@@ -299,7 +299,7 @@ void updateArgumentRE(RangeErrorMap &RMap, MemorySSA &MemSSA, Value *Pointer,
     if (PointerRE == nullptr || !PointerRE->second.hasValue()
 	|| PointerRE->second->noiseTermsAbsSum() < NewRE->second->noiseTermsAbsSum()) {
       RMap.setRangeError(Pointer, *NewRE);
-      DEBUG(dbgs() << "(Error of pointer "<< Pointer->getName() << " updated.) ");
+      DEBUG(dbgs() << "(Error of pointer ("<< *Pointer << ") updated.) ");
     }
   }
 }

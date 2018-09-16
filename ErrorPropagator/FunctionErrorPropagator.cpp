@@ -257,6 +257,8 @@ FunctionErrorPropagator::applyActualParametersErrors(RangeErrorMap &GlobRMap,
   for (auto AArg = Args->begin(), AArgEnd = Args->end();
        AArg != AArgEnd && FArg != FArgEnd;
        ++AArg, ++FArg) {
+    if (*AArg == nullptr)
+      continue;
     if (!FArg->getType()->isPointerTy())
       continue;
 

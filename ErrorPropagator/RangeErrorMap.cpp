@@ -125,8 +125,13 @@ void RangeErrorMap::applyArgumentErrors(Function &F,
     Value *AArgV = *AArg;
     const AffineForm<inter_t> *Err = this->getError(AArgV);
     if (Err == nullptr) {
-      DEBUG(dbgs() << "No pre-computed error available for formal parameter (" << *FArg
-	    << ") from actual parameter (" << *AArgV << ").\n");
+      DEBUG(
+	    dbgs() << "No pre-computed error available for formal parameter (" << *FArg << ")";
+	    if (AArgV != nullptr)
+	      dbgs() << "from actual parameter (" << *AArgV << ").\n";
+	    else
+	      dbgs() << ".\n";
+	    );
       continue;
     }
 

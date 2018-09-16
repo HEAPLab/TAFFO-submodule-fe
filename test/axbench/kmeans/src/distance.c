@@ -58,7 +58,7 @@ void assignCluster(float* __attribute__((annotate(ANNOTATION_RGBPIXEL))) p, Clus
 	int *p2 = (int *)p;
 	float __attribute__((annotate(ANNOTATION_CENTROID))) *centroids = (float *)clusters->centroids;
 
-	float __attribute__((annotate("target:distance" ANNOTATION_RGBPIXEL))) d;
+	float __attribute__((annotate("target:distance " ANNOTATION_RGBPIXEL))) d;
 	d = euclideanDistance(p, &CENTROID(centroids, i));
 	RGBPIXEL_DISTANCE(p, 0) = d;
 

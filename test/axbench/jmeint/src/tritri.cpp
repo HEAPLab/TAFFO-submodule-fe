@@ -203,7 +203,8 @@ int coplanar_tri_tri(float N[3] __attribute__((annotate("range 0.1 1 0"))),
 }
 
 int tri_tri_intersect(float V0[3] __attribute__((annotate("range 0.1 1 0"))),float V1[3] __attribute__((annotate("range 0.1 1 0"))),float V2[3] __attribute__((annotate("range 0.1 1 0"))),
-                      float U0[3] __attribute__((annotate("range 0.1 1 0"))),float U1[3] __attribute__((annotate("range 0.1 1 0"))),float U2[3] __attribute__((annotate("range 0.1 1 0"))))
+                      float U0[3] __attribute__((annotate("range 0.1 1 0"))),float U1[3] __attribute__((annotate("range 0.1 1 0"))),float U2[3] __attribute__((annotate("range 0.1 1 0"))),
+		      float *res)
 {
   #pragma clang attribute push( __attribute__((annotate("target:all no_float 8 24 signed 0.1 1"))) , apply_to = variable)
   float E1[3],E2[3];
@@ -311,6 +312,9 @@ int tri_tri_intersect(float V0[3] __attribute__((annotate("range 0.1 1 0"))),flo
 
   SORT(isect1[0],isect1[1]);
   SORT(isect2[0],isect2[1]);
+
+  res[0] = isect1[0];
+  res[1] = isect1[1];
 
   if(isect1[1]<isect2[0] || isect2[1]<isect1[0])
   {

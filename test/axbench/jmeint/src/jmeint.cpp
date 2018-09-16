@@ -94,13 +94,15 @@ int main(int argc, char* argv[])
 		dataIn[15] 	= xyz[i + 15];
 		dataIn[16] 	= xyz[i + 16];
 		dataIn[17] 	= xyz[i + 17];
-		
+
+		float res[2];
 
 #pragma parrot(input, "jmeint", [18]dataIn)
 
 		x = tri_tri_intersect(
 				xyz + i + 0 * 3, xyz + i + 1 * 3, xyz + i + 2 * 3,
-				xyz + i + 3 * 3, xyz + i + 4 * 3, xyz + i + 5 * 3);
+				xyz + i + 3 * 3, xyz + i + 4 * 3, xyz + i + 5 * 3,
+				res);
 
 		if(x == 0)
 		{
@@ -122,7 +124,7 @@ int main(int argc, char* argv[])
 			
 		kernel_time += timer.nanosecondsSinceInit();
 
-		outputFileHandler << x << std::endl;
+		outputFileHandler << x << " " << res[0] << " " << res[1] << std::endl;
 		
 		timer.reset();
 	}

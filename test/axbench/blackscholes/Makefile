@@ -16,6 +16,10 @@ HEADERS		:= src
 INCLUDE		+= -I${HEADERS} -I../common/src
 LIB		:= 
 
+MIOSIX_EABI     := /opt/arm-miosix-eabi/arm-miosix-eabi
+MIOSIX_CFLAGS   := -target arm-none-linux-eabi --sysroot=$(MIOSIX_EABI) -I$(MIOSIX_EABI)/include/ -I$(MIOSIX_EABI)/include/c++/4.7.3/ -I$(MIOSIX_EABI)/include/c++/4.7.3/arm-miosix-eabi/ -D_MIOSIX -D_MIOSIX_GCC_PATCH_VERSION=1 -mcpu=cortex-m3 -mthumb -ffunction-sections -Wall
+
+
 MODULE		:= blackscholes.out
 
 CPP_FILES       := blackscholes.c
@@ -46,7 +50,7 @@ $(MODULE): $(OBJ_FILES) $(OBJ_FILES_FIX) $(LL_FILES_ERR) $(FLT_IMIX_STAT) $(FIX_
 
 
 obj/%.ll: src/%.c
-	$(CC) -S -emit-llvm $(CFLAGS) $(INCLUDE) $< -o $@
+	$(CC) -S -emit-llvm $(MIOSIX_FLAGS) $(CFLAGS) $(INCLUDE) $< -o $@
 
 obj/%.init.ll: obj/%.ll
 	$(LLVM_DIR)/bin/opt -load=$(INITLIB) -S -taffoinit $(if $(ISDEBUG), -debug-only=flttofix$(comma)annotation) -stats $< -o $@ 2> stats/init.log
@@ -58,10 +62,10 @@ obj/%.err.ll: obj/%.fixp.ll
 	$(LLVM_DIR)/bin/opt -load=$(ERRORLIB) -S -errorprop -startonly $(if $(ISDEBUG), -debug-only=errorprop) $< -o $@ 2> stats/errorprop.log
 
 obj/%.s: obj/%.ll
-	$(CC) -S  $< -o $@ $(OX)
+	$(CC) -S $(MIOSIX_FLAGS) $< -o $@ $(OX)
 
 obj/%.o: obj/%.s
-	$(CC) -c  $< -o $@
+	$(CC) -c $(MIOSIX_FLAGS) $< -o $@
 
 stats/%.mix.txt: obj/%.ll
 	$(INSTMIX) $< > $@
@@ -69,7 +73,23 @@ stats/%.mix.txt: obj/%.ll
 stats/%.llvm.txt: obj/%.ll
 	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -stats $< -o /dev/null 2> $@
 
+miosix_cflags:
+	$(eval MIOSIX_FLAGS += $(MIOSIX_CFLAGS))
 
+miosix_o: miosix_cflags DIR $(OBJ_FILES) $(OBJ_FILES_FIX) $(LL_FILES_ERR) $(FLT_IMIX_STAT) $(FIX_IMIX_STAT) $(LLVM_STAT)
+	cp obj/blackscholes.o $(MIOSIX_ROOT)/$(basename $(MODULE)).o
+	cp obj/blackscholes.fixp.o $(MIOSIX_ROOT)/$(basename $(MODULE)).fixp.o
+
+miosix_float: miosix_o
+	make clean -C $(MIOSIX_ROOT)
+	make BENCH=$(basename $(MODULE)).o -j 8 -C $(MIOSIX_ROOT)
+	#make program -C $(MIOSIX_ROOT)
+
+miosix_fix: miosix_o
+	make clean -C $(MIOSIX_ROOT)
+	make BENCH=$(basename $(MODULE)).fixp.o -j 8 -C $(MIOSIX_ROOT)
+	#make program -C $(MIOSIX_ROOT)
+	
 clean:
 	rm -rf *.o
 	rm -rf *.d

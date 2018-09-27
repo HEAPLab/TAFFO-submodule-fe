@@ -8,12 +8,16 @@ $(info debug mode on)
 endif
 comma :=,
 
-OX          := #-O3
+OX          := -O3
 
 CFLAGS		:= -Wall -Wnarrowing -std=c++11
 LFLAGS		+= #-lboost_regex
 HEADERS		:= src
 INCLUDE		+= -I${HEADERS} -I../common/src
+
+MIOSIX_EABI     := /opt/arm-miosix-eabi/arm-miosix-eabi
+MIOSIX_CFLAGS   := -target arm-none-linux-eabi --sysroot=$(MIOSIX_EABI) -I$(MIOSIX_EABI)/include/ -I$(MIOSIX_EABI)/include/c++/4.7.3/ -I$(MIOSIX_EABI)/include/c++/4.7.3/arm-miosix-eabi/ -D_MIOSIX -D_MIOSIX_GCC_PATCH_VERSION=1 -mcpu=cortex-m3 -mthumb -ffunction-sections -Wall
+
 
 MODULE		:= inversek2j.out
 
@@ -39,14 +43,14 @@ $(MODULE): $(OBJ_FLOAT) $(OBJ_FIX) obj/main.err.ll stats/main.fixp.mix.txt stats
 	$(LD) $(OBJ_FIX) $(LFLAGS) -o bin/$@.fixp
 
 obj/%.ll : src/%.cpp
-	$(CC) -S -emit-llvm $(CFLAGS) $(INCLUDE) $< -o $@
+	$(CC) -S -emit-llvm $(MIOSIX_FLAGS) $(CFLAGS) $(INCLUDE) $< -o $@
 
 obj/main.ll : $(LL_FILES)
 	$(LLVM_DIR)/bin/llvm-link -S $^ -o $@
 
 $(OBJ_FLOAT) : obj/main.ll
-	$(CC) -S $^ -o obj/main.s $(OX)
-	$(CC) -c obj/main.s -o $@
+	$(CC) -S $(MIOSIX_FLAGS) $^ -o obj/main.s $(OX)
+	$(CC) -c $(MIOSIX_FLAGS) obj/main.s -o $@
 
 obj/main.init.ll : obj/main.ll
 	$(LLVM_DIR)/bin/opt -load=$(INITLIB) -S -taffoinit $(if $(ISDEBUG), -debug-only=flttofix$(comma)annotation) -stats $< -o $@ 2> stats/init.log
@@ -55,8 +59,8 @@ obj/main.fixp.ll : obj/main.init.ll
 	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -mem2reg $(if $(ISDEBUG), -debug-only=flttofix) -stats $< -o $@ 2> stats/flttofix.log
 
 $(OBJ_FIX) : obj/main.fixp.ll
-	$(CC) -S $^ -o obj/main.fixp.s $(OX)
-	$(CC) -c obj/main.fixp.s -o $@
+	$(CC) -S $(MIOSIX_FLAGS) $^ -o obj/main.fixp.s $(OX)
+	$(CC) -c $(MIOSIX_FLAGS) obj/main.fixp.s -o $@
 
 obj/main.err.ll : obj/main.fixp.ll
 	$(LLVM_DIR)/bin/opt -load=$(ERRORLIB) -S -errorprop -startonly $(if $(ISDEBUG), -debug-only=errorprop) $< -o $@ 2> stats/errorprop.log
@@ -66,6 +70,23 @@ stats/%.mix.txt: obj/%.ll
 
 stats/%.llvm.txt: obj/%.ll
 	$(LLVM_DIR)/bin/opt -load=$(PASSLIB) -S -flttofix -dce -stats $< -o /dev/null 2> $@
+
+miosix_cflags:
+	$(eval MIOSIX_FLAGS += $(MIOSIX_CFLAGS))
+
+miosix_o: miosix_cflags DIR $(OBJ_FLOAT) $(OBJ_FIX) obj/main.err.ll stats/main.fixp.mix.txt stats/main.mix.txt stats/main.llvm.txt
+	cp obj/main.o $(MIOSIX_ROOT)/$(basename $(MODULE)).o
+	cp obj/main.fixp.o $(MIOSIX_ROOT)/$(basename $(MODULE)).fixp.o
+
+miosix_float: miosix_o
+	make clean -C $(MIOSIX_ROOT)
+	make BENCH=$(basename $(MODULE)).o -j 8 -C $(MIOSIX_ROOT)
+	#make program -C $(MIOSIX_ROOT)
+
+miosix_fix: miosix_o
+	make clean -C $(MIOSIX_ROOT)
+	make BENCH=$(basename $(MODULE)).fixp.o -j 8 -C $(MIOSIX_ROOT)
+	#make program -C $(MIOSIX_ROOT)
 
 clean:
 	rm -rf *.o

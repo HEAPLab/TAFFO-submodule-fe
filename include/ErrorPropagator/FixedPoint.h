@@ -22,7 +22,7 @@
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Metadata.h"
-#include "ErrorPropagator/MDUtils/InputInfo.h"
+#include "InputInfo.h"
 #include "ErrorPropagator/AffineForms.h"
 
 namespace ErrorProp {
@@ -31,6 +31,7 @@ namespace ErrorProp {
 typedef long double inter_t;
 
 using namespace llvm;
+using namespace mdutils;
 
 /// Interval of former fixed point values
 /// An interval representing a fixed point range in the intermediate type.

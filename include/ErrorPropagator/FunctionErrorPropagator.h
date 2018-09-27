@@ -30,6 +30,7 @@
 namespace ErrorProp {
 
 using namespace llvm;
+using namespace mdutils;
 
 /// Propagates errors of fixed point computations in a single function.
 class FunctionErrorPropagator {

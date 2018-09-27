@@ -21,7 +21,7 @@
 #include "llvm/Analysis/LoopInfo.h"
 
 #include "ErrorPropagator/Propagators.h"
-#include "ErrorPropagator/MDUtils/Metadata.h"
+#include "Metadata.h"
 
 namespace ErrorProp {
 

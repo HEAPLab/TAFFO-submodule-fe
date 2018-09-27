@@ -22,7 +22,7 @@
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Optional.h"
-#include "ErrorPropagator/MDUtils/Metadata.h"
+#include "Metadata.h"
 #include "ErrorPropagator/FixedPoint.h"
 #include "ErrorPropagator/AffineForms.h"
 

@@ -25,7 +25,7 @@
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
 #include "llvm/Analysis/MemorySSA.h"
 
-#include "ErrorPropagator/MDUtils/Metadata.h"
+#include "Metadata.h"
 #include "ErrorPropagator/FunctionErrorPropagator.h"
 
 namespace ErrorProp {

@@ -23,7 +23,7 @@ void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
     // Compute loop trip count
     unsigned TripCount = SE.getSmallConstantTripCount(L);
     // Get user supplied unroll count
-    Optional<unsigned> OUC = mdutils::MetadataManager::retrieveLoopUnrollCount(*L);
+    Optional<unsigned> OUC = mdutils::MetadataManager::retrieveLoopUnrollCount(*L, &LInfo);
     unsigned UnrollCount = DefaultUnrollCount;
     if (OUC.hasValue())
       if (TripCount != 0 && OUC.getValue() > TripCount)
@@ -43,7 +43,7 @@ void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
     DominatorTree &DomTree = P.getAnalysis<DominatorTreeWrapperPass>(F).getDomTree();
     AssumptionCache &AssC = P.getAnalysis<AssumptionCacheTracker>().getAssumptionCache(F);
     OptimizationRemarkEmitter &ORE = P.getAnalysis<OptimizationRemarkEmitterWrapperPass>(F).getORE();
-    
+
     LoopUnrollResult URes = UnrollLoop(L, UnrollCount, TripCount,
     				       true, false, true, false, false,
     				       TripMult, 0U,

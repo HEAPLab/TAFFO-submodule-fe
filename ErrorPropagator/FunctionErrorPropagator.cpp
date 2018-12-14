@@ -93,6 +93,9 @@ void
 FunctionErrorPropagator::computeFunctionErrors(SmallVectorImpl<Value *> *ArgErrs) {
   assert(FCopy != nullptr);
 
+  if (ArgErrs)
+    RMap.initArgumentBindings(*FCopy, *ArgErrs);
+
   RMap.retrieveRangeErrors(*FCopy);
   RMap.applyArgumentErrors(*FCopy, ArgErrs);
 
@@ -274,6 +277,9 @@ FunctionErrorPropagator::applyActualParametersErrors(RangeErrorMap &GlobRMap,
 	  << ") error " << static_cast<double>(Err->noiseTermsAbsSum()) << "\n");
     GlobRMap.setError(*AArg, *Err);
   }
+
+  // Now update structs:
+  GlobRMap.updateStructErrors(RMap, *Args);
 }
 
 void

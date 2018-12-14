@@ -334,6 +334,7 @@ bool propagateStore(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
 
   // Update struct errors.
   RMap.updateStructElemError(SI, SrcRE->second.getPointer());
+  RMap.setStructRangeError(SI.getPointerOperand(), *SrcRE);
 
   return true;
 }
@@ -423,6 +424,11 @@ bool propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
   assert(I.getOpcode() == Instruction::Load && "Must be Load.");
   LoadInst &LI = cast<LoadInst>(I);
 
+  if (isa<PointerType>(LI.getType())) {
+    DEBUG(dbgs() << "Pointer load " << I.getName() << " ignored.\n");
+    return false;
+  }
+
   DEBUG(dbgs() << "Propagating error for Load instruction " << I.getName() << "... ");
 
   // Look for range and error in the defining instructions with MemorySSA
@@ -432,6 +438,14 @@ bool propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
 
   // Kludje for when AliasAnalysis fails (i.e. almost always).
   // findLOEError(RMap, &I, REs);
+
+  // If this is a load of a struct element, lookup in the struct errors.
+  if (const RangeErrorMap::RangeError *StructRE
+      = RMap.getStructRangeError(LI.getPointerOperand())) {
+    REs.push_back(StructRE);
+    DEBUG(dbgs() << "(StructError: "
+	  << static_cast<double>(StructRE->second.getValue().noiseTermsAbsSum()) << ") ");
+  }
 
   std::sort(REs.begin(), REs.end());
   auto NewEnd = std::unique(REs.begin(), REs.end());

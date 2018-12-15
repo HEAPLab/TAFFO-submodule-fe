@@ -425,7 +425,6 @@ StructError *StructTreeWalker::navigateStructTree(StructTree *Root, bool Create)
       return navigateStructTree(RN->getStructElement(ChildIdx), Create);
     }
     else {
-      // TODO: deal with sequential types
       RN->setStructElement(ChildIdx, new StructError(Root));
       return cast<StructError>(RN->getStructElement(ChildIdx));
     }
@@ -435,7 +434,10 @@ StructError *StructTreeWalker::navigateStructTree(StructTree *Root, bool Create)
 }
 
 unsigned StructTreeWalker::parseIndex(const Use &U) const {
-  return cast<ConstantInt>(U.get())->getZExtValue();
+  if (ConstantInt *CIdx = dyn_cast<ConstantInt>(U.get()))
+    return CIdx->getZExtValue();
+  else
+    return 0U;
 }
 
 StructErrorMap::StructErrorMap(const StructErrorMap &M)

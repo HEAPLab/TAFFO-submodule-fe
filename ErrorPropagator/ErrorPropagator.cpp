@@ -22,8 +22,8 @@
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/ScalarEvolution.h"
-#include "llvm/Analysis/OptimizationRemarkEmitter.h"
-#include "llvm/Analysis/MemorySSA.h"
+#include "llvm/Analysis/OptimizationDiagnosticInfo.h"
+#include "llvm/Transforms/Utils/MemorySSA.h"
 
 #include "Metadata.h"
 #include "ErrorPropagator/FunctionErrorPropagator.h"

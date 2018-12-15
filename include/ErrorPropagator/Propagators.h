@@ -17,7 +17,7 @@
 #define ERRORPROPAGATOR_PROPAGATORS_H
 
 #include "llvm/IR/Instruction.h"
-#include "llvm/Analysis/MemorySSA.h"
+#include "llvm/Transforms/Utils/MemorySSA.h"
 #include "llvm/Analysis/MemoryDependenceAnalysis.h"
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/SmallVector.h"

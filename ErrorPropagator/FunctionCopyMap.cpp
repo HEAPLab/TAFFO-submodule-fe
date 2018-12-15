@@ -4,7 +4,7 @@
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/ScalarEvolution.h"
-#include "llvm/Analysis/OptimizationRemarkEmitter.h"
+#include "llvm/Analysis/OptimizationDiagnosticInfo.h"
 #include "llvm/Transforms/Utils/UnrollLoop.h"
 #include "llvm/Support/Debug.h"
 #include "Metadata.h"
@@ -44,19 +44,16 @@ void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
     AssumptionCache &AssC = P.getAnalysis<AssumptionCacheTracker>().getAssumptionCache(F);
     OptimizationRemarkEmitter &ORE = P.getAnalysis<OptimizationRemarkEmitterWrapperPass>(F).getORE();
     
-    LoopUnrollResult URes = UnrollLoop(L, UnrollCount, TripCount,
+    bool URes = UnrollLoop(L, UnrollCount, TripCount,
     				       true, false, true, false, false,
     				       TripMult, 0U,
-    				       false, &LInfo, &SE, &DomTree,
+    				       &LInfo, &SE, &DomTree,
     				       &AssC, &ORE, true);
     switch (URes) {
-      case LoopUnrollResult::Unmodified:
+      case false:
     	DEBUG(dbgs() << "unmodified.\n");
     	break;
-      case LoopUnrollResult::PartiallyUnrolled:
-    	DEBUG(dbgs() << "unrolled partially.\n");
-    	break;
-      case LoopUnrollResult::FullyUnrolled:
+      case true:
     	DEBUG(dbgs() << "done.\n");
     	break;
     }

@@ -100,12 +100,12 @@ void RangeErrorMap::retrieveRangeErrors(const Function &F) {
 
     if (FPI.hasInitialError()) {
       AffineForm<inter_t> Err(0.0, FPI.getInitialError());
-      this->setRangeError(Arg, std::make_pair(FPI, Err));
+      this->setRangeError(&(*Arg), std::make_pair(FPI, Err));
 
       DEBUG(dbgs() << FPI.getInitialError() << ".\n");
     }
     else {
-      this->setRangeError(Arg, std::make_pair(FPI, NoneType()));
+      this->setRangeError(&(*Arg), std::make_pair(FPI, NoneType()));
 
       DEBUG(dbgs() << "none.\n");
     }

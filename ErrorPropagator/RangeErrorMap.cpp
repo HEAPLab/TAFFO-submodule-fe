@@ -350,6 +350,7 @@ StructTree *StructTreeWalker::makeRoot(Value *P) {
 
 Value *StructTreeWalker::navigatePointerTreeToRoot(Value *P) {
   assert(P != nullptr);
+  assert(P->getType()->isPointerTy() && "Supplied with non-pointer Value.");
   if (GetElementPtrInst *GEPI = dyn_cast<GetElementPtrInst>(P)) {
     auto IdxIt = GEPI->idx_begin();
     ++IdxIt;
@@ -504,6 +505,10 @@ const StructTree::RangeError *StructErrorMap::getFieldError(Value *P) const {
 void StructErrorMap::updateStructTree(const StructErrorMap &O, const ArrayRef<Value *> Pointers) {
   StructTreeWalker STW(this->ArgBindings);
   for (Value *P : Pointers) {
+    assert(P != nullptr);
+    if (!P->getType()->isPointerTy())
+      continue;
+
     if (Value *Root = STW.retrieveRootPointer(P)) {
       auto OTreeIt = O.StructMap.find(Root);
       if (OTreeIt != O.StructMap.end()

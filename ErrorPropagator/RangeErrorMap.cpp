@@ -389,7 +389,7 @@ Value *StructTreeWalker::navigatePointerTreeToRoot(Value *P) {
     if (AArg != ArgBindings.end())
       return navigatePointerTreeToRoot(AArg->second);
     else
-      return P;
+      return (isa<StructType>(cast<PointerType>(A->getType())->getElementType())) ? P : nullptr;
   }
   else if (AllocaInst *AI = dyn_cast<AllocaInst>(P)) {
     return (isa<StructType>(AI->getAllocatedType())) ? P : nullptr;

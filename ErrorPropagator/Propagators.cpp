@@ -333,7 +333,6 @@ bool propagateStore(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
   DEBUG(dbgs() << static_cast<double>(SrcRE->second->noiseTermsAbsSum()) << ".\n");
 
   // Update struct errors.
-  RMap.updateStructElemError(SI, SrcRE->second.getPointer());
   RMap.setStructRangeError(SI.getPointerOperand(), *SrcRE);
 
   return true;

@@ -189,10 +189,6 @@ public:
 
   MetadataManager &getMetadataManager() { return *MDMgr; }
 
-  void updateStructElemError(StoreInst &SI, const AffineForm<inter_t> *Error);
-  void updateStructElemError(StructType *ST, unsigned Idx, const inter_t &Error);
-  void updateStructElemError(const RangeErrorMap &Other);
-
   const RangeError *getStructRangeError(Value *Pointer) const;
   void setStructRangeError(Value *Pointer, const RangeError &RE);
 
@@ -209,12 +205,8 @@ public:
 protected:
   std::map<const Value *, RangeError> REMap;
   MetadataManager *MDMgr;
-  std::map<StructType *, SmallVector<Optional<inter_t>, 2U>> StructMap;
   StructErrorMap SEMap;
   TargetErrors TErrs;
-
-  void printStructErrs(StructType *ST, raw_ostream &OS) const;
-
 }; // end class RangeErrorMap
 
 typedef DenseMap<Value *, CmpErrorInfo> CmpErrorMap;

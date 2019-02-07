@@ -73,8 +73,6 @@ FunctionErrorPropagator::computeErrorsWithCopy(RangeErrorMap &GlobRMap,
     GlobRMap.setError(&GV, *GVErr);
   }
 
-  // Update global struct element errors.
-  GlobRMap.updateStructElemError(RMap);
   // Update target errors
   GlobRMap.updateTargets(RMap);
 

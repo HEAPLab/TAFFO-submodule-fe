@@ -27,108 +27,11 @@
 #include "Metadata.h"
 #include "FixedPoint.h"
 #include "AffineForms.h"
+#include "StructErrorMap.h"
 
 namespace ErrorProp {
 
 using namespace llvm;
-
-class StructTree {
-public:
-  typedef std::pair<FPInterval, Optional<AffineForm<inter_t> > > RangeError;
-  enum StructTreeKind {
-    STK_Node,
-    STK_Error
-  };
-
-  StructTree(StructTreeKind K, StructTree *P = nullptr)
-    : Parent(P), Kind(K) {}
-
-  virtual StructTree *clone() const = 0;
-  StructTree *getParent() const { return Parent; }
-  void setParent(StructTree *P) { Parent = P; }
-  virtual ~StructTree() = default;
-
-  StructTreeKind getKind() const { return Kind; }
-protected:
-  StructTree *Parent;
-
-private:
-  StructTreeKind Kind;
-};
-
-class StructNode : public StructTree {
-public:
-  StructNode(StructType *ST, StructTree *Parent = nullptr)
-    : StructTree(STK_Node, Parent), Fields(), SType(ST) {
-    assert(ST != nullptr);
-    Fields.resize(ST->getNumElements());
-  }
-
-  StructNode(const StructNode &SN);
-  StructNode &operator=(const StructNode &O);
-
-  StructTree *clone() const override { return new StructNode(*this); }
-  StructType *getStructType() const { return SType; }
-  StructTree *getStructElement(unsigned I) { return Fields[I].get(); }
-  void setStructElement(unsigned I, StructTree *NewEl) { Fields[I].reset(NewEl); }
-
-  static bool classof(const StructTree *ST) { return ST->getKind() == STK_Node; }
-private:
-  SmallVector<std::unique_ptr<StructTree>, 2U> Fields;
-  StructType *SType;
-};
-
-class StructError : public StructTree {
-public:
-  StructError(StructTree *Parent = nullptr)
-    : StructTree(STK_Error, Parent), Error() {}
-
-  StructError(const RangeError &Err, StructTree *Parent = nullptr)
-    : StructTree(STK_Error, Parent), Error(Err) {}
-
-  StructTree *clone() const override { return new StructError(*this); }
-  const RangeError& getError() const { return Error; }
-  void setError (const RangeError &Err) { Error = Err; }
-
-  static bool classof(const StructTree *ST) { return ST->getKind() == STK_Error; }
-private:
-  RangeError Error;
-};
-
-class StructTreeWalker {
-public:
-  StructTreeWalker(const DenseMap<Argument *, Value *> &ArgBindings)
-    : IndexStack(), ArgBindings(ArgBindings) {}
-
-  Value *retrieveRootPointer(Value *P);
-  StructError *getOrCreateFieldNode(StructTree *Root);
-  StructError *getFieldNode(StructTree *Root);
-  StructTree *makeRoot(Value *P);
-
-protected:
-  SmallVector<unsigned, 4U> IndexStack;
-  const DenseMap<Argument *, Value *> &ArgBindings;
-
-  Value *navigatePointerTreeToRoot(Value *P);
-  StructError *navigateStructTree(StructTree *Root, bool Create = false);
-  unsigned parseIndex(const Use &U) const;
-};
-
-class StructErrorMap {
-public:
-  StructErrorMap() = default;
-  StructErrorMap(const StructErrorMap &M);
-  StructErrorMap &operator=(const StructErrorMap &O);
-
-  void initArgumentBindings(Function &F, const ArrayRef<Value *> AArgs);
-  void setFieldError(Value *P, const StructTree::RangeError &Err);
-  const StructTree::RangeError *getFieldError(Value *P) const;
-  void updateStructTree(const StructErrorMap &O, const ArrayRef<Value *> Pointers);
-
-protected:
-  std::map<Value *, std::unique_ptr<StructTree> > StructMap;
-  DenseMap<Argument *, Value *> ArgBindings;
-};
 
 class TargetErrors {
 public:

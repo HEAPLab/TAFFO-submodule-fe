@@ -2,6 +2,7 @@ add_llvm_loadable_module(LLVMErrorPropagator
   ErrorPropagator.cpp
   FunctionErrorPropagator.cpp
   RangeErrorMap.cpp
+  StructErrorMap.cpp
   FunctionCopyMap.cpp
   Propagators.cpp
   AffineForms.cpp

@@ -21,6 +21,7 @@
 #include "llvm/Analysis/LoopInfo.h"
 
 #include "Propagators.h"
+#include "MemSSAUtils.h"
 #include "Metadata.h"
 
 namespace ErrorProp {
@@ -156,47 +157,49 @@ bool
 FunctionErrorPropagator::dispatchInstruction(Instruction &I) {
   assert(MemSSA != nullptr);
 
+  InstructionPropagator IP(RMap, *MemSSA);
+
   if (I.isBinaryOp())
-    return propagateBinaryOp(RMap, I);
+    return IP.propagateBinaryOp(I);
 
   switch (I.getOpcode()) {
     case Instruction::Store:
-      return propagateStore(RMap, *MemSSA, I);
+      return IP.propagateStore(I);
     case Instruction::Load:
-      return propagateLoad(RMap, *MemSSA, I);
+      return IP.propagateLoad(I);
     case Instruction::FPExt:
       // Fall-through.
     case Instruction::SExt:
       // Fall-through.
     case Instruction::ZExt:
-      return propagateExt(RMap, I);
+      return IP.propagateExt(I);
     case Instruction::FPTrunc:
       // Fall-through.
     case Instruction::Trunc:
-      return propagateTrunc(RMap, I);
+      return IP.propagateTrunc(I);
     case Instruction::Select:
-      return propagateSelect(RMap, I);
+      return IP.propagateSelect(I);
     case Instruction::PHI:
-      return propagatePhi(RMap, I);
+      return IP.propagatePhi(I);
     case Instruction::FCmp:
       // Fall-through.
     case Instruction::ICmp:
-      return checkCmp(RMap, CmpMap, I);
+      return IP.checkCmp(CmpMap, I);
     case Instruction::Ret:
-      return propagateRet(RMap, I);
+      return IP.propagateRet(I);
     case Instruction::Call:
      // Fall-through.
     case Instruction::Invoke:
       prepareErrorsForCall(I);
-      return propagateCall(RMap, I);
+      return IP.propagateCall(I);
     case Instruction::UIToFP:
       // Fall-through.
     case Instruction::SIToFP:
-      return propagateIToFP(RMap, I);
+      return IP.propagateIToFP(I);
     case Instruction::FPToUI:
       // Fall-through.
     case Instruction::FPToSI:
-      return propagateFPToI(RMap, I);
+      return IP.propagateFPToI(I);
     default:
       DEBUG(dbgs() << "Unhandled " << I.getOpcodeName()
 	    << " instruction: " << I.getName() << "\n");
@@ -217,7 +220,7 @@ FunctionErrorPropagator::prepareErrorsForCall(Instruction &I) {
       if (RE != nullptr && RE->second.hasValue())
 	Args.push_back(Arg);
       else {
-	Value *OrigPointer = getOriginPointer(*MemSSA, Arg);
+	Value *OrigPointer = MemSSAUtils::getOriginPointer(*MemSSA, Arg);
 	Args.push_back(OrigPointer);
       }
     }
@@ -226,7 +229,8 @@ FunctionErrorPropagator::prepareErrorsForCall(Instruction &I) {
     }
   }
 
-  if (CalledF == nullptr || isSpecialFunction(*CalledF))
+  if (CalledF == nullptr
+      || InstructionPropagator::isSpecialFunction(*CalledF))
     return;
 
   DEBUG(dbgs() << "Preparing errors for function call/invoke "
@@ -265,7 +269,7 @@ FunctionErrorPropagator::applyActualParametersErrors(RangeErrorMap &GlobRMap,
 
     const AffineForm<inter_t> *Err = RMap.getError(&(*FArg));
     if (Err == nullptr) {
-      Value *OrigPointer = getOriginPointer(*MemSSA, &*FArg);
+      Value *OrigPointer = MemSSAUtils::getOriginPointer(*MemSSA, &*FArg);
       Err = RMap.getError(OrigPointer);
       if (Err == nullptr)
 	continue;

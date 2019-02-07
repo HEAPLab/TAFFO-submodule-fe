@@ -5,6 +5,9 @@ add_llvm_loadable_module(LLVMErrorPropagator
   StructErrorMap.cpp
   FunctionCopyMap.cpp
   Propagators.cpp
+  PropagatorsUtils.cpp
+  SpecialFunctions.cpp
+  MemSSAUtils.cpp
   AffineForms.cpp
   FixedPoint.cpp
 

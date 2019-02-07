@@ -24,6 +24,7 @@
 #include "llvm/IR/Argument.h"
 #include "AffineForms.h"
 #include "Metadata.h"
+#include "MemSSAUtils.h"
 
 namespace ErrorProp {
 
@@ -98,90 +99,9 @@ propagateShr(const AffineForm<inter_t> &E1, const FPInterval &ResR) {
   return E1 + AffineForm<inter_t>(0, ResR.getRoundingError());
 }
 
-const RangeErrorMap::RangeError *
-getConstantFPRangeError(RangeErrorMap &RMap, ConstantFP *VFP) {
-  double CVal;
-  if (VFP->getType()->isDoubleTy())
-    CVal = VFP->getValueAPF().convertToDouble();
-  else if (VFP->getType()->isFloatTy())
-    CVal = VFP->getValueAPF().convertToFloat();
-  else
-    return nullptr;
-
-  // Kludge! ;-)
-  CVal = 1.0;
-
-  FPInterval FPI(Interval<inter_t>(CVal, CVal));
-  RMap.setRangeError(VFP, std::make_pair(FPI, AffineForm<inter_t>(0.0)));
-  return RMap.getRangeError(VFP);
-}
-
-const RangeErrorMap::RangeError *
-getConstantRangeError(RangeErrorMap &RMap, Instruction &I, ConstantInt *VInt,
-		      bool DoublePP = false, const FPType *FallbackTy = nullptr) {
-
-  // We interpret the value of VInt with the same
-  // fractional bits and sign of the result.
-  const FPInterval *RInfo = RMap.getRange(&I);
-  const FPType *Ty = nullptr;
-  if (RInfo != nullptr)
-    Ty = dyn_cast_or_null<FPType>(RInfo->getTType());
-  if (Ty == nullptr && FallbackTy != nullptr)
-    Ty = FallbackTy;
-
-  FPInterval VRange;
-  AffineForm<inter_t> Error;
-  if (Ty != nullptr) {
-    unsigned PointPos = Ty->getPointPos();
-    if (DoublePP) PointPos *= 2U;
-    int SPointPos = (Ty->isSigned()) ? -PointPos : PointPos;
-    std::unique_ptr<FixedPointValue> VFPRange =
-      FixedPointValue::createFromConstantInt(SPointPos, nullptr, VInt, VInt);
-    VRange = VFPRange->getInterval();
-    // We use the rounding error of this format as the only error.
-    Error = AffineForm<inter_t>(0, Ty->getRoundingError());
-  }
-  else {
-    VRange.Min = VRange.Max = VInt->getSExtValue();
-    DEBUG(dbgs() << "(WARNING: interpreting ConstantInt " << *VInt
-	  << " as integer.)");
-  }
-
-  RMap.setRangeError(VInt, std::make_pair(VRange, Error));
-  return RMap.getRangeError(VInt);
-}
-
-const RangeErrorMap::RangeError*
-getOperandRangeError(RangeErrorMap &RMap, Instruction &I, Value *V,
-		     bool DoublePP = false, const FPType *FallbackTy = nullptr) {
-  assert(V != nullptr);
-
-  // If V is a Constant Int extract its value.
-  ConstantInt *VInt = dyn_cast<ConstantInt>(V);
-  if (VInt != nullptr)
-    return getConstantRangeError(RMap, I, VInt, DoublePP, FallbackTy);
-
-  ConstantFP *VFP = dyn_cast<ConstantFP>(V);
-  if (VFP != nullptr)
-    return getConstantFPRangeError(RMap, VFP);
-
-  // Otherwise, check if Range and Error have already been computed.
-  return RMap.getRangeError(V);
-}
-
-const RangeErrorMap::RangeError*
-getOperandRangeError(RangeErrorMap &RMap, Instruction &I, unsigned Op,
-		     bool DoublePP = false, const FPType *FallbackTy = nullptr) {
-  Value *V = I.getOperand(Op);
-  if (V == nullptr)
-    return nullptr;
-
-  return getOperandRangeError(RMap, I, V, DoublePP, FallbackTy);
-}
-
 } // end of anonymous namespace
 
-bool propagateBinaryOp(RangeErrorMap &RMap, Instruction &I) {
+bool InstructionPropagator::propagateBinaryOp(Instruction &I) {
   BinaryOperator &BI = cast<BinaryOperator>(I);
 
   DEBUG(dbgs() << "Computing error for " << BI.getOpcodeName()
@@ -194,8 +114,8 @@ bool propagateBinaryOp(RangeErrorMap &RMap, Instruction &I) {
 
   bool DoublePP = BI.getOpcode() == Instruction::UDiv
     || BI.getOpcode() == Instruction::SDiv;
-  auto *O1 = getOperandRangeError(RMap, BI, 0U, DoublePP);
-  auto *O2 = getOperandRangeError(RMap, BI, 1U);
+  auto *O1 = getOperandRangeError(BI, 0U, DoublePP);
+  auto *O2 = getOperandRangeError(BI, 1U);
   if (O1 == nullptr || !O1->second.hasValue()
       || O2 == nullptr || !O2->second.hasValue()) {
     DEBUG(dbgs() << "no data.\n");
@@ -259,52 +179,7 @@ bool propagateBinaryOp(RangeErrorMap &RMap, Instruction &I) {
   return true;
 }
 
-Value *getOriginPointer(MemorySSA &MemSSA, Value *Pointer) {
-  assert(Pointer != nullptr);
-
-  if (isa<Argument>(Pointer) || isa<AllocaInst>(Pointer)) {
-    return Pointer;
-  }
-  else if (GetElementPtrInst *GEPI = dyn_cast<GetElementPtrInst>(Pointer)) {
-    return getOriginPointer(MemSSA, GEPI->getPointerOperand());
-  }
-  else if (BitCastInst *BCI = dyn_cast<BitCastInst>(Pointer)) {
-    return getOriginPointer(MemSSA, BCI->getOperand(0U));
-  }
-  else if (LoadInst *LI = dyn_cast<LoadInst>(Pointer)) {
-    MemorySSAWalker *MSSAWalker = MemSSA.getWalker();
-    assert(MSSAWalker != nullptr && "Null MemorySSAWalker.");
-    if (MemoryDef *MD = dyn_cast<MemoryDef>(MSSAWalker->getClobberingMemoryAccess(LI))) {
-      if (MemSSA.isLiveOnEntryDef(MD)) {
-	return getOriginPointer(MemSSA, LI->getPointerOperand());
-      }
-      else if (StoreInst *SI = dyn_cast<StoreInst>(MD->getMemoryInst())) {
-	return getOriginPointer(MemSSA, SI->getValueOperand());
-      }
-    }
-    // TODO: Handle MemoryPHI
-    return getOriginPointer(MemSSA, LI->getPointerOperand());
-  }
-  return nullptr;
-}
-
-void updateArgumentRE(RangeErrorMap &RMap, MemorySSA &MemSSA, Value *Pointer,
-		      const RangeErrorMap::RangeError *NewRE) {
-  assert(Pointer != nullptr);
-  assert(NewRE != nullptr);
-
-  Pointer = getOriginPointer(MemSSA, Pointer);
-  if (Pointer != nullptr) {
-    auto *PointerRE = RMap.getRangeError(Pointer);
-    if (PointerRE == nullptr || !PointerRE->second.hasValue()
-	|| PointerRE->second->noiseTermsAbsSum() < NewRE->second->noiseTermsAbsSum()) {
-      RMap.setRangeError(Pointer, *NewRE);
-      DEBUG(dbgs() << "(Error of pointer ("<< *Pointer << ") updated.) ");
-    }
-  }
-}
-
-bool propagateStore(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
+bool InstructionPropagator::propagateStore(Instruction &I) {
   assert(I.getOpcode() == Instruction::Store && "Must be Store.");
   StoreInst &SI = cast<StoreInst>(I);
 
@@ -314,7 +189,7 @@ bool propagateStore(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
   assert(IDest != nullptr && "Store with null Pointer Operand.\n");
   auto *PointerRE = RMap.getRangeError(IDest);
 
-  auto *SrcRE = getOperandRangeError(RMap, I, 0U);
+  auto *SrcRE = getOperandRangeError(I, 0U);
   if (SrcRE == nullptr || !SrcRE->second.hasValue()) {
     DEBUG(dbgs() << "(no data, looking up pointer) ");
     SrcRE = PointerRE;
@@ -328,7 +203,7 @@ bool propagateStore(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
   // Associate the source error to this store instruction,
   RMap.setRangeError(&SI, *SrcRE);
   // and to the pointer, if greater, and if it is a function Argument.
-  updateArgumentRE(RMap, MemSSA, IDest, SrcRE);
+  updateArgumentRE(IDest, SrcRE);
 
   DEBUG(dbgs() << static_cast<double>(SrcRE->second->noiseTermsAbsSum()) << ".\n");
 
@@ -338,88 +213,8 @@ bool propagateStore(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
   return true;
 }
 
-void findLOEError(RangeErrorMap &RMap, Instruction *I,
-		  SmallVectorImpl<const RangeErrorMap::RangeError *> &Res) {
-  Value *Pointer;
-  switch(I->getOpcode()) {
-    case Instruction::Load:
-      Pointer = (cast<LoadInst>(I))->getPointerOperand();
-      break;
-    case Instruction::GetElementPtr:
-      Pointer = (cast<GetElementPtrInst>(I))->getPointerOperand();
-      break;
-    case Instruction::BitCast:
-      Pointer = (cast<BitCastInst>(I))->getOperand(0U);
-    default:
-      return;
-  }
-  const RangeErrorMap::RangeError *RE = RMap.getRangeError(Pointer);
-  if (RE != nullptr && RE->second.hasValue()) {
-    Res.push_back(RE);
-  }
-  else {
-    Instruction *PI = dyn_cast<Instruction>(Pointer);
-    if (PI != nullptr)
-      findLOEError(RMap, PI, Res);
-  }
-}
 
-void findMemDefError(RangeErrorMap &RMap, Instruction *I, const MemoryDef *MD,
-		     SmallVectorImpl<const RangeErrorMap::RangeError *> &Res) {
-  assert(MD != nullptr && "MD is null.");
-
-  Instruction *MI = MD->getMemoryInst();
-  if (isa<CallInst>(MI) || isa<InvokeInst>(MI))
-    // The computed error should have been attached to the actual parameter.
-    findLOEError(RMap, I, Res);
-  else
-    Res.push_back(RMap.getRangeError(MD->getMemoryInst()));
-}
-
-void findMemPhiError(RangeErrorMap &RMap,
-		     MemorySSA &MemSSA,
-		     Instruction *I,
-		     MemoryPhi *MPhi,
-		     SmallSet<MemoryAccess *, DEFAULT_RE_COUNT> &Visited,
-		     SmallVectorImpl<const RangeErrorMap::RangeError *> &Res) {
-  assert(MPhi != nullptr && "MPhi is null.");
-
-  for (Use &MU : MPhi->incoming_values()) {
-    MemoryAccess *MA = cast<MemoryAccess>(&MU);
-    findMemSSAError(RMap, MemSSA, I, MA, Visited, Res);
-  }
-}
-
-void findMemSSAError(RangeErrorMap &RMap, MemorySSA &MemSSA,
-		     Instruction *I, MemoryAccess *MA,
-		     SmallSet<MemoryAccess *, DEFAULT_RE_COUNT> &Visited,
-		     SmallVectorImpl<const RangeErrorMap::RangeError *> &Res) {
-  if (MA == nullptr) {
-    DEBUG(dbgs() << "WARNING: nullptr MemoryAccess passed to findMemSSAError!\n");
-    return;
-  }
-
-  if (!Visited.insert(MA).second)
-    return;
-
-  if (MemSSA.isLiveOnEntryDef(MA))
-    findLOEError(RMap, I, Res);
-  else if (isa<MemoryUse>(MA)) {
-    MemorySSAWalker *MSSAWalker = MemSSA.getWalker();
-    assert(MSSAWalker != nullptr && "Null MemorySSAWalker.");
-    findMemSSAError(RMap, MemSSA, I,
-		    MSSAWalker->getClobberingMemoryAccess(MA),
-		    Visited, Res);
-  }
-  else if (isa<MemoryDef>(MA))
-    findMemDefError(RMap, I, cast<MemoryDef>(MA), Res);
-  else {
-    assert(isa<MemoryPhi>(MA));
-    findMemPhiError(RMap, MemSSA, I, cast<MemoryPhi>(MA), Visited, Res);
-  }
-}
-
-bool propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
+bool InstructionPropagator::propagateLoad(Instruction &I) {
   assert(I.getOpcode() == Instruction::Load && "Must be Load.");
   LoadInst &LI = cast<LoadInst>(I);
 
@@ -431,9 +226,9 @@ bool propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
   DEBUG(dbgs() << "Propagating error for Load instruction " << I.getName() << "... ");
 
   // Look for range and error in the defining instructions with MemorySSA
-  SmallSet<MemoryAccess *, DEFAULT_RE_COUNT> Visited;
-  SmallVector<const RangeErrorMap::RangeError *, DEFAULT_RE_COUNT> REs;
-  findMemSSAError(RMap, MemSSA, &I, MemSSA.getMemoryAccess(&I), Visited, REs);
+  MemSSAUtils MemUtils(RMap, MemSSA);
+  MemUtils.findMemSSAError(&I, MemSSA.getMemoryAccess(&I));
+  MemSSAUtils::REVector &REs = MemUtils.getRangeErrors();
 
   // Kludje for when AliasAnalysis fails (i.e. almost always).
   // findLOEError(RMap, &I, REs);
@@ -492,31 +287,7 @@ bool propagateLoad(RangeErrorMap &RMap, MemorySSA &MemSSA, Instruction &I) {
   return true;
 }
 
-bool unOpErrorPassThrough(RangeErrorMap &RMap, Instruction &I) {
-  // assert(isa<UnaryInstruction>(I) && "Must be Unary.");
-
-  auto *OpRE = getOperandRangeError(RMap, I, 0U);
-  if (OpRE == nullptr || !OpRE->second.hasValue()) {
-    DEBUG(dbgs() << "no data.\n");
-    return false;
-  }
-
-  auto *DestRE = RMap.getRangeError(&I);
-  if (DestRE == nullptr || DestRE->first.isUninitialized()) {
-    // Add operand range and error to RMap.
-    RMap.setRangeError(&I, *OpRE);
-  }
-  else {
-    // Add only error to RMap.
-    RMap.setError(&I, *OpRE->second);
-  }
-
-  DEBUG(dbgs() << static_cast<double>(OpRE->second->noiseTermsAbsSum()) << ".\n");
-
-  return true;
-}
-
-bool propagateExt(RangeErrorMap &RMap, Instruction &I) {
+bool InstructionPropagator::propagateExt(Instruction &I) {
   assert((I.getOpcode() == Instruction::SExt
 	  || I.getOpcode() == Instruction::ZExt
 	  || I.getOpcode() == Instruction::FPExt)
@@ -525,10 +296,10 @@ bool propagateExt(RangeErrorMap &RMap, Instruction &I) {
   DEBUG(dbgs() << "Propagating error for Extend instruction " << I.getName() << "... ");
 
   // No further error is introduced with signed/unsigned extension.
-  return unOpErrorPassThrough(RMap, I);
+  return unOpErrorPassThrough(I);
 }
 
-bool propagateTrunc(RangeErrorMap &RMap, Instruction &I) {
+bool InstructionPropagator::propagateTrunc(Instruction &I) {
   assert((I.getOpcode() == Instruction::Trunc
 	  || I.getOpcode() == Instruction::FPTrunc)
 	 && "Must be Trunc.");
@@ -537,18 +308,18 @@ bool propagateTrunc(RangeErrorMap &RMap, Instruction &I) {
 
   // No further error is introduced with truncation if no overflow occurs
   // (in which case it is useless to propagate other errors).
-  return unOpErrorPassThrough(RMap, I);
+  return unOpErrorPassThrough(I);
 }
 
-bool propagateIToFP(RangeErrorMap &RMap, Instruction &I) {
+bool InstructionPropagator::propagateIToFP(Instruction &I) {
   assert((isa<SIToFPInst>(I) || isa<UIToFPInst>(I)) && "Must be IToFP.");
 
   DEBUG(dbgs() << "Propagating error for IToFP instruction " << I.getName() << "... ");
 
-  return unOpErrorPassThrough(RMap, I);
+  return unOpErrorPassThrough(I);
 }
 
-bool propagateFPToI(RangeErrorMap &RMap, Instruction &I) {
+bool InstructionPropagator::propagateFPToI(Instruction &I) {
   assert((isa<FPToSIInst>(I) || isa<FPToUIInst>(I)) && "Must be FPToI.");
 
   DEBUG(dbgs() << "Propagating error for FPToI instruction " << I.getName() << "... ");
@@ -572,7 +343,7 @@ bool propagateFPToI(RangeErrorMap &RMap, Instruction &I) {
   return true;
 }
 
-bool propagateSelect(RangeErrorMap &RMap, Instruction &I) {
+bool InstructionPropagator::propagateSelect(Instruction &I) {
   SelectInst &SI = cast<SelectInst>(I);
 
   DEBUG(dbgs() << "Propagating error for Select instruction " << I.getName() << "... ");
@@ -582,8 +353,8 @@ bool propagateSelect(RangeErrorMap &RMap, Instruction &I) {
     return false;
   }
 
-  auto *TV = getOperandRangeError(RMap, I, SI.getTrueValue());
-  auto *FV = getOperandRangeError(RMap, I, SI.getFalseValue());
+  auto *TV = getOperandRangeError(I, SI.getTrueValue());
+  auto *FV = getOperandRangeError(I, SI.getFalseValue());
   if (TV == nullptr || !TV->second.hasValue()
       || FV == nullptr || !FV->second.hasValue()) {
     DEBUG(dbgs() << "(no data).\n");
@@ -608,7 +379,7 @@ bool propagateSelect(RangeErrorMap &RMap, Instruction &I) {
   return true;
 }
 
-bool propagatePhi(RangeErrorMap &RMap, Instruction &I) {
+bool InstructionPropagator::propagatePhi(Instruction &I) {
   PHINode &PHI = cast<PHINode>(I);
 
   DEBUG(dbgs() << "Propagating error for PHI node " << I.getName() << "... ");
@@ -616,7 +387,7 @@ bool propagatePhi(RangeErrorMap &RMap, Instruction &I) {
   const FPType *ConstFallbackTy = nullptr;
   if (RMap.getRangeError(&I) == nullptr) {
     for (const Use &IVal : PHI.incoming_values()) {
-      auto *RE = getOperandRangeError(RMap, I, IVal);
+      auto *RE = getOperandRangeError(I, IVal);
       if (RE == nullptr)
 	continue;
 
@@ -631,7 +402,7 @@ bool propagatePhi(RangeErrorMap &RMap, Instruction &I) {
   inter_t Min = std::numeric_limits<inter_t>::infinity();
   inter_t Max = -std::numeric_limits<inter_t>::infinity();
   for (const Use &IVal : PHI.incoming_values()) {
-    auto *RE = getOperandRangeError(RMap, I, IVal, false, ConstFallbackTy);
+    auto *RE = getOperandRangeError(I, IVal, false, ConstFallbackTy);
     if (RE == nullptr)
       continue;
 
@@ -665,34 +436,17 @@ bool propagatePhi(RangeErrorMap &RMap, Instruction &I) {
   return true;
 }
 
-inter_t computeMinRangeDiff(const FPInterval &R1, const FPInterval &R2) {
-  // Check if the two ranges overlap.
-  if (R1.Min <= R2.Max && R2.Min <= R1.Max) {
-    return 0.0;
-  }
-
-  // Otherwise either R1 < R2 or R2 < R1.
-  if (R1.Max < R2.Min) {
-    // R1 < R2
-    return R2.Min - R1.Max;
-  }
-
-  // Else R2 < R1
-  assert(R2.Max < R1.Min);
-  return R1.Min - R2.Max;
-}
-
 extern cl::opt<unsigned> CmpErrorThreshold;
 
-bool checkCmp(RangeErrorMap &RMap, CmpErrorMap &CmpMap, Instruction &I) {
+bool InstructionPropagator::checkCmp(CmpErrorMap &CmpMap, Instruction &I) {
   CmpInst &CI = cast<CmpInst>(I);
 
   DEBUG(dbgs() << "Checking comparison error for ICmp/FCmp "
 	<< CmpInst::getPredicateName(CI.getPredicate())
 	<< " instruction " << I.getName() << "... ");
 
-  auto *Op1 = getOperandRangeError(RMap, I, 0U);
-  auto *Op2 = getOperandRangeError(RMap, I, 1U);
+  auto *Op1 = getOperandRangeError(I, 0U);
+  auto *Op2 = getOperandRangeError(I, 1U);
   if (Op1 == nullptr || Op1->first.isUninitialized() || !Op1->second.hasValue()
       || Op2 == nullptr || Op2->first.isUninitialized() || !Op2->second.hasValue()) {
     DEBUG(dbgs() << "(no data).\n");
@@ -731,7 +485,7 @@ bool checkCmp(RangeErrorMap &RMap, CmpErrorMap &CmpMap, Instruction &I) {
   return true;
 }
 
-bool propagateRet(RangeErrorMap &RMap, Instruction &I) {
+bool InstructionPropagator::propagateRet(Instruction &I) {
   ReturnInst &RI = cast<ReturnInst>(I);
 
   DEBUG(dbgs() << "Propagating error for Return instruction "
@@ -767,175 +521,7 @@ bool propagateRet(RangeErrorMap &RMap, Instruction &I) {
   }
 }
 
-bool isSqrt(Function &F) {
-  StringRef FName = F.getName();
-  return FName == "sqrtf"
-    || FName == "sqrt"
-    || FName == "_ZSt4sqrtf"
-    || (FName.find("sqrt") != StringRef::npos
-	&& FName.find("fixp") != StringRef::npos)
-    || FName == "_ZSt4sqrtf_fixp";
-}
-
-bool isLog(Function &F) {
-  StringRef FName = F.getName();
-  return FName == "log"
-    || FName == "logf"
-    || FName == "_ZSt3logf"
-    || (FName.find("log") != StringRef::npos
-	&& FName.find("fixp") != StringRef::npos);
-}
-
-bool isExp(Function &F) {
-  StringRef FName = F.getName();
-  return FName == "expf"
-    || FName == "exp"
-    || FName == "_ZSt3expf"
-    || (FName.find("exp") != StringRef::npos
-	&& FName.find("fixp") != StringRef::npos);
-}
-
-bool isAcos(Function &F) {
-  StringRef FName = F.getName();
-  return F.getName() == "acos"
-    || F.getName() == "acosf"
-    || (FName.find("acos") != StringRef::npos
-	&& FName.find("fixp") != StringRef::npos);
-}
-
-bool isAsin(Function &F) {
-  StringRef FName = F.getName();
-  return F.getName() == "asin"
-    || F.getName() == "asinf"
-    || (FName.find("asin") != StringRef::npos
-	&& FName.find("fixp") != StringRef::npos);;
-}
-
-bool isSpecialFunction(Function &F) {
-  return F.arg_size() == 1U
-    && (F.empty() || !F.hasName()
-	|| isSqrt(F) || isLog(F) || isExp(F) || isAcos(F) || isAsin(F));
-}
-
-bool propagateSqrt(RangeErrorMap &RMap, Instruction &I) {
-  DEBUG(dbgs() << "(special: sqrt) ");
-  auto *OpRE = getOperandRangeError(RMap, I, 0U);
-  if (OpRE == nullptr || !OpRE->second.hasValue()) {
-    DEBUG(dbgs() << "no data.\n");
-    return false;
-  }
-
-  AffineForm<inter_t> NewErr =
-    LinearErrorApproximationDecr([](inter_t x){ return static_cast<inter_t>(0.5) / std::sqrt(x); },
-				 OpRE->first, OpRE->second.getValue())
-    + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
-
-  RMap.setError(&I, NewErr);
-
-  DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
-  return true;
-}
-
-bool propagateLog(RangeErrorMap &RMap, Instruction &I) {
-  DEBUG(dbgs() << "(special: log) ");
-  auto *OpRE = getOperandRangeError(RMap, I, 0U);
-  if (OpRE == nullptr || !OpRE->second.hasValue()) {
-    DEBUG(dbgs() << "no data.\n");
-    return false;
-  }
-
-  AffineForm<inter_t> NewErr =
-    LinearErrorApproximationDecr([](inter_t x){ return static_cast<inter_t>(1) / x; },
-				 OpRE->first, OpRE->second.getValue())
-    + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
-
-  RMap.setError(&I, NewErr);
-
-  DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
-  return true;
-}
-
-bool propagateExp(RangeErrorMap &RMap, Instruction &I) {
-  DEBUG(dbgs() << "(special: exp) ");
-  auto *OpRE = getOperandRangeError(RMap, I, 0U);
-  if (OpRE == nullptr || !OpRE->second.hasValue()) {
-    DEBUG(dbgs() << "no data.\n");
-    return false;
-  }
-
-  AffineForm<inter_t> NewErr =
-    LinearErrorApproximationIncr([](inter_t x){ return std::exp(x); },
-				 OpRE->first, OpRE->second.getValue())
-    + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
-
-  RMap.setError(&I, NewErr);
-
-  DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
-  return true;
-}
-
-bool propagateAcos(RangeErrorMap &RMap, Instruction &I) {
-  DEBUG(dbgs() << "(special: acos) ");
-  auto *OpRE = getOperandRangeError(RMap, I, 0U);
-  if (OpRE == nullptr || !OpRE->second.hasValue()) {
-    DEBUG(dbgs() << "no data.\n");
-    return false;
-  }
-
-  AffineForm<inter_t> NewErr =
-    LinearErrorApproximationIncr([](inter_t x){ return static_cast<inter_t>(-1) / std::sqrt(1 - x*x); },
-				 OpRE->first, OpRE->second.getValue())
-    + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
-
-  RMap.setError(&I, NewErr);
-
-  DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
-  return true;
-}
-
-bool propagateAsin(RangeErrorMap &RMap, Instruction &I) {
-  DEBUG(dbgs() << "(special: asin) ");
-  auto *OpRE = getOperandRangeError(RMap, I, 0U);
-  if (OpRE == nullptr || !OpRE->second.hasValue()) {
-    DEBUG(dbgs() << "no data.\n");
-    return false;
-  }
-
-  AffineForm<inter_t> NewErr =
-    LinearErrorApproximationIncr([](inter_t x){ return static_cast<inter_t>(1) / std::sqrt(1 - x*x); },
-				 OpRE->first, OpRE->second.getValue())
-    + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
-
-  RMap.setError(&I, NewErr);
-
-  DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
-  return true;
-}
-
-bool propagateSpecialCall(RangeErrorMap &RMap, Instruction &I, Function &Called) {
-  assert(isSpecialFunction(Called));
-  if (isSqrt(Called)) {
-    return propagateSqrt(RMap, I);
-  }
-  else if (isLog(Called)) {
-    return propagateLog(RMap, I);
-  }
-  else if (isExp(Called)) {
-    return propagateExp(RMap, I);
-  }
-  else if (isAcos(Called)) {
-    return propagateAcos(RMap, I);
-  }
-  else if (isAsin(Called)) {
-    return propagateAsin(RMap, I);
-  }
-  else {
-    DEBUG(dbgs() << "(special pass-through) ");
-    return unOpErrorPassThrough(RMap, I);
-  }
-}
-
-bool propagateCall(RangeErrorMap &RMap, Instruction &I) {
+bool InstructionPropagator::propagateCall(Instruction &I) {
   Function *F = nullptr;
   if (isa<CallInst>(I)) {
     F = cast<CallInst>(I).getCalledFunction();
@@ -950,7 +536,7 @@ bool propagateCall(RangeErrorMap &RMap, Instruction &I) {
   }
 
   if (F != nullptr && isSpecialFunction(*F)) {
-    return propagateSpecialCall(RMap, I, *F);
+    return propagateSpecialCall(I, *F);
   }
 
   if (RMap.getRangeError(&I) == nullptr) {
@@ -971,7 +557,7 @@ bool propagateCall(RangeErrorMap &RMap, Instruction &I) {
   return true;
 }
 
-bool propagateGetElementPtr(RangeErrorMap &RMap, Instruction &I) {
+bool InstructionPropagator::propagateGetElementPtr(Instruction &I) {
   GetElementPtrInst &GEPI = cast<GetElementPtrInst>(I);
 
   DEBUG(dbgs() << "Propagating error for GetElementPtr instruction "

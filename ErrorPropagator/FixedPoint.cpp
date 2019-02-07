@@ -16,7 +16,7 @@
 #include <cmath>
 
 #include "llvm/Support/ErrorHandling.h"
-#include "ErrorPropagator/FixedPoint.h"
+#include "FixedPoint.h"
 
 namespace ErrorProp {
 

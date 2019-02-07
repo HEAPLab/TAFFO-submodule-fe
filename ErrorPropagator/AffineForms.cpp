@@ -13,6 +13,6 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "ErrorPropagator/AffineForms.h"
+#include "AffineForms.h"
 
 ErrorProp::NoiseTermBase::SymbolT ErrorProp::NoiseTermBase::SymId = 0;

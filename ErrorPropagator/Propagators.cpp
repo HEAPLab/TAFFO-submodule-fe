@@ -13,7 +13,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "ErrorPropagator/Propagators.h"
+#include "Propagators.h"
 
 #include <cassert>
 #include <algorithm>
@@ -22,7 +22,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Argument.h"
-#include "ErrorPropagator/AffineForms.h"
+#include "AffineForms.h"
 #include "Metadata.h"
 
 namespace ErrorProp {

@@ -14,7 +14,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "ErrorPropagator/RangeErrorMap.h"
+#include "RangeErrorMap.h"
 
 #include <utility>
 #include "llvm/Support/Debug.h"

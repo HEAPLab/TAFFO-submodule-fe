@@ -1,4 +1,4 @@
-#include "ErrorPropagator/FunctionCopyMap.h"
+#include "FunctionCopyMap.h"
 
 #include "llvm/IR/Dominators.h"
 #include "llvm/Analysis/LoopInfo.h"

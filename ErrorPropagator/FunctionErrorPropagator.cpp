@@ -12,7 +12,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "ErrorPropagator/FunctionErrorPropagator.h"
+#include "FunctionErrorPropagator.h"
 
 #include "llvm/IR/InstIterator.h"
 #include "llvm/IR/CallSite.h"
@@ -20,7 +20,7 @@
 #include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 #include "llvm/Analysis/LoopInfo.h"
 
-#include "ErrorPropagator/Propagators.h"
+#include "Propagators.h"
 #include "Metadata.h"
 
 namespace ErrorProp {

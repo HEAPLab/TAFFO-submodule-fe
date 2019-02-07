@@ -12,7 +12,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "ErrorPropagator/ErrorPropagator.h"
+#include "ErrorPropagator.h"
 
 #include <cassert>
 #include <utility>
@@ -26,7 +26,7 @@
 #include "llvm/Analysis/MemorySSA.h"
 
 #include "Metadata.h"
-#include "ErrorPropagator/FunctionErrorPropagator.h"
+#include "FunctionErrorPropagator.h"
 
 namespace ErrorProp {
 

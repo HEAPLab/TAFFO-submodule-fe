@@ -25,8 +25,8 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Optional.h"
 #include "Metadata.h"
-#include "ErrorPropagator/FixedPoint.h"
-#include "ErrorPropagator/AffineForms.h"
+#include "FixedPoint.h"
+#include "AffineForms.h"
 
 namespace ErrorProp {
 

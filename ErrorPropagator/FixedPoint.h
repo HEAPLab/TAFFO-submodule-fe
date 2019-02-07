@@ -23,7 +23,7 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Metadata.h"
 #include "InputInfo.h"
-#include "ErrorPropagator/AffineForms.h"
+#include "AffineForms.h"
 
 namespace ErrorProp {
 

@@ -49,4 +49,4 @@ entry:
 ; CHECK: !12 = !{double 1.270000e-01}
 ; CHECK: !17 = !{double 1.370000e-01}
 ; CHECK: !20 = !{double 2.465240e-01}
-; CHECK: !23 = !{double 0x40104FC903E8FCE9}
+; CHECK: !23 = !{double 0x3FD85E9D0F5F0976}

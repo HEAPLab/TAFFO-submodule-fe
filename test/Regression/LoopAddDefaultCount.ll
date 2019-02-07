@@ -3,12 +3,6 @@
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
-; CHECK: %a.addr.03 = phi i32 [ %a, %for.body.lr.ph ], [ %add, %for.body ], !taffo.info !7, !taffo.abserror !6
-; CHECK: %add = add nsw i32 %a.addr.03, %a.addr.03, !taffo.info !7, !taffo.abserror !9
-; CHECK: %split = phi i32 [ %add, %for.body ], !taffo.info !7, !taffo.abserror !10
-; CHECK: %a.addr.0.lcssa = phi i32 [ %split, %for.cond.for.end_crit_edge ], [ %a, %entry ], !taffo.info !7, !taffo.abserror !10
-; CHECK: %mul = mul nsw i32 %a.addr.0.lcssa, %a.addr.0.lcssa, !taffo.info !11, !taffo.abserror !13
-; CHECK: ret i32 %mul, !taffo.abserror !13
 
 ; Function Attrs: noinline uwtable
 define i32 @foo(i32 %a, i32 %b) #0 !taffo.funinfo !2 {
@@ -52,7 +46,17 @@ for.end:                                          ; preds = %for.cond.for.end_cr
 !9 = !{!4, !10, i1 0}
 !10 = !{double 1.000000e+04, double 2.073600e+04}
 
-; CHECK: !9 = !{double 2.500000e-02}
-; CHECK: !10 = !{double 4.000000e-01}
-; CHECK: !13 = !{double 2.896000e+01}
+; CHECK-DAG: !{double 2.500000e-02}
+; CHECK-DAG: !{double 4.000000e-01}
+; CHECK-DAG: !{double 2.896000e+01}
+
+;  %a.addr.03 = phi i32 [ %a, %for.body.lr.ph ], [ %add, %for.body ], !taffo.info !7, !taffo.abserror !6
+;  %add = add nsw i32 %a.addr.03, %a.addr.03, !taffo.info !7, !taffo.abserror !9
+;  %split = phi i32 [ %add, %for.body ], !taffo.info !7, !taffo.abserror !10
+;  %a.addr.0.lcssa = phi i32 [ %split, %for.cond.for.end_crit_edge ], [ %a, %entry ], !taffo.info !7, !taffo.abserror !10
+;  %mul = mul nsw i32 %a.addr.0.lcssa, %a.addr.0.lcssa, !taffo.info !11, !taffo.abserror !13
+;  ret i32 %mul, !taffo.abserror !13
+;  !9 = !{double 2.500000e-02}
+;  !10 = !{double 4.000000e-01}
+;  !13 = !{double 2.896000e+01}
 

@@ -5,24 +5,6 @@ target triple = "x86_64-unknown-linux-gnu"
 
 @.str = private unnamed_addr constant [17 x i8] c"hello world, %d\0A\00", align 1
 
-; CHECK: store i32 10, i32* %a, align 4, !taffo.info !2, !taffo.abserror !5
-; CHECK: store i32 11, i32* %b, align 4, !taffo.info !6, !taffo.abserror !8
-; CHECK: %0 = load i32, i32* %a, align 4, !taffo.abserror !5
-; CHECK: %1 = load i32, i32* %b, align 4, !taffo.abserror !8
-; CHECK: %add = add nsw i32 %0, %1, !taffo.info !9, !taffo.abserror !11
-; CHECK: store i32 %add, i32* %a, align 4, !taffo.abserror !11
-; CHECK: %2 = load i32, i32* %a, align 4, !taffo.abserror !11
-; CHECK: %conv = sext i32 %2 to i64, !taffo.info !12, !taffo.abserror !11
-; CHECK: store i64 %conv, i64* %c, align 8, !taffo.abserror !11
-; CHECK: %3 = load i32, i32* %b, align 4, !taffo.abserror !8
-; CHECK: %conv1 = sext i32 %3 to i64, !taffo.info !14, !taffo.abserror !8
-; CHECK: store i64 %conv1, i64* %d, align 8, !taffo.abserror !8
-; CHECK: %4 = load i64, i64* %c, align 8, !taffo.abserror !11
-; CHECK: %5 = load i64, i64* %d, align 8, !taffo.abserror !8
-; CHECK: %sub = sub nsw i64 %4, %5, !taffo.info !15, !taffo.abserror !5
-; CHECK: %conv2 = trunc i64 %sub to i32, !taffo.info !17, !taffo.abserror !5
-; CHECK: store i32 %conv2, i32* %b, align 4, !taffo.abserror !5
-; CHECK: %6 = load i32, i32* %b, align 4, !taffo.abserror !5
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define i32 @main() #0 {
@@ -79,4 +61,32 @@ declare i32 @printf(i8*, ...) #1
 !15 = !{double 1.250000e-01, double 5.000000e-01}
 !16 = !{!3, !15, i1 0}
 
-; CHECK: !11 = !{double 3.000000e-03}
+; CHECK-DAG: !{double 0.000000e+00}
+; CHECK-DAG: !{double 6.250000e-02}
+; CHECK-DAG: !{double 3.125000e-02}
+
+;  store i32 0, i32* %retval, align 4, !taffo.abserror !2
+;  store i32 10, i32* %a, align 4, !taffo.info !5, !taffo.abserror !4
+;  store i32 11, i32* %b, align 4, !taffo.info !9, !taffo.abserror !4
+;  %0 = load i32, i32* %a, align 4, !taffo.abserror !4
+;  %1 = load i32, i32* %b, align 4, !taffo.abserror !4
+;  %add = add nsw i32 %0, %1, !taffo.info !12, !taffo.abserror !3
+;  store i32 %add, i32* %a, align 4, !taffo.abserror !3
+;  %2 = load i32, i32* %a, align 4, !taffo.abserror !3
+;  %conv = sext i32 %2 to i64, !taffo.info !14, !taffo.abserror !3
+;  store i64 %conv, i64* %c, align 8, !taffo.abserror !3
+;  %3 = load i32, i32* %b, align 4, !taffo.abserror !4
+;  %conv1 = sext i32 %3 to i64, !taffo.info !16, !taffo.abserror !4
+;  store i64 %conv1, i64* %d, align 8, !taffo.abserror !4
+;  %4 = load i64, i64* %c, align 8, !taffo.abserror !3
+;  %5 = load i64, i64* %d, align 8, !taffo.abserror !4
+;  %sub = sub nsw i64 %4, %5, !taffo.info !17, !taffo.abserror !4
+;  %conv2 = trunc i64 %sub to i32, !taffo.info !19, !taffo.abserror !4
+;  store i32 %conv2, i32* %b, align 4, !taffo.abserror !4
+;  %6 = load i32, i32* %b, align 4, !taffo.abserror !4
+;  ret i32 0, !taffo.abserror !2
+;  !2 = !{double 0.000000e+00}
+;  !3 = !{double 6.250000e-02}
+;  !4 = !{double 3.125000e-02}
+
+

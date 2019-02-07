@@ -5,34 +5,9 @@ target triple = "x86_64-unknown-linux-gnu"
 
 @.str = private unnamed_addr constant [17 x i8] c"hello world, %d\0A\00", align 1
 
-; CHECK: store i32 10, i32* %a, align 4, !taffo.info !3, !taffo.abserror !6
-; CHECK: store i32 11, i32* %b, align 4, !taffo.info !7, !taffo.abserror !6
-; CHECK: %0 = load i32, i32* %a, align 4, !taffo.abserror !6
-; CHECK: %1 = load i32, i32* %b, align 4, !taffo.abserror !6
-; CHECK: %add = add nsw i32 %0, %1, !taffo.info !9, !taffo.abserror !11
-; CHECK: store i32 %add, i32* %a, align 4, !taffo.abserror !11
-; CHECK: %2 = load i32, i32* %a, align 4, !taffo.abserror !11
-; CHECK: %shl = shl i32 %2, 3, !taffo.info !12, !taffo.abserror !11
-; CHECK: store i32 %shl, i32* %a, align 4, !taffo.abserror !11
-; CHECK: %3 = load i32, i32* %a, align 4, !taffo.abserror !11
-; CHECK: %4 = load i32, i32* %b, align 4, !taffo.abserror !6
-; CHECK: %sub = sub nsw i32 %3, %4, !taffo.info !15, !taffo.abserror !6
-; CHECK: store i32 %sub, i32* %b, align 4, !taffo.abserror !6
-; CHECK: %5 = load i32, i32* %b, align 4, !taffo.abserror !6
-; CHECK: %shr = ashr i32 %5, 3, !taffo.info !17, !taffo.abserror !20
-; CHECK: store i32 %shr, i32* %b, align 4, !taffo.abserror !20
-; CHECK: %6 = load i32, i32* %a, align 4, !taffo.abserror !11
-; CHECK: %7 = load i32, i32* %b, align 4, !taffo.abserror !20
-; CHECK: %mul = mul nsw i32 %6, %7, !taffo.info !21, !taffo.abserror !23
-; CHECK: store i32 %mul, i32* %a, align 4, !taffo.abserror !23
-; CHECK: %8 = load i32, i32* %b, align 4, !taffo.abserror !20
-; CHECK: %9 = load i32, i32* %a, align 4, !taffo.abserror !23
-; CHECK: %div = sdiv i32 %8, %9, !taffo.info !24, !taffo.abserror !26
-; CHECK: store i32 %div, i32* %b, align 4, !taffo.abserror !26
-; CHECK: %10 = load i32, i32* %b, align 4, !taffo.abserror !26
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define i32 @main() !errorprop.argsrange !{} {
+define i32 @main() {
 entry:
   %retval = alloca i32, align 4
   %a = alloca i32, align 4
@@ -94,8 +69,39 @@ declare i32 @printf(i8*, ...)
 !19 = !{!"fixp", i32 32, i32 2}
 !20 = !{double 1.000000e+00, double 4.000000e+00}
 
-; CHECK: !6 = !{double 3.125000e-02}
-; CHECK: !11 = !{double 6.250000e-02}
-; CHECK: !20 = !{double 2.812500e-01}
-; CHECK: !23 = !{double 0x3FD2F40000000000}
-; CHECK: !26 = !{double 0x3FE065121211F59A}
+; CHECK-DAG: !{double 3.125000e-02}
+; CHECK-DAG: !{double 6.250000e-02}
+; CHECK-DAG: !{double 2.812500e-01}
+; CHECK-DAG: !{double 0x3FD2F40000000000}
+; CHECK-DAG: !{double 0x3FE4039E06522C3F}
+
+;  store i32 10, i32* %a, align 4, !taffo.info !3, !taffo.abserror !6
+;  store i32 11, i32* %b, align 4, !taffo.info !7, !taffo.abserror !6
+;  %0 = load i32, i32* %a, align 4, !taffo.abserror !6
+;  %1 = load i32, i32* %b, align 4, !taffo.abserror !6
+;  %add = add nsw i32 %0, %1, !taffo.info !9, !taffo.abserror !11
+;  store i32 %add, i32* %a, align 4, !taffo.abserror !11
+;  %2 = load i32, i32* %a, align 4, !taffo.abserror !11
+;  %shl = shl i32 %2, 3, !taffo.info !12, !taffo.abserror !11
+;  store i32 %shl, i32* %a, align 4, !taffo.abserror !11
+;  %3 = load i32, i32* %a, align 4, !taffo.abserror !11
+;  %4 = load i32, i32* %b, align 4, !taffo.abserror !6
+;  %sub = sub nsw i32 %3, %4, !taffo.info !15, !taffo.abserror !6
+;  store i32 %sub, i32* %b, align 4, !taffo.abserror !6
+;  %5 = load i32, i32* %b, align 4, !taffo.abserror !6
+;  %shr = ashr i32 %5, 3, !taffo.info !17, !taffo.abserror !20
+;  store i32 %shr, i32* %b, align 4, !taffo.abserror !20
+;  %6 = load i32, i32* %a, align 4, !taffo.abserror !11
+;  %7 = load i32, i32* %b, align 4, !taffo.abserror !20
+;  %mul = mul nsw i32 %6, %7, !taffo.info !21, !taffo.abserror !23
+;  store i32 %mul, i32* %a, align 4, !taffo.abserror !23
+;  %8 = load i32, i32* %b, align 4, !taffo.abserror !20
+;  %9 = load i32, i32* %a, align 4, !taffo.abserror !23
+;  %div = sdiv i32 %8, %9, !taffo.info !24, !taffo.abserror !26
+;  store i32 %div, i32* %b, align 4, !taffo.abserror !26
+;  %10 = load i32, i32* %b, align 4, !taffo.abserror !26
+;  !6 = !{double 3.125000e-02}
+;  !11 = !{double 6.250000e-02}
+;  !20 = !{double 2.812500e-01}
+;  !23 = !{double 0x3FD2F40000000000}
+;  !26 = !{double 0x3FE4039E06522C3F}

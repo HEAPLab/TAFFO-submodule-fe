@@ -3,23 +3,6 @@
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
-; CHECK: store i32 0, i32* %arrayidx5, align 4, !taffo.info !15, !taffo.abserror !17
-; CHECK: %0 = load i32, i32* %arrayidx12, align 4, !taffo.info !18, !taffo.abserror !4
-; CHECK: %mul = mul nsw i32 %alpha, %0, !taffo.info !19, !taffo.abserror !21
-; CHECK: %1 = load i32, i32* %arrayidx16, align 4, !taffo.info !22, !taffo.abserror !4
-; CHECK: %mul17 = mul nsw i32 %mul, %1, !taffo.info !23, !taffo.abserror !25
-; CHECK: %2 = load i32, i32* %arrayidx21, align 4, !taffo.info !15, !taffo.abserror !17
-; CHECK: %add = add nsw i32 %2, %mul17, !taffo.info !13, !taffo.abserror !26
-; CHECK: store i32 %add, i32* %arrayidx21, align 4, !taffo.abserror !26
-; CHECK: %3 = load i32, i32* %arrayidx37, align 4, !taffo.info !18, !taffo.abserror !26
-; CHECK: %mul38 = mul nsw i32 %3, %beta, !taffo.info !27, !taffo.abserror !29
-; CHECK: store i32 %mul38, i32* %arrayidx37, align 4, !taffo.abserror !29
-; CHECK: %4 = load i32, i32* %arrayidx45, align 4, !taffo.info !13, !taffo.abserror !26
-; CHECK: %5 = load i32, i32* %arrayidx49, align 4, !taffo.info !30, !taffo.abserror !4
-; CHECK: %mul50 = mul nsw i32 %4, %5, !taffo.info !31, !taffo.abserror !33
-; CHECK: %6 = load i32, i32* %arrayidx54, align 4, !taffo.info !34, !taffo.abserror !29
-; CHECK: %add55 = add nsw i32 %6, %mul50, !taffo.info !34, !taffo.abserror !36
-; CHECK: store i32 %add55, i32* %arrayidx54, align 4, !taffo.abserror !36
 
 define void @foo(i32 %alpha, i32 %beta, [22 x i32]* %A, [18 x i32]* noalias nocapture %B, [24 x i32]* noalias nocapture %C, [24 x i32]* noalias nocapture %D) !taffo.funinfo !0 {
 entry:
@@ -198,10 +181,35 @@ for.end64:                                        ; preds = %for.cond28
 !30 = !{!7, !31, i1 0}
 !31 = !{double 1.200000e+02, double 3.276800e+04}
 
-; CHECK: !17 = !{double 0x3EE0000000000000}
-; CHECK: !21 = !{double 0x3F4CAC0988BFD79C}
-; CHECK: !25 = !{double 0x3FA3D70BD017E3B4}
-; CHECK: !26 = !{double 0x3FA3D80BD017E3B4}
-; CHECK: !29 = !{double 0x3FBDF548E32F8F2E}
-; CHECK: !33 = !{double 0x3FF44D970B78A4FC}
-; CHECK: !36 = !{double 0x3FF62CEB99AB9DEF}
+; CHECK-DAG: !{double 0x3EE0000000000000}
+; CHECK-DAG: !{double 0x3F4CAC0988BFD79C}
+; CHECK-DAG: !{double 0x3FA3D70BD017E3B4}
+; CHECK-DAG: !{double 0x3FA3D80BD017E3B4}
+; CHECK-DAG: !{double 0x3FBDF548E32F8F2E}
+; CHECK-DAG: !{double 0x3FF44D970B78A4FC}
+; CHECK-DAG: !{double 0x3FF62CEB99AB9DEF}
+
+;  store i32 0, i32* %arrayidx5, align 4, !taffo.info !15, !taffo.abserror !17
+;  %0 = load i32, i32* %arrayidx12, align 4, !taffo.info !18, !taffo.abserror !4
+;  %mul = mul nsw i32 %alpha, %0, !taffo.info !19, !taffo.abserror !21
+;  %1 = load i32, i32* %arrayidx16, align 4, !taffo.info !22, !taffo.abserror !4
+;  %mul17 = mul nsw i32 %mul, %1, !taffo.info !23, !taffo.abserror !25
+;  %2 = load i32, i32* %arrayidx21, align 4, !taffo.info !15, !taffo.abserror !17
+;  %add = add nsw i32 %2, %mul17, !taffo.info !13, !taffo.abserror !26
+;  store i32 %add, i32* %arrayidx21, align 4, !taffo.abserror !26
+;  %3 = load i32, i32* %arrayidx37, align 4, !taffo.info !18, !taffo.abserror !26
+;  %mul38 = mul nsw i32 %3, %beta, !taffo.info !27, !taffo.abserror !29
+;  store i32 %mul38, i32* %arrayidx37, align 4, !taffo.abserror !29
+;  %4 = load i32, i32* %arrayidx45, align 4, !taffo.info !13, !taffo.abserror !26
+;  %5 = load i32, i32* %arrayidx49, align 4, !taffo.info !30, !taffo.abserror !4
+;  %mul50 = mul nsw i32 %4, %5, !taffo.info !31, !taffo.abserror !33
+;  %6 = load i32, i32* %arrayidx54, align 4, !taffo.info !34, !taffo.abserror !29
+;  %add55 = add nsw i32 %6, %mul50, !taffo.info !34, !taffo.abserror !36
+;  store i32 %add55, i32* %arrayidx54, align 4, !taffo.abserror !36
+;  !17 = !{double 0x3EE0000000000000}
+;  !21 = !{double 0x3F4CAC0988BFD79C}
+;  !25 = !{double 0x3FA3D70BD017E3B4}
+;  !26 = !{double 0x3FA3D80BD017E3B4}
+;  !29 = !{double 0x3FBDF548E32F8F2E}
+;  !33 = !{double 0x3FF44D970B78A4FC}
+;  !36 = !{double 0x3FF62CEB99AB9DEF}

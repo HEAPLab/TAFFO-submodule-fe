@@ -3,13 +3,6 @@
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
-; CHECK: store i64 %x, i64* %x.addr, align 8, !taffo.abserror !4
-; CHECK: %0 = load i64, i64* %x.addr, align 8, !taffo.abserror !4
-; CHECK: %1 = load i64, i64* %x.addr, align 8, !taffo.abserror !4
-; CHECK: %mul = mul nsw i64 %0, %1, !taffo.info !5, !taffo.abserror !7
-; CHECK: %2 = load i64, i64* %x.addr, align 8, !taffo.abserror !4
-; CHECK: %mul1 = mul nsw i64 %mul, %2, !taffo.info !8, !taffo.abserror !10
-; CHECK: ret i64 %mul1, !taffo.abserror !10
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define i64 @_Z3barl(i64 %x) #0 !taffo.funinfo !0 {
@@ -23,18 +16,6 @@ entry:
   %mul1 = mul nsw i64 %mul, %2, !taffo.info !7
   ret i64 %mul1
 }
-
-; CHECK: store i64 %a, i64* %a.addr, align 8, !taffo.abserror !14
-; CHECK: store i64 %b, i64* %b.addr, align 8, !taffo.abserror !17
-; CHECK: %0 = load i64, i64* %a.addr, align 8, !taffo.abserror !14
-; CHECK: %1 = load i64, i64* %b.addr, align 8, !taffo.abserror !17
-; CHECK: %mul = mul nsw i64 %0, %1, !taffo.info !18, !taffo.abserror !20
-; CHECK: to label %invoke.cont unwind label %lpad, !taffo.info !8, !taffo.abserror !21
-; CHECK: store i64 %call, i64* %retval, align 8, !taffo.abserror !21
-; CHECK: %6 = load i64, i64* %a.addr, align 8, !taffo.abserror !14
-; CHECK: %7 = load i64, i64* %b.addr, align 8, !taffo.abserror !17
-; CHECK: %mul1 = mul nsw i64 %6, %7, !taffo.info !18, !taffo.abserror !20
-; CHECK: store i64 %mul1, i64* %retval, align 8, !taffo.abserror !20
 
 ; Function Attrs: noinline optnone uwtable
 define i64 @_Z3fooll(i64 %a, i64 %b) #1 personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*) !taffo.funinfo !9 {
@@ -117,7 +98,30 @@ attributes #3 = { nounwind }
 !16 = !{!2, !17, i1 false}
 !17 = !{double 0.000000e+00, double 4.000000e+01}
 
-; CHECK: !7 = !{double 0x3E42E5D9E5C5CC3B}
-; CHECK: !10 = !{double 0x3E837D08B4F58035}
-; CHECK: !20 = !{double 0x3E4BEAD35941E10C}
-; CHECK: !21 = !{double 0x3ED3CAFCD82CAC6E}
+; CHECK-DAG: !{double 0x3E42E5D9E5C5CC3B}
+; CHECK-DAG: !{double 0x3E837D08B4F58035}
+; CHECK-DAG: !{double 0x3E4BEAD35941E10C}
+; CHECK-DAG: !{double 0x3ED3CAFCD82CAC6E}
+
+;  store i64 %x, i64* %x.addr, align 8, !taffo.abserror !4
+;  %0 = load i64, i64* %x.addr, align 8, !taffo.abserror !4
+;  %1 = load i64, i64* %x.addr, align 8, !taffo.abserror !4
+;  %mul = mul nsw i64 %0, %1, !taffo.info !5, !taffo.abserror !7
+;  %2 = load i64, i64* %x.addr, align 8, !taffo.abserror !4
+;  %mul1 = mul nsw i64 %mul, %2, !taffo.info !8, !taffo.abserror !10
+;  ret i64 %mul1, !taffo.abserror !10
+;  store i64 %a, i64* %a.addr, align 8, !taffo.abserror !14
+;  store i64 %b, i64* %b.addr, align 8, !taffo.abserror !17
+;  %0 = load i64, i64* %a.addr, align 8, !taffo.abserror !14
+;  %1 = load i64, i64* %b.addr, align 8, !taffo.abserror !17
+;  %mul = mul nsw i64 %0, %1, !taffo.info !18, !taffo.abserror !20
+;  to label %invoke.cont unwind label %lpad, !taffo.info !8, !taffo.abserror !21
+;  store i64 %call, i64* %retval, align 8, !taffo.abserror !21
+;  %6 = load i64, i64* %a.addr, align 8, !taffo.abserror !14
+;  %7 = load i64, i64* %b.addr, align 8, !taffo.abserror !17
+;  %mul1 = mul nsw i64 %6, %7, !taffo.info !18, !taffo.abserror !20
+;  store i64 %mul1, i64* %retval, align 8, !taffo.abserror !20
+;  !7 = !{double 0x3E42E5D9E5C5CC3B}
+;  !10 = !{double 0x3E837D08B4F58035}
+;  !20 = !{double 0x3E4BEAD35941E10C}
+;  !21 = !{double 0x3ED3CAFCD82CAC6E}

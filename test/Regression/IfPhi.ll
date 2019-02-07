@@ -2,13 +2,6 @@
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
 
-; CHECK: %cmp = icmp slt i32 %a, %b, !taffo.wrongcmptol !6
-; CHECK: %add = add nsw i32 %a, %b, !taffo.info !10, !taffo.abserror !12
-; CHECK: %sub = sub nsw i32 %a, %b, !taffo.info !13, !taffo.abserror !12
-; CHECK: %a.addr.0 = phi i32 [ %add, %if.then ], [ %sub, %if.else ], !taffo.info !15, !taffo.abserror !12
-; CHECK: %mul = mul nsw i32 %a.addr.0, %b, !taffo.info !17, !taffo.abserror !19
-; CHECK: %div = sdiv i32 %b, %mul, !taffo.info !20, !taffo.abserror !22
-; CHECK: ret i32 %div, !taffo.abserror !22
 
 ; Function Attrs: noinline nounwind uwtable
 define i32 @foo(i32 %a, i32 %b) #0 !taffo.funinfo !3 {
@@ -55,6 +48,17 @@ if.end:                                           ; preds = %if.else, %if.then
 !19 = !{!5, !20, i1 0}
 !20 = !{double -1.000000e+00, double 3.250000e+00}
 
-; CHECK: !12 = !{double 1.270000e-01}
-; CHECK: !19 = !{double 2.290040e-01}
-; CHECK: !22 = !{double 0x3FC349213E824590}
+; CHECK-DAG: !{double 1.270000e-01}
+; CHECK-DAG: !{double 2.290040e-01}
+; CHECK-DAG: !{double 0x3FC03ECCDC5942DB}
+
+;  %cmp = icmp slt i32 %a, %b, !taffo.wrongcmptol !6
+;  %add = add nsw i32 %a, %b, !taffo.info !10, !taffo.abserror !12
+;  %sub = sub nsw i32 %a, %b, !taffo.info !13, !taffo.abserror !12
+;  %a.addr.0 = phi i32 [ %add, %if.then ], [ %sub, %if.else ], !taffo.info !15, !taffo.abserror !12
+;  %mul = mul nsw i32 %a.addr.0, %b, !taffo.info !17, !taffo.abserror !19
+;  %div = sdiv i32 %b, %mul, !taffo.info !20, !taffo.abserror !22
+;  ret i32 %div, !taffo.abserror !22
+;  !12 = !{double 1.270000e-01}
+;  !19 = !{double 2.290040e-01}
+;  !22 = !{double 0x3FC03ECCDC5942DB}

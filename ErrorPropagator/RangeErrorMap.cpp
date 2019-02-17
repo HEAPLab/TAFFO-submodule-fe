@@ -83,16 +83,20 @@ bool RangeErrorMap::retrieveRangeError(Instruction &I) {
 }
 
 void RangeErrorMap::retrieveRangeErrors(const Function &F) {
-  SmallVector<InputInfo *, 1U> REs;
+  SmallVector<MDInfo *, 1U> REs;
   MDMgr->retrieveArgumentInputInfo(F, REs);
 
   auto REIt = REs.begin(), REEnd = REs.end();
   for (Function::const_arg_iterator Arg = F.arg_begin(), ArgE = F.arg_end();
        Arg != ArgE && REIt != REEnd; ++Arg, ++REIt) {
-    if ((*REIt)->IRange == nullptr)
+    // TODO: struct support
+    InputInfo *ii = dyn_cast<InputInfo>(*REIt);
+    if (ii == nullptr)
+      continue;
+    if (ii->IRange == nullptr)
       continue;
 
-    FPInterval FPI(*REIt);
+    FPInterval FPI(ii);
 
     DEBUG(dbgs() << "Retrieving data for Argument " << Arg->getName() << "... "
 	  << "Range: [" << static_cast<double>(FPI.Min) << ", "

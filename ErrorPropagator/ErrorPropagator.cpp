@@ -68,9 +68,9 @@ bool ErrorPropagator::runOnModule(Module &M) {
   return false;
 }
 
-void ErrorPropagator::retrieveGlobalVariablesRangeError(const Module &M,
+void ErrorPropagator::retrieveGlobalVariablesRangeError(Module &M,
 							RangeErrorMap &RMap) {
-  for (const GlobalVariable &GV : M.globals()) {
+  for (GlobalVariable &GV : M.globals()) {
     RMap.retrieveRangeError(GV);
   }
 }

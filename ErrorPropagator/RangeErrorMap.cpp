@@ -68,6 +68,16 @@ void RangeErrorMap::setRangeError(const Value *I,
 }
 
 bool RangeErrorMap::retrieveRangeError(Instruction &I) {
+  if (I.getType()->isStructTy()) {
+    StructInfo *SI = MDMgr->retrieveStructInfo(I);
+    if (SI == nullptr) {
+      DEBUG(dbgs() << "No struct data for Instruction [" << I << "].\n");
+      return false;
+    }
+    SEMap.createStructTreeFromMetadata(&I, SI);
+    return false;
+  }
+
   InputInfo *II = MDMgr->retrieveInputInfo(I);
   if (II == nullptr)
     return false;
@@ -82,36 +92,42 @@ bool RangeErrorMap::retrieveRangeError(Instruction &I) {
   }
 }
 
-void RangeErrorMap::retrieveRangeErrors(const Function &F) {
+void RangeErrorMap::retrieveRangeErrors(Function &F) {
   SmallVector<MDInfo *, 1U> REs;
   MDMgr->retrieveArgumentInputInfo(F, REs);
 
   auto REIt = REs.begin(), REEnd = REs.end();
-  for (Function::const_arg_iterator Arg = F.arg_begin(), ArgE = F.arg_end();
+  for (Function::arg_iterator Arg = F.arg_begin(), ArgE = F.arg_end();
        Arg != ArgE && REIt != REEnd; ++Arg, ++REIt) {
-    // TODO: struct support
-    InputInfo *ii = dyn_cast<InputInfo>(*REIt);
-    if (ii == nullptr)
-      continue;
-    if (ii->IRange == nullptr)
+    if (*REIt == nullptr)
       continue;
 
-    FPInterval FPI(ii);
+    if (InputInfo *II = dyn_cast<InputInfo>(*REIt)) {
+      if (II->IRange == nullptr)
+	continue;
 
-    DEBUG(dbgs() << "Retrieving data for Argument " << Arg->getName() << "... "
-	  << "Range: [" << static_cast<double>(FPI.Min) << ", "
-	  << static_cast<double>(FPI.Max) << "], Error: ");
+      FPInterval FPI(II);
 
-    if (FPI.hasInitialError()) {
-      AffineForm<inter_t> Err(0.0, FPI.getInitialError());
-      this->setRangeError(Arg, std::make_pair(FPI, Err));
+      DEBUG(dbgs() << "Retrieving data for Argument " << Arg->getName() << "... "
+	    << "Range: [" << static_cast<double>(FPI.Min) << ", "
+	    << static_cast<double>(FPI.Max) << "], Error: ");
 
-      DEBUG(dbgs() << FPI.getInitialError() << ".\n");
+      if (FPI.hasInitialError()) {
+	AffineForm<inter_t> Err(0.0, FPI.getInitialError());
+	this->setRangeError(Arg, std::make_pair(FPI, Err));
+
+	DEBUG(dbgs() << FPI.getInitialError() << ".\n");
+      }
+      else {
+	this->setRangeError(Arg, std::make_pair(FPI, NoneType()));
+
+	DEBUG(dbgs() << "none.\n");
+      }
     }
     else {
-      this->setRangeError(Arg, std::make_pair(FPI, NoneType()));
-
-      DEBUG(dbgs() << "none.\n");
+      assert(Arg->getType()->isStructTy() && "Must be a Struct Argument.");
+      StructInfo *SI = cast<StructInfo>(*REIt);
+      SEMap.createStructTreeFromMetadata(Arg, SI);
     }
   }
 }
@@ -147,7 +163,17 @@ void RangeErrorMap::applyArgumentErrors(Function &F,
   }
 }
 
-void RangeErrorMap::retrieveRangeError(const GlobalObject &V) {
+void RangeErrorMap::retrieveRangeError(GlobalObject &V) {
+  if (V.getType()->isStructTy()) {
+    StructInfo *SI = MDMgr->retrieveStructInfo(V);
+    if (SI == nullptr) {
+      DEBUG(dbgs() << "No struct data for Global Variable " << V.getName() << ".\n");
+      return;
+    }
+    SEMap.createStructTreeFromMetadata(&V, SI);
+    return;
+  }
+
   DEBUG(dbgs() << "Retrieving data for Global Variable " << V.getName() << "... ");
 
   InputInfo *II = MDMgr->retrieveInputInfo(V);

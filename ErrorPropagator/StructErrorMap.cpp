@@ -22,6 +22,33 @@ namespace ErrorProp {
 
 using namespace llvm;
 
+StructNode::StructNode(StructInfo *SI, StructType *ST, StructTree *Parent)
+  : StructTree(STK_Node, Parent), Fields(), SType(ST) {
+  assert(ST != nullptr);
+  Fields.resize(ST->getNumElements());
+
+  DEBUG(dbgs() << "{ ");
+  for (std::size_t Idx = 0; Idx < SI->size(); ++Idx) {
+    MDInfo *FieldMDI = SI->getField(Idx);
+    if (FieldMDI == nullptr) {
+      DEBUG(dbgs() << "null ,");
+      continue;
+    }
+
+    if (StructInfo *FieldSI = dyn_cast<StructInfo>(FieldMDI)) {
+      Fields[Idx].reset(new StructNode(FieldSI, cast<StructType>(ST->getElementType(Idx)), this));
+    }
+    else if (InputInfo *FieldII = dyn_cast<InputInfo>(FieldMDI)) {
+      Fields[Idx].reset(new StructError(FieldII, this));
+    }
+    else {
+      llvm_unreachable("Unhandled MDInfo kind.");
+    }
+    DEBUG(dbgs() << ", ");
+  }
+  DEBUG(dbgs() << " }");
+}
+
 StructNode::StructNode(const StructNode &SN)
   : StructTree(SN), Fields(), SType(SN.SType) {
   this->Fields.reserve(SN.Fields.size());
@@ -43,6 +70,26 @@ StructNode &StructNode::operator=(const StructNode &O) {
   }
 
   return *this;
+}
+
+StructError::StructError(InputInfo *II, StructTree *Parent)
+  : StructTree(STK_Error, Parent), Error() {
+  FPInterval FPI(II);
+
+  DEBUG(dbgs() << "{ Range: [" << static_cast<double>(FPI.Min) << ", "
+	<< static_cast<double>(FPI.Max) << "], Error: ");
+
+  if (FPI.hasInitialError()) {
+    AffineForm<inter_t> Err(0.0, FPI.getInitialError());
+    Error = std::make_pair(FPI, Err);
+
+    DEBUG(dbgs() << FPI.getInitialError() << "} ");
+  }
+  else {
+    Error = std::make_pair(FPI, NoneType());
+
+    DEBUG(dbgs() << "none } ");
+  }
 }
 
 Value *StructTreeWalker::retrieveRootPointer(Value *P) {
@@ -231,6 +278,20 @@ void StructErrorMap::updateStructTree(const StructErrorMap &O, const ArrayRef<Va
 	this->StructMap[Root].reset(OTreeIt->second->clone());
     }
   }
+}
+
+void StructErrorMap::createStructTreeFromMetadata(Value *V,
+						  mdutils::MDInfo *MDI) {
+  assert(V->getType()->isStructTy()
+	 && "Struct Metadata can be attached to Struct Values only.");
+  DEBUG(dbgs() << "Retrieving data for struct [" << V << "]: ");
+
+  StructNode *RootSN = new StructNode(cast<StructInfo>(MDI),
+				      cast<StructType>(V->getType()));
+  // Erase previous data
+  StructMap[V].reset(RootSN);
+
+  DEBUG(dbgs() << ".\n");
 }
 
 } // end namespace ErrorProp

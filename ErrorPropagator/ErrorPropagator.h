@@ -57,7 +57,7 @@ public:
   void getAnalysisUsage(AnalysisUsage &) const override;
 
 protected:
-  void retrieveGlobalVariablesRangeError(const Module &M, RangeErrorMap &RMap);
+  void retrieveGlobalVariablesRangeError(Module &M, RangeErrorMap &RMap);
   void checkCommandLine();
 
 }; // end of class ErrorPropagator

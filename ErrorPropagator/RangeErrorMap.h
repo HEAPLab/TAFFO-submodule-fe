@@ -80,7 +80,7 @@ public:
   bool retrieveRangeError(Instruction &I);
 
   /// Retrieve ranges and errors for arguments of function F from metadata.
-  void retrieveRangeErrors(const Function &F);
+  void retrieveRangeErrors(Function &F);
 
   /// Associate the errors of the actual parameters of F contained in Args
   /// to the corresponding formal parameters.
@@ -88,7 +88,7 @@ public:
 			   SmallVectorImpl<Value *> *Args);
 
   /// Retrieve range and error for global variable V, and add it to the map.
-  void retrieveRangeError(const GlobalObject &V);
+  void retrieveRangeError(GlobalObject &V);
 
   MetadataManager &getMetadataManager() { return *MDMgr; }
 
@@ -114,7 +114,6 @@ protected:
 
 typedef DenseMap<Value *, CmpErrorInfo> CmpErrorMap;
 #define CMPERRORMAP_NUMINITBUCKETS 4U
-
 
 } // end namespace ErrorProp
 

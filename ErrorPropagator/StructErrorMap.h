@@ -22,6 +22,7 @@
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Argument.h"
 #include "FixedPoint.h"
+#include "Metadata.h"
 
 namespace ErrorProp {
 
@@ -57,6 +58,7 @@ public:
     Fields.resize(ST->getNumElements());
   }
 
+  StructNode(StructInfo *MDI, StructType *ST, StructTree *Parent = nullptr);
   StructNode(const StructNode &SN);
   StructNode &operator=(const StructNode &O);
 
@@ -78,6 +80,8 @@ public:
 
   StructError(const RangeError &Err, StructTree *Parent = nullptr)
     : StructTree(STK_Error, Parent), Error(Err) {}
+
+  StructError(InputInfo *MDI,  StructTree *Parent = nullptr);
 
   StructTree *clone() const override { return new StructError(*this); }
   const RangeError& getError() const { return Error; }
@@ -117,6 +121,8 @@ public:
   void setFieldError(Value *P, const StructTree::RangeError &Err);
   const StructTree::RangeError *getFieldError(Value *P) const;
   void updateStructTree(const StructErrorMap &O, const llvm::ArrayRef<llvm::Value *> Pointers);
+  void createStructTreeFromMetadata(llvm::Value *V,
+				    mdutils::MDInfo *MDI);
 
 protected:
   std::map<llvm::Value *, std::unique_ptr<StructTree> > StructMap;
@@ -124,6 +130,5 @@ protected:
 };
 
 } // end namespace ErrorProp
-
 
 #endif

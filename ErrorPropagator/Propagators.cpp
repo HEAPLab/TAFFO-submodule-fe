@@ -577,4 +577,44 @@ bool InstructionPropagator::propagateGetElementPtr(Instruction &I) {
   return true;
 }
 
+bool InstructionPropagator::propagateExtractValue(Instruction &I) {
+  ExtractValueInst &EVI = cast<ExtractValueInst>(I);
+
+  DEBUG(dbgs() << "Propagating error for ExtractValue instruction "
+	<< I.getName() << "... ");
+
+  const RangeErrorMap::RangeError *RE = RMap.getStructRangeError(&EVI);
+  if (RE == nullptr || !RE->second.hasValue()) {
+    DEBUG(dbgs() << "ignored (no data).\n");
+    return false;
+  }
+
+  RMap.setRangeError(&EVI, *RE);
+
+  DEBUG(dbgs() << static_cast<double>(RE->second->noiseTermsAbsSum()) << ".\n");
+
+  return true;
+}
+
+bool InstructionPropagator::propagateInsertValue(Instruction &I) {
+  InsertValueInst &IVI = cast<InsertValueInst>(I);
+
+  DEBUG(dbgs() << "Propagating error for ExtractValue instruction "
+	<< I.getName() << "... ");
+
+
+  const RangeErrorMap::RangeError *RE =
+    RMap.getStructRangeError(IVI.getInsertedValueOperand());
+  if (RE == nullptr || !RE->second.hasValue()) {
+    DEBUG(dbgs() << "ignored (no data).\n");
+    return false;
+  }
+
+  RMap.setStructRangeError(&IVI, *RE);
+
+  DEBUG(dbgs() << static_cast<double>(RE->second->noiseTermsAbsSum()) << ".\n");
+
+  return false;
+}
+
 } // end of namespace ErrorProp

@@ -82,6 +82,9 @@ public:
   /// Associate the error of the source pointer to I.
   bool propagateGetElementPtr(Instruction &I);
 
+  bool propagateExtractValue(Instruction &I);
+  bool propagateInsertValue(Instruction &I);
+
 private:
   RangeErrorMap &RMap;
   MemorySSA &MemSSA;

@@ -195,16 +195,12 @@ void RangeErrorMap::retrieveRangeError(GlobalObject &V) {
 }
 
 const RangeErrorMap::RangeError *
-RangeErrorMap::getStructRangeError(Value *Pointer) const {
-  assert(isa<PointerType>(Pointer->getType()));
-
-  return SEMap.getFieldError(Pointer);
+RangeErrorMap::getStructRangeError(Value *V) const {
+  return SEMap.getFieldError(V);
 }
 
-void RangeErrorMap::setStructRangeError(Value *Pointer, const RangeError &RE) {
-  assert(isa<PointerType>(Pointer->getType()));
-
-  SEMap.setFieldError(Pointer, RE);
+void RangeErrorMap::setStructRangeError(Value *V, const RangeError &RE) {
+  SEMap.setFieldError(V, RE);
 }
 
 void RangeErrorMap::updateTargets(const RangeErrorMap &Other) {

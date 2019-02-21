@@ -92,8 +92,8 @@ public:
 
   MetadataManager &getMetadataManager() { return *MDMgr; }
 
-  const RangeError *getStructRangeError(Value *Pointer) const;
-  void setStructRangeError(Value *Pointer, const RangeError &RE);
+  const RangeError *getStructRangeError(Value *V) const;
+  void setStructRangeError(Value *V, const RangeError &RE);
 
   void initArgumentBindings(Function &F, const ArrayRef<Value *> AArgs) {
     SEMap.initArgumentBindings(F, AArgs);

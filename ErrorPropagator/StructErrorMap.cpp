@@ -126,7 +126,6 @@ StructTree *StructTreeWalker::makeRoot(Value *P) {
 
 Value *StructTreeWalker::navigatePointerTreeToRoot(Value *P) {
   assert(P != nullptr);
-  assert(P->getType()->isPointerTy() && "Supplied with non-pointer Value.");
   if (GetElementPtrInst *GEPI = dyn_cast<GetElementPtrInst>(P)) {
     auto IdxIt = GEPI->idx_begin();
     ++IdxIt;
@@ -173,6 +172,18 @@ Value *StructTreeWalker::navigatePointerTreeToRoot(Value *P) {
   }
   else if (GlobalVariable *GV = dyn_cast<GlobalVariable>(P)) {
     return (GV->getValueType()->isStructTy()) ? P : nullptr;
+  }
+  else if (ExtractValueInst *EVI = dyn_cast<ExtractValueInst>(P)) {
+    for (unsigned Idx : EVI->indices())
+      IndexStack.push_back(Idx);
+
+    return EVI->getAggregateOperand();
+  }
+  else if (InsertValueInst *IVI = dyn_cast<InsertValueInst>(P)) {
+    for (unsigned Idx : IVI->indices())
+      IndexStack.push_back(Idx);
+
+    return IVI->getAggregateOperand();
   }
   return nullptr;
 }

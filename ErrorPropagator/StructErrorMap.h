@@ -52,18 +52,18 @@ private:
 
 class StructNode : public StructTree {
 public:
-  StructNode(StructType *ST, StructTree *Parent = nullptr)
+  StructNode(llvm::StructType *ST, StructTree *Parent = nullptr)
     : StructTree(STK_Node, Parent), Fields(), SType(ST) {
     assert(ST != nullptr);
     Fields.resize(ST->getNumElements());
   }
 
-  StructNode(StructInfo *MDI, StructType *ST, StructTree *Parent = nullptr);
+  StructNode(mdutils::StructInfo *MDI, llvm::StructType *ST, StructTree *Parent = nullptr);
   StructNode(const StructNode &SN);
   StructNode &operator=(const StructNode &O);
 
   StructTree *clone() const override { return new StructNode(*this); }
-  StructType *getStructType() const { return SType; }
+  llvm::StructType *getStructType() const { return SType; }
   StructTree *getStructElement(unsigned I) { return Fields[I].get(); }
   void setStructElement(unsigned I, StructTree *NewEl) { Fields[I].reset(NewEl); }
 
@@ -72,7 +72,7 @@ private:
   llvm::SmallVector<std::unique_ptr<StructTree>, 2U> Fields;
   llvm::StructType *SType;
 
-  static StructType *getElementStructType(Type *T);
+  static llvm::StructType *getElementStructType(llvm::Type *T);
 };
 
 class StructError : public StructTree {
@@ -83,7 +83,7 @@ public:
   StructError(const RangeError &Err, StructTree *Parent = nullptr)
     : StructTree(STK_Error, Parent), Error(Err) {}
 
-  StructError(InputInfo *MDI,  StructTree *Parent = nullptr);
+  StructError(mdutils::InputInfo *MDI,  StructTree *Parent = nullptr);
 
   StructTree *clone() const override { return new StructError(*this); }
   const RangeError& getError() const { return Error; }
@@ -108,7 +108,7 @@ protected:
   llvm::SmallVector<unsigned, 4U> IndexStack;
   const llvm::DenseMap<llvm::Argument *, llvm::Value *> &ArgBindings;
 
-  llvm::Value *navigatePointerTreeToRoot(Value *P);
+  llvm::Value *navigatePointerTreeToRoot(llvm::Value *P);
   StructError *navigateStructTree(StructTree *Root, bool Create = false);
   unsigned parseIndex(const llvm::Use &U) const;
 };
@@ -120,8 +120,8 @@ public:
   StructErrorMap &operator=(const StructErrorMap &O);
 
   void initArgumentBindings(llvm::Function &F, const llvm::ArrayRef<llvm::Value *> AArgs);
-  void setFieldError(Value *P, const StructTree::RangeError &Err);
-  const StructTree::RangeError *getFieldError(Value *P) const;
+  void setFieldError(llvm::Value *P, const StructTree::RangeError &Err);
+  const StructTree::RangeError *getFieldError(llvm::Value *P) const;
   void updateStructTree(const StructErrorMap &O, const llvm::ArrayRef<llvm::Value *> Pointers);
   void createStructTreeFromMetadata(llvm::Value *V,
 				    mdutils::MDInfo *MDI);

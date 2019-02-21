@@ -15,13 +15,9 @@
 
 #include "Propagators.h"
 
-#include <cassert>
-#include <algorithm>
-#include <cmath>
 #include "llvm/Support/Debug.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/InstrTypes.h"
-#include "llvm/IR/Argument.h"
 #include "AffineForms.h"
 #include "Metadata.h"
 #include "MemSSAUtils.h"
@@ -31,6 +27,9 @@ namespace ErrorProp {
 #define DEBUG_TYPE "errorprop"
 
 namespace {
+
+using namespace llvm;
+using namespace mdutils;
 
 AffineForm<inter_t>
 propagateAdd(const FPInterval &R1, const AffineForm<inter_t> &E1,

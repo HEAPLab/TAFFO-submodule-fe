@@ -11,6 +11,8 @@
 
 namespace ErrorProp {
 
+using namespace llvm;
+
 #define DEBUG_TYPE "errorprop"
 
 void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {

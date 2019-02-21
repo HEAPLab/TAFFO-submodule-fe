@@ -21,6 +21,7 @@
 namespace ErrorProp {
 
 using namespace llvm;
+using namespace mdutils;
 
 StructNode::StructNode(StructInfo *SI, StructType *ST, StructTree *Parent)
   : StructTree(STK_Node, Parent), Fields(), SType(ST) {

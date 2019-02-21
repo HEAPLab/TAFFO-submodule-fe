@@ -14,9 +14,6 @@
 
 #include "ErrorPropagator.h"
 
-#include <cassert>
-#include <utility>
-
 #include "llvm/Support/Debug.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/Analysis/LoopInfo.h"
@@ -29,6 +26,9 @@
 #include "FunctionErrorPropagator.h"
 
 namespace ErrorProp {
+
+using namespace llvm;
+using namespace mdutils;
 
 #define DEBUG_TYPE "errorprop"
 

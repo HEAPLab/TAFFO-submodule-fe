@@ -2,6 +2,8 @@
 
 namespace ErrorProp {
 
+using namespace llvm;
+
 bool InstructionPropagator::isSqrt(Function &F) {
   StringRef FName = F.getName();
   return FName == "sqrtf"

@@ -26,6 +26,9 @@
 
 namespace ErrorProp {
 
+using namespace llvm;
+using namespace mdutils;
+
 #define DEBUG_TYPE "errorprop"
 
 void

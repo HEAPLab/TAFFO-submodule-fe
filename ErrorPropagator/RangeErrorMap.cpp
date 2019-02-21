@@ -21,6 +21,9 @@
 
 namespace ErrorProp {
 
+using namespace llvm;
+using namespace mdutils;
+
 #define DEBUG_TYPE "errorprop"
 
 const FPInterval *RangeErrorMap::getRange(const Value *I) const {

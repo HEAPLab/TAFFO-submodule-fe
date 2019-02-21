@@ -25,39 +25,37 @@
 
 namespace ErrorProp {
 
-using namespace llvm;
+llvm::cl::opt<unsigned> DefaultUnrollCount("dunroll",
+					   llvm::cl::desc("Default loop unroll count"),
+					   llvm::cl::value_desc("count"),
+					   llvm::cl::init(1U));
+llvm::cl::opt<bool> NoLoopUnroll("nounroll",
+				 llvm::cl::desc("Never unroll loops"),
+				 llvm::cl::init(false));
+llvm::cl::opt<unsigned> CmpErrorThreshold("cmpthresh",
+					  llvm::cl::desc("CMP errors are signaled"
+							 "only if error is above perc %"),
+					  llvm::cl::value_desc("perc"),
+					  llvm::cl::init(0U));
+llvm::cl::opt<unsigned> MaxRecursionCount("recur",
+					  llvm::cl::desc("Default number of recursive calls"
+							 "to the same function."),
+					  llvm::cl::value_desc("count"),
+					  llvm::cl::init(1U));
+llvm::cl::opt<bool> StartOnly("startonly",
+			      llvm::cl::desc("Propagate only functions with start metadata."),
+			      llvm::cl::init(false));
 
-cl::opt<unsigned> DefaultUnrollCount("dunroll",
-				     cl::desc("Default loop unroll count"),
-				     cl::value_desc("count"),
-				     cl::init(1U));
-cl::opt<bool> NoLoopUnroll("nounroll",
-			   cl::desc("Never unroll loops"),
-			   cl::init(false));
-cl::opt<unsigned> CmpErrorThreshold("cmpthresh",
-				    cl::desc("CMP errors are signaled"
-					     "only if error is above perc %"),
-				    cl::value_desc("perc"),
-				    cl::init(0U));
-cl::opt<unsigned> MaxRecursionCount("recur",
-				    cl::desc("Default number of recursive calls"
-					     "to the same function."),
-				    cl::value_desc("count"),
-				    cl::init(1U));
-cl::opt<bool> StartOnly("startonly",
-			cl::desc("Propagate only functions with start metadata."),
-			cl::init(false));
-
-class ErrorPropagator : public ModulePass {
+class ErrorPropagator : public llvm::ModulePass {
 public:
   static char ID;
   ErrorPropagator() : ModulePass(ID) {}
 
-  bool runOnModule(Module &) override;
-  void getAnalysisUsage(AnalysisUsage &) const override;
+  bool runOnModule(llvm::Module &) override;
+  void getAnalysisUsage(llvm::AnalysisUsage &) const override;
 
 protected:
-  void retrieveGlobalVariablesRangeError(Module &M, RangeErrorMap &RMap);
+  void retrieveGlobalVariablesRangeError(llvm::Module &M, RangeErrorMap &RMap);
   void checkCommandLine();
 
 }; // end of class ErrorPropagator

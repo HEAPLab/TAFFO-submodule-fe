@@ -4,6 +4,9 @@
 
 namespace ErrorProp {
 
+using namespace llvm;
+using namespace mdutils;
+
 const RangeErrorMap::RangeError *
 InstructionPropagator::getConstantFPRangeError(ConstantFP *VFP) {
   double CVal;

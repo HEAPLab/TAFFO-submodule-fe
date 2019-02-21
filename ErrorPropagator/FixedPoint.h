@@ -30,9 +30,6 @@ namespace ErrorProp {
 /// Intermediate type for error computations.
 typedef long double inter_t;
 
-using namespace llvm;
-using namespace mdutils;
-
 /// Interval of former fixed point values
 /// An interval representing a fixed point range in the intermediate type.
 class FPInterval : public Interval<inter_t> {
@@ -40,7 +37,7 @@ public:
 
   FPInterval() : IInfo(nullptr) {}
 
-  FPInterval(InputInfo *II) : IInfo(II) {
+  FPInterval(mdutils::InputInfo *II) : IInfo(II) {
     assert(II != nullptr);
     assert(II->IRange != nullptr);
 
@@ -71,7 +68,7 @@ public:
 
   bool isUninitialized() const { return IInfo == nullptr; }
 
-  const TType *getTType() const {
+  const mdutils::TType *getTType() const {
     if (isUninitialized())
       return nullptr;
 
@@ -79,7 +76,7 @@ public:
   }
 
 protected:
-  InputInfo *IInfo;
+  mdutils::InputInfo *IInfo;
 
   inter_t getMin() const {
     return static_cast<inter_t>(IInfo->IRange->Min);

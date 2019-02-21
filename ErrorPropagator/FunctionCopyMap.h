@@ -22,21 +22,19 @@
 
 namespace ErrorProp {
 
-using namespace llvm;
-
 struct FunctionCopyCount {
-  Function *Copy = nullptr;
-  ValueToValueMapTy VMap;
+  llvm::Function *Copy = nullptr;
+  llvm::ValueToValueMapTy VMap;
   unsigned RecCount = 0U;
   unsigned MaxRecCount = 1U;
 };
 
-void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount);
+void UnrollLoops(llvm::Pass &P, llvm::Function &F, unsigned DefaultUnrollCount);
 
 class FunctionCopyManager {
 public:
 
-  FunctionCopyManager(Pass &P,
+  FunctionCopyManager(llvm::Pass &P,
 		      unsigned MaxRecursionCount,
 		      unsigned DefaultUnrollCount,
 		      bool NoLoopUnroll)
@@ -45,14 +43,14 @@ public:
       NoLoopUnroll(NoLoopUnroll),
       DefaultUnrollCount(DefaultUnrollCount) {}
 
-  Function *getFunctionCopy(Function *F) {
+  llvm::Function *getFunctionCopy(llvm::Function *F) {
     FunctionCopyCount *FCData = prepareFunctionData(F);
     assert(FCData != nullptr);
 
     return FCData->Copy;
   }
 
-  unsigned getRecursionCount(Function *F) {
+  unsigned getRecursionCount(llvm::Function *F) {
     auto FCData = FCMap.find(F);
     if (FCData == FCMap.end())
       return 0U;
@@ -60,7 +58,7 @@ public:
     return FCData->second.RecCount;
   }
 
-  unsigned getMaxRecursionCount(Function *F) {
+  unsigned getMaxRecursionCount(llvm::Function *F) {
     auto FCData = FCMap.find(F);
     if (FCData == FCMap.end())
       return MaxRecursionCount;
@@ -68,14 +66,14 @@ public:
     return FCData->second.MaxRecCount;
   }
 
-  void setRecursionCount(Function *F, unsigned Count) {
+  void setRecursionCount(llvm::Function *F, unsigned Count) {
     FunctionCopyCount *FCData = prepareFunctionData(F);
     assert(FCData != nullptr);
 
     FCData->RecCount = Count;
   }
 
-  unsigned incRecursionCount(Function *F) {
+  unsigned incRecursionCount(llvm::Function *F) {
     FunctionCopyCount *FCData = prepareFunctionData(F);
     assert(FCData != nullptr);
 
@@ -85,7 +83,7 @@ public:
     return Old;
   }
 
-  bool maxRecursionCountReached(Function *F) {
+  bool maxRecursionCountReached(llvm::Function *F) {
     auto FCData = FCMap.find(F);
     if (FCData == FCMap.end())
       return false;
@@ -93,7 +91,7 @@ public:
     return FCData->second.RecCount >= FCData->second.MaxRecCount;
   }
 
-  ValueToValueMapTy *getValueToValueMap(Function *F) {
+  llvm::ValueToValueMapTy *getValueToValueMap(llvm::Function *F) {
     auto FCData = FCMap.find(F);
     if (FCData == FCMap.end())
       return nullptr;
@@ -104,16 +102,16 @@ public:
   ~FunctionCopyManager();
 
 protected:
-  typedef std::map<Function *, FunctionCopyCount> FunctionCopyMap;
+  typedef std::map<llvm::Function *, FunctionCopyCount> FunctionCopyMap;
 
   FunctionCopyMap FCMap;
 
-  Pass &P;
+  llvm::Pass &P;
   unsigned MaxRecursionCount;
   unsigned DefaultUnrollCount;
   bool NoLoopUnroll;
 
-  FunctionCopyCount *prepareFunctionData(Function *F);
+  FunctionCopyCount *prepareFunctionData(llvm::Function *F);
 };
 
 } // end namespace ErrorProp

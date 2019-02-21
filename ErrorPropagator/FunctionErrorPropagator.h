@@ -29,16 +29,13 @@
 
 namespace ErrorProp {
 
-using namespace llvm;
-using namespace mdutils;
-
 /// Propagates errors of fixed point computations in a single function.
 class FunctionErrorPropagator {
 public:
-  FunctionErrorPropagator(Pass &EPPass,
-			  Function &F,
+  FunctionErrorPropagator(llvm::Pass &EPPass,
+			  llvm::Function &F,
 			  FunctionCopyManager &FCMap,
-			  MetadataManager &MDManager)
+			  mdutils::MetadataManager &MDManager)
     : EPPass(EPPass), F(F), FCMap(FCMap),
       FCopy(FCMap.getFunctionCopy(&F)), RMap(MDManager),
       CmpMap(CMPERRORMAP_NUMINITBUCKETS), MemSSA(nullptr),
@@ -56,44 +53,44 @@ public:
   /// if GenMetadata is true, computed errors are attached
   /// to each instruction as metadata.
   void computeErrorsWithCopy(RangeErrorMap &GlobRMap,
-			     SmallVectorImpl<Value *> *Args = nullptr,
+			     llvm::SmallVectorImpl<llvm::Value *> *Args = nullptr,
 			     bool GenMetadata = false);
 
   RangeErrorMap &getRMap() { return RMap; }
 
 protected:
   /// Compute errors instruction by instruction.
-  void computeFunctionErrors(SmallVectorImpl<Value *> *ArgErrs);
+  void computeFunctionErrors(llvm::SmallVectorImpl<llvm::Value *> *ArgErrs);
 
   /// Compute errors for a single instruction,
   /// using the range from metadata attached to it.
-  void computeInstructionErrors(Instruction &I);
+  void computeInstructionErrors(llvm::Instruction &I);
 
   /// Compute errors for a single instruction.
-  bool dispatchInstruction(Instruction &I);
+  bool dispatchInstruction(llvm::Instruction &I);
 
   /// Compute the error on the return value of another function.
-  void prepareErrorsForCall(Instruction &I);
+  void prepareErrorsForCall(llvm::Instruction &I);
 
   /// Transfer the errors computed locally to the actual parameters of the function call,
   /// but only if they are pointers.
   void applyActualParametersErrors(RangeErrorMap &GlobRMap,
-				   SmallVectorImpl<Value *> *Args);
+				   llvm::SmallVectorImpl<llvm::Value *> *Args);
 
   /// Attach error metadata to the original function.
   void attachErrorMetadata();
 
   /// Returns true if I may overflow, according to range data.
-  bool checkOverflow(Instruction &I);
+  bool checkOverflow(llvm::Instruction &I);
 
-  Pass &EPPass;
-  Function &F;
+  llvm::Pass &EPPass;
+  llvm::Function &F;
   FunctionCopyManager &FCMap;
 
-  Function *FCopy;
+  llvm::Function *FCopy;
   RangeErrorMap RMap;
   CmpErrorMap CmpMap;
-  MemorySSA *MemSSA;
+  llvm::MemorySSA *MemSSA;
   bool Cloned;
 };
 
@@ -102,10 +99,10 @@ protected:
 /// This is a sort of topological ordering that takes loops into account.
 class BBScheduler {
 public:
-  typedef std::vector<BasicBlock *> queue_type;
+  typedef std::vector<llvm::BasicBlock *> queue_type;
   typedef queue_type::reverse_iterator iterator;
 
-  BBScheduler(Function &F, LoopInfo &LI)
+  BBScheduler(llvm::Function &F, llvm::LoopInfo &LI)
     : Queue(), Set(), LInfo(LI) {
     Queue.reserve(F.size());
     enqueueChildren(&F.getEntryBlock());
@@ -125,13 +122,13 @@ public:
 
 protected:
   queue_type Queue;
-  SmallSet<BasicBlock *, 8U> Set;
-  LoopInfo &LInfo;
+  llvm::SmallSet<llvm::BasicBlock *, 8U> Set;
+  llvm::LoopInfo &LInfo;
 
   /// Put BB and all of its successors in the queue.
-  void enqueueChildren(BasicBlock *BB);
+  void enqueueChildren(llvm::BasicBlock *BB);
   /// True if Dst is an exiting or external block wrt Loop L.
-  bool isExiting(BasicBlock *Dst, Loop *L) const;
+  bool isExiting(llvm::BasicBlock *Dst, llvm::Loop *L) const;
 };
 
 } // end namespace ErrorProp

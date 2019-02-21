@@ -2,6 +2,8 @@
 
 namespace ErrorProp {
 
+using namespace llvm;
+
 void MemSSAUtils::findLOEError(Instruction *I) {
   Value *Pointer;
   switch(I->getOpcode()) {

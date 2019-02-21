@@ -20,6 +20,9 @@
 
 namespace ErrorProp {
 
+using namespace llvm;
+using namespace mdutils;
+
 namespace {
 
 ConstantAsMetadata *getBoundMetadata(LLVMContext &C, uint32_t Bound) {

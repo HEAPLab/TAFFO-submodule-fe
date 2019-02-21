@@ -42,7 +42,7 @@ return:                                           ; preds = %if.else, %if.then
   ret i32 %retval.0
 }
 
-!0 = !{!1, !5}
+!0 = !{i32 1, !1, i32 1, !5}
 !1 = !{!2, !3, !4}
 !2 = !{!"fixp", i32 -64, i32 20}
 !3 = !{double 1.000000e+01, double 5.000000e+01}

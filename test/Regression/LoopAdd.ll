@@ -33,7 +33,7 @@ for.end:                                          ; preds = %for.body
 
 !0 = !{i32 1, !"wchar_size", i32 4}
 !1 = !{!"clang version 6.0.1 (https://git.llvm.org/git/clang.git/ 0e746072ed897a85b4f533ab050b9f506941a097) (git@github.com:llvm-mirror/llvm.git 7883f391cb5539d062f0d6d9b3aa05b159b18450)"}
-!2 = !{!3}
+!2 = !{i32 1, !3}
 !3 = !{!4, !5, !6}
 !4 = !{!"fixp", i32 -32, i32 4}
 !5 = !{double 5.000000e+00, double 6.000000e+00}

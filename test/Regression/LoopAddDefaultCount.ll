@@ -36,7 +36,7 @@ for.end:                                          ; preds = %for.cond.for.end_cr
 
 !0 = !{i32 1, !"wchar_size", i32 4}
 !1 = !{!"clang version 6.0.1 (https://git.llvm.org/git/clang.git/ 0e746072ed897a85b4f533ab050b9f506941a097) (git@github.com:llvm-mirror/llvm.git f63e4a17fa8545617336f7ebf5a418fdeee4530b)"}
-!2 = !{!3}
+!2 = !{i32 1, !3, i32 0, i32 0}
 !3 = !{!4, !5, !6}
 !4 = !{!"fixp", i32 -32, i32 4}
 !5 = !{double 5.000000e+00, double 6.000000e+00}

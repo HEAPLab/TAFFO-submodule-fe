@@ -33,7 +33,7 @@ if.end:                                           ; preds = %if.else, %if.then
 
 !0 = !{i32 1, !"wchar_size", i32 4}
 !1 = !{!"clang version 6.0.1 (https://git.llvm.org/git/clang.git/ 0e746072ed897a85b4f533ab050b9f506941a097) (git@github.com:llvm-mirror/llvm.git 38c1684af2387229b58d2ca8c57202ed3e60e1e3)"}
-!2 = !{!3, !4}
+!2 = !{i32 1, !3, i32 1, !4}
 !3 = !{!5, !6, !7}
 !5 = !{!"fixp", i32 -32, i32 5}
 !6 = !{double 4.000000e+00, double 5.000000e+00}

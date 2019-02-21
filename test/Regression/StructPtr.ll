@@ -3,7 +3,7 @@
 %struct.bar = type { i32, i64 }
 %struct.foo = type { %struct.bar, %struct.bar*, i64, [5 x [4 x i32]] }
 
-@globby = common global %struct.bar zeroinitializer, align 8
+@globby = common global %struct.bar zeroinitializer, align 8, !taffo.structinfo !10
 
 ; Function Attrs: noinline nounwind uwtable
 define i32 @slarti(%struct.foo* noalias nocapture, i32) #0 !taffo.funinfo !7 {
@@ -34,8 +34,8 @@ define i32 @slarti(%struct.foo* noalias nocapture, i32) #0 !taffo.funinfo !7 {
 
 ; Function Attrs: noinline nounwind uwtable
 define i32 @main() #0 {
-  %1 = alloca %struct.foo, align 8
-  %2 = alloca %struct.bar, align 8
+  %1 = alloca %struct.foo, align 8, !taffo.structinfo !13
+  %2 = alloca %struct.bar, align 8, !taffo.structinfo !10
   %3 = trunc i64 42 to i32, !taffo.info !8
   store i32 %3, i32* getelementptr inbounds (%struct.bar, %struct.bar* @globby, i32 0, i32 0), align 8
   %4 = getelementptr inbounds %struct.foo, %struct.foo* %1, i32 0, i32 1
@@ -84,9 +84,13 @@ attributes #0 = { noinline nounwind uwtable "correctly-rounded-divide-sqrt-fp-ma
 !4 = !{double -2.000000e+00, double 2.000000e+00}
 !5 = !{double 1.000000e-08}
 !6 = !{!3, !4, i1 false}
-!7 = !{!6, !2}
+!7 = !{i32 0, i32 0, i32 1, !2}
 !8 = !{!3, !4, !9}
 !9 = !{double 1.000000e-07}
+!10 = !{!11, !6}
+!11 = !{!3, !12, i1 false}
+!12 = !{double 42.000000e+00, double 42.000000e+00}
+!13 = !{!10, !10, i1 false, i1 false}
 
 ; CHECK-DAG: !{double 2.000000e-08}
 ; CHECK-DAG: !{double 0x3E601B2B29A4692C}

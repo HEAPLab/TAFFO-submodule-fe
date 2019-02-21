@@ -79,7 +79,7 @@ attributes #1 = { noinline optnone uwtable "correctly-rounded-divide-sqrt-fp-mat
 attributes #2 = { noreturn nounwind }
 attributes #3 = { nounwind }
 
-!0 = !{!1}
+!0 = !{i32 1, !1}
 !1 = !{!2, !3, !4}
 !2 = !{!"fixp", i32 64, i32 32}
 !3 = !{double 3.000000e+00, double 1.100000e+01}
@@ -88,7 +88,7 @@ attributes #3 = { nounwind }
 !6 = !{double 9.000000e+00, double 1.210000e+02}
 !7 = !{!2, !8, i1 false}
 !8 = !{double 2.700000e+01, double 1.331000e+03}
-!9 = !{!10, !13}
+!9 = !{i32 1, !10, i32 1, !13}
 !10 = !{!2, !11, !12}
 !11 = !{double 0.000000e+00, double 2.000000e+01}
 !12 = !{double 5.000000e-10}

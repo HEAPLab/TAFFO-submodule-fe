@@ -68,12 +68,7 @@ void RangeErrorMap::setRangeError(const Value *I,
 }
 
 bool RangeErrorMap::retrieveRangeError(Instruction &I) {
-  if (I.getType()->isStructTy()) {
-    StructInfo *SI = MDMgr->retrieveStructInfo(I);
-    if (SI == nullptr) {
-      DEBUG(dbgs() << "No struct data for Instruction [" << I << "].\n");
-      return false;
-    }
+  if (StructInfo *SI = MDMgr->retrieveStructInfo(I)) {
     SEMap.createStructTreeFromMetadata(&I, SI);
     return false;
   }
@@ -164,7 +159,7 @@ void RangeErrorMap::applyArgumentErrors(Function &F,
 }
 
 void RangeErrorMap::retrieveRangeError(GlobalObject &V) {
-  if (V.getType()->isStructTy()) {
+  if (V.getValueType()->isStructTy()) {
     StructInfo *SI = MDMgr->retrieveStructInfo(V);
     if (SI == nullptr) {
       DEBUG(dbgs() << "No struct data for Global Variable " << V.getName() << ".\n");

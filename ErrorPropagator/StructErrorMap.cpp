@@ -36,7 +36,9 @@ StructNode::StructNode(StructInfo *SI, StructType *ST, StructTree *Parent)
     }
 
     if (StructInfo *FieldSI = dyn_cast<StructInfo>(FieldMDI)) {
-      Fields[Idx].reset(new StructNode(FieldSI, cast<StructType>(ST->getElementType(Idx)), this));
+      Fields[Idx].reset(new StructNode(FieldSI,
+				       getElementStructType(ST->getElementType(Idx)),
+				       this));
     }
     else if (InputInfo *FieldII = dyn_cast<InputInfo>(FieldMDI)) {
       Fields[Idx].reset(new StructError(FieldII, this));
@@ -46,7 +48,7 @@ StructNode::StructNode(StructInfo *SI, StructType *ST, StructTree *Parent)
     }
     DEBUG(dbgs() << ", ");
   }
-  DEBUG(dbgs() << " }");
+  DEBUG(dbgs() << "}");
 }
 
 StructNode::StructNode(const StructNode &SN)
@@ -72,11 +74,23 @@ StructNode &StructNode::operator=(const StructNode &O) {
   return *this;
 }
 
+StructType *StructNode::getElementStructType(Type *T) {
+  while (!T->isStructTy()) {
+    if (PointerType *PT = dyn_cast<PointerType>(T))
+      T = PT->getElementType();
+    else if (SequentialType *ST = dyn_cast<SequentialType>(T))
+      T = ST->getElementType();
+    else
+      return nullptr;
+  }
+  return cast<StructType>(T);
+}
+
 StructError::StructError(InputInfo *II, StructTree *Parent)
   : StructTree(STK_Error, Parent), Error() {
   FPInterval FPI(II);
 
-  DEBUG(dbgs() << "{ Range: [" << static_cast<double>(FPI.Min) << ", "
+  DEBUG(dbgs() << "{Range: [" << static_cast<double>(FPI.Min) << ", "
 	<< static_cast<double>(FPI.Max) << "], Error: ");
 
   if (FPI.hasInitialError()) {
@@ -88,7 +102,7 @@ StructError::StructError(InputInfo *II, StructTree *Parent)
   else {
     Error = std::make_pair(FPI, NoneType());
 
-    DEBUG(dbgs() << "none } ");
+    DEBUG(dbgs() << "none}");
   }
 }
 
@@ -282,12 +296,17 @@ void StructErrorMap::updateStructTree(const StructErrorMap &O, const ArrayRef<Va
 
 void StructErrorMap::createStructTreeFromMetadata(Value *V,
 						  mdutils::MDInfo *MDI) {
-  assert(V->getType()->isStructTy()
-	 && "Struct Metadata can be attached to Struct Values only.");
-  DEBUG(dbgs() << "Retrieving data for struct [" << V << "]: ");
+  DEBUG(dbgs() << "Retrieving data for struct [" << *V << "]: ");
 
-  StructNode *RootSN = new StructNode(cast<StructInfo>(MDI),
-				      cast<StructType>(V->getType()));
+  StructType *ST = nullptr;
+  if (GlobalValue *GV = dyn_cast<GlobalValue>(V))
+    ST = cast<StructType>(GV->getValueType());
+  else if (PointerType *SPT = dyn_cast<PointerType>(V->getType()))
+    ST = cast<StructType>(SPT->getElementType());
+  else
+    ST = cast<StructType>(V->getType());
+
+  StructNode *RootSN = new StructNode(cast<StructInfo>(MDI), ST);
   // Erase previous data
   StructMap[V].reset(RootSN);
 

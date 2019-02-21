@@ -71,6 +71,8 @@ public:
 private:
   llvm::SmallVector<std::unique_ptr<StructTree>, 2U> Fields;
   llvm::StructType *SType;
+
+  static StructType *getElementStructType(Type *T);
 };
 
 class StructError : public StructTree {

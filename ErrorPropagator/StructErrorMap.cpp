@@ -23,25 +23,25 @@ namespace ErrorProp {
 using namespace llvm;
 using namespace mdutils;
 
-StructNode::StructNode(StructInfo *SI, StructType *ST, StructTree *Parent)
+StructNode::StructNode(const StructInfo *SI, StructType *ST, StructTree *Parent)
   : StructTree(STK_Node, Parent), Fields(), SType(ST) {
   assert(ST != nullptr);
   Fields.resize(ST->getNumElements());
 
   DEBUG(dbgs() << "{ ");
   for (std::size_t Idx = 0; Idx < SI->size(); ++Idx) {
-    MDInfo *FieldMDI = SI->getField(Idx);
+    const MDInfo *FieldMDI = SI->getField(Idx);
     if (FieldMDI == nullptr) {
       DEBUG(dbgs() << "null ,");
       continue;
     }
 
-    if (StructInfo *FieldSI = dyn_cast<StructInfo>(FieldMDI)) {
+    if (const StructInfo *FieldSI = dyn_cast<StructInfo>(FieldMDI)) {
       Fields[Idx].reset(new StructNode(FieldSI,
 				       getElementStructType(ST->getElementType(Idx)),
 				       this));
     }
-    else if (InputInfo *FieldII = dyn_cast<InputInfo>(FieldMDI)) {
+    else if (const InputInfo *FieldII = dyn_cast<InputInfo>(FieldMDI)) {
       Fields[Idx].reset(new StructError(FieldII, this));
     }
     else {
@@ -87,7 +87,7 @@ StructType *StructNode::getElementStructType(Type *T) {
   return cast<StructType>(T);
 }
 
-StructError::StructError(InputInfo *II, StructTree *Parent)
+StructError::StructError(const InputInfo *II, StructTree *Parent)
   : StructTree(STK_Error, Parent), Error() {
   FPInterval FPI(II);
 
@@ -307,7 +307,7 @@ void StructErrorMap::updateStructTree(const StructErrorMap &O, const ArrayRef<Va
 }
 
 void StructErrorMap::createStructTreeFromMetadata(Value *V,
-						  mdutils::MDInfo *MDI) {
+						  const mdutils::MDInfo *MDI) {
   DEBUG(dbgs() << "Retrieving data for struct [" << *V << "]: ");
 
   StructType *ST = nullptr;

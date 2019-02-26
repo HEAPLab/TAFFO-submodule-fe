@@ -37,7 +37,7 @@ public:
 
   FPInterval() : IInfo(nullptr) {}
 
-  FPInterval(mdutils::InputInfo *II) : IInfo(II) {
+  FPInterval(const mdutils::InputInfo *II) : IInfo(II) {
     assert(II != nullptr);
     assert(II->IRange != nullptr);
 
@@ -72,11 +72,11 @@ public:
     if (isUninitialized())
       return nullptr;
 
-    return IInfo->IType;
+    return IInfo->IType.get();
   }
 
 protected:
-  mdutils::InputInfo *IInfo;
+  const mdutils::InputInfo *IInfo;
 
   inter_t getMin() const {
     return static_cast<inter_t>(IInfo->IRange->Min);

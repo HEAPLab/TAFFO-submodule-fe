@@ -58,7 +58,7 @@ public:
     Fields.resize(ST->getNumElements());
   }
 
-  StructNode(mdutils::StructInfo *MDI, llvm::StructType *ST, StructTree *Parent = nullptr);
+  StructNode(const mdutils::StructInfo *MDI, llvm::StructType *ST, StructTree *Parent = nullptr);
   StructNode(const StructNode &SN);
   StructNode &operator=(const StructNode &O);
 
@@ -83,7 +83,7 @@ public:
   StructError(const RangeError &Err, StructTree *Parent = nullptr)
     : StructTree(STK_Error, Parent), Error(Err) {}
 
-  StructError(mdutils::InputInfo *MDI,  StructTree *Parent = nullptr);
+  StructError(const mdutils::InputInfo *MDI,  StructTree *Parent = nullptr);
 
   StructTree *clone() const override { return new StructError(*this); }
   const RangeError& getError() const { return Error; }
@@ -124,7 +124,7 @@ public:
   const StructTree::RangeError *getFieldError(llvm::Value *P) const;
   void updateStructTree(const StructErrorMap &O, const llvm::ArrayRef<llvm::Value *> Pointers);
   void createStructTreeFromMetadata(llvm::Value *V,
-				    mdutils::MDInfo *MDI);
+				    const mdutils::MDInfo *MDI);
 
 protected:
   std::map<llvm::Value *, std::unique_ptr<StructTree> > StructMap;

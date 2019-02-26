@@ -71,12 +71,12 @@ void RangeErrorMap::setRangeError(const Value *I,
 }
 
 bool RangeErrorMap::retrieveRangeError(Instruction &I) {
-  if (StructInfo *SI = MDMgr->retrieveStructInfo(I)) {
+  if (const StructInfo *SI = MDMgr->retrieveStructInfo(I)) {
     SEMap.createStructTreeFromMetadata(&I, SI);
     return false;
   }
 
-  InputInfo *II = MDMgr->retrieveInputInfo(I);
+  const InputInfo *II = MDMgr->retrieveInputInfo(I);
   if (II == nullptr)
     return false;
 
@@ -100,7 +100,7 @@ void RangeErrorMap::retrieveRangeErrors(Function &F) {
     if (*REIt == nullptr)
       continue;
 
-    if (InputInfo *II = dyn_cast<InputInfo>(*REIt)) {
+    if (const InputInfo *II = dyn_cast<InputInfo>(*REIt)) {
       if (II->IRange == nullptr)
 	continue;
 
@@ -124,7 +124,7 @@ void RangeErrorMap::retrieveRangeErrors(Function &F) {
     }
     else {
       assert(Arg->getType()->isStructTy() && "Must be a Struct Argument.");
-      StructInfo *SI = cast<StructInfo>(*REIt);
+      const StructInfo *SI = cast<StructInfo>(*REIt);
       SEMap.createStructTreeFromMetadata(Arg, SI);
     }
   }
@@ -163,7 +163,7 @@ void RangeErrorMap::applyArgumentErrors(Function &F,
 
 void RangeErrorMap::retrieveRangeError(GlobalObject &V) {
   if (V.getValueType()->isStructTy()) {
-    StructInfo *SI = MDMgr->retrieveStructInfo(V);
+    const StructInfo *SI = MDMgr->retrieveStructInfo(V);
     if (SI == nullptr) {
       DEBUG(dbgs() << "No struct data for Global Variable " << V.getName() << ".\n");
       return;
@@ -174,7 +174,7 @@ void RangeErrorMap::retrieveRangeError(GlobalObject &V) {
 
   DEBUG(dbgs() << "Retrieving data for Global Variable " << V.getName() << "... ");
 
-  InputInfo *II = MDMgr->retrieveInputInfo(V);
+  const InputInfo *II = MDMgr->retrieveInputInfo(V);
   if (II == nullptr) {
     DEBUG(dbgs() << "ignored (no data).\n");
     return;

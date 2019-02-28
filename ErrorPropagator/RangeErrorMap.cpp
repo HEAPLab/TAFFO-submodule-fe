@@ -77,7 +77,7 @@ bool RangeErrorMap::retrieveRangeError(Instruction &I) {
   }
 
   const InputInfo *II = MDMgr->retrieveInputInfo(I);
-  if (II == nullptr)
+  if (II == nullptr || II->IRange == nullptr)
     return false;
 
   if (II->IError == nullptr) {

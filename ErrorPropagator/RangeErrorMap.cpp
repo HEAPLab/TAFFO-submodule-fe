@@ -57,7 +57,14 @@ RangeErrorMap::getRangeError(const Value *I) const {
 
 void RangeErrorMap::setError(const Value *I, const AffineForm<inter_t> &E) {
   // If Range does not exist, the default is created.
-  REMap[I].second = E;
+  auto RE = REMap.find(I);
+  if (RE == REMap.end()) {
+    REMap[I] = std::make_pair(Interval<inter_t>(std::numeric_limits<double>::quiet_NaN(),
+						std::numeric_limits<double>::quiet_NaN()),
+			      E);
+  }
+  else
+    RE->second.second = E;
 
   TErrs.updateTarget(I, E.noiseTermsAbsSum());
 }

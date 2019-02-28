@@ -163,7 +163,7 @@ Value *StructTreeWalker::navigatePointerTreeToRoot(Value *P) {
   }
   else if (Argument *A = dyn_cast<Argument>(P)) {
     auto AArg = ArgBindings.find(A);
-    if (AArg != ArgBindings.end())
+    if (AArg != ArgBindings.end() && AArg->second != nullptr)
       return navigatePointerTreeToRoot(AArg->second);
     else
       return (isa<StructType>(cast<PointerType>(A->getType())->getElementType())) ? P : nullptr;
@@ -293,8 +293,7 @@ const StructTree::RangeError *StructErrorMap::getFieldError(Value *P) const {
 void StructErrorMap::updateStructTree(const StructErrorMap &O, const ArrayRef<Value *> Pointers) {
   StructTreeWalker STW(this->ArgBindings);
   for (Value *P : Pointers) {
-    assert(P != nullptr);
-    if (!P->getType()->isPointerTy())
+    if (P == nullptr || !P->getType()->isPointerTy())
       continue;
 
     if (Value *Root = STW.retrieveRootPointer(P)) {

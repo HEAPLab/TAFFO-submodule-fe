@@ -18,6 +18,7 @@
 
 #include <utility>
 #include "llvm/Support/Debug.h"
+#include "TypeUtils.h"
 
 namespace ErrorProp {
 
@@ -130,7 +131,8 @@ void RangeErrorMap::retrieveRangeErrors(Function &F) {
       }
     }
     else {
-      assert(Arg->getType()->isStructTy() && "Must be a Struct Argument.");
+      assert(taffo::fullyUnwrapPointerOrArrayType(Arg->getType())->isStructTy()
+	     && "Must be a Struct Argument.");
       const StructInfo *SI = cast<StructInfo>(*REIt);
       SEMap.createStructTreeFromMetadata(Arg, SI);
     }

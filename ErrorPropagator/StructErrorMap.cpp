@@ -17,6 +17,7 @@
 #include <memory>
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/GlobalVariable.h"
+#include "TypeUtils.h"
 
 namespace ErrorProp {
 
@@ -311,11 +312,9 @@ void StructErrorMap::createStructTreeFromMetadata(Value *V,
 
   StructType *ST = nullptr;
   if (GlobalValue *GV = dyn_cast<GlobalValue>(V))
-    ST = cast<StructType>(GV->getValueType());
-  else if (PointerType *SPT = dyn_cast<PointerType>(V->getType()))
-    ST = cast<StructType>(SPT->getElementType());
+    ST = cast<StructType>(taffo::fullyUnwrapPointerOrArrayType(GV->getValueType()));
   else
-    ST = cast<StructType>(V->getType());
+    ST = cast<StructType>(taffo::fullyUnwrapPointerOrArrayType(V->getType()));
 
   StructNode *RootSN = new StructNode(cast<StructInfo>(MDI), ST);
   // Erase previous data

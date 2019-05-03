@@ -461,7 +461,7 @@ LinearErrorApproximationDecr(FunDer dF, const Interval<T> &R, const AffineForm<T
   T X = std::min(std::abs(R.Min), std::abs(R.Max));
   T dFx = dF(X);
 
-  DEBUG(llvm::dbgs() << "(R = [" << static_cast<double>(R.Min)
+  LLVM_DEBUG(llvm::dbgs() << "(R = [" << static_cast<double>(R.Min)
 	<< ", " << static_cast<double>(R.Max)
 	<< "], dFx = " << static_cast<double>(dFx)
 	<< ", E = " << static_cast<double>(E.noiseTermsAbsSum())
@@ -478,7 +478,7 @@ LinearErrorApproximationIncr(FunDer dF, const Interval<T> &R, const AffineForm<T
   T X = std::max(std::abs(R.Min), std::abs(R.Max));
   T dFx = dF(X);
 
-  DEBUG(llvm::dbgs() << "(R = [" << static_cast<double>(R.Min)
+  LLVM_DEBUG(llvm::dbgs() << "(R = [" << static_cast<double>(R.Min)
 	<< ", " << static_cast<double>(R.Max)
 	<< "], dFx = " << static_cast<double>(dFx) << ") ");
   return E.scalarMultiply(dFx);

@@ -53,7 +53,7 @@ findMemPhiError(Instruction *I, MemoryPhi *MPhi) {
 void MemSSAUtils::
 findMemSSAError(Instruction *I, MemoryAccess *MA) {
   if (MA == nullptr) {
-    DEBUG(dbgs() << "WARNING: nullptr MemoryAccess passed to findMemSSAError!\n");
+    LLVM_DEBUG(dbgs() << "WARNING: nullptr MemoryAccess passed to findMemSSAError!\n");
     return;
   }
 

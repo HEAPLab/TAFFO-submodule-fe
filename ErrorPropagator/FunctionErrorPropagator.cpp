@@ -36,7 +36,7 @@ FunctionErrorPropagator::computeErrorsWithCopy(RangeErrorMap &GlobRMap,
 					       SmallVectorImpl<Value *> *Args,
 					       bool GenMetadata) {
   if (F.empty() || FCopy == nullptr) {
-    DEBUG(dbgs() << "Function " << F.getName() << " could not be processed.\n");
+    LLVM_DEBUG(dbgs() << "Function " << F.getName() << " could not be processed.\n");
     return;
   }
 
@@ -45,7 +45,7 @@ FunctionErrorPropagator::computeErrorsWithCopy(RangeErrorMap &GlobRMap,
 
   Function &CF = *FCopy;
 
-  DEBUG(dbgs() << "\n*** Processing function " << CF.getName()
+  LLVM_DEBUG(dbgs() << "\n*** Processing function " << CF.getName()
 	<< " (iteration " << OldRecCount + 1 << ")... ***\n");
 
   CmpMap.clear();
@@ -88,7 +88,7 @@ FunctionErrorPropagator::computeErrorsWithCopy(RangeErrorMap &GlobRMap,
   // Restore original recursion count.
   FCMap.setRecursionCount(&F, OldRecCount);
 
-  DEBUG(dbgs() << "Finished processing function " << CF.getName() << ".\n\n");
+  LLVM_DEBUG(dbgs() << "Finished processing function " << CF.getName() << ".\n\n");
 }
 
 void
@@ -131,25 +131,25 @@ FunctionErrorPropagator::computeInstructionErrors(Instruction &I) {
 
   // if (HasInitialError) {
   //   if (ComputedError) {
-  //     DEBUG(dbgs() << "WARNING: computed error for instruction "
+  //     LLVM_DEBUG(dbgs() << "WARNING: computed error for instruction "
   // 	    << I.getName() << " ignored because of metadata error "
   // 	    << InitialError << ".\n");
   //     RMap.setError(&I, AffineForm<inter_t>(0.0, InitialError));
   //   }
   //   else {
-  //     DEBUG(dbgs() << "Initial error for instruction "
+  //     LLVM_DEBUG(dbgs() << "Initial error for instruction "
   // 	    << I.getName() << ": " << InitialError << ".\n");
   //   }
   // }
 
   if (!ComputedError && HasInitialError) {
-    DEBUG(dbgs() << "WARNING: metadata error "
+    LLVM_DEBUG(dbgs() << "WARNING: metadata error "
 	  << InitialError << " attached to instruction "
 	  << I.getName() << ".\n");
     RMap.setError(&I, AffineForm<inter_t>(0.0, InitialError));
   }
 
-  DEBUG(
+  LLVM_DEBUG(
 	if(checkOverflow(I))
 	  dbgs() << "Possible overflow detected for instruction "
 		 << I.getName() << ".\n";
@@ -204,7 +204,7 @@ FunctionErrorPropagator::dispatchInstruction(Instruction &I) {
     case Instruction::FPToSI:
       return IP.propagateFPToI(I);
     default:
-      DEBUG(dbgs() << "Unhandled " << I.getOpcodeName()
+      LLVM_DEBUG(dbgs() << "Unhandled " << I.getOpcodeName()
 	    << " instruction: " << I.getName() << "\n");
       return false;
   }
@@ -236,7 +236,7 @@ FunctionErrorPropagator::prepareErrorsForCall(Instruction &I) {
       || InstructionPropagator::isSpecialFunction(*CalledF))
     return;
 
-  DEBUG(dbgs() << "Preparing errors for function call/invoke "
+  LLVM_DEBUG(dbgs() << "Preparing errors for function call/invoke "
 	<< I.getName() << "...\n");
 
   // Stop if we have reached the maximum recursion count.
@@ -278,7 +278,7 @@ FunctionErrorPropagator::applyActualParametersErrors(RangeErrorMap &GlobRMap,
 	continue;
     }
 
-    DEBUG(dbgs() << "Setting actual parameter (" << **AArg
+    LLVM_DEBUG(dbgs() << "Setting actual parameter (" << **AArg
 	  << ") error " << static_cast<double>(Err->noiseTermsAbsSum()) << "\n");
     GlobRMap.setError(*AArg, *Err);
   }
@@ -325,27 +325,31 @@ void BBScheduler::enqueueChildren(BasicBlock *BB) {
   if (Set.count(BB))
     return;
 
-  DEBUG(dbgs() << "Scheduling " << BB->getName() << ".\n");
+  LLVM_DEBUG(dbgs() << "Scheduling " << BB->getName() << ".\n");
 
   Set.insert(BB);
 
-  TerminatorInst *TI = BB->getTerminator();
+  Instruction *TI = BB->getTerminator();
   if (TI != nullptr) {
     Loop *L = LInfo.getLoopFor(BB);
     if (L == nullptr) {
       // Not part of a loop, just visit all unvisited successors.
-      for (BasicBlock *DestBB : TI->successors())
-	enqueueChildren(DestBB);
+      int c = TI->getNumSuccessors();
+      for (int i=0; i<c; i++)
+        enqueueChildren(TI->getSuccessor(i));
     }
     else {
       // Part of a loop:
       // visit exiting blocks first, so they are scheduled at the end.
       SmallVector<BasicBlock *, 2U> BodyQueue;
-      for (BasicBlock *DestBB : TI->successors())
+      int c = TI->getNumSuccessors();
+      for (int i=0; i<c; i++) {
+        BasicBlock *DestBB = TI->getSuccessor(i);
 	if (isExiting(DestBB, L))
 	  enqueueChildren(DestBB);
 	else
 	  BodyQueue.push_back(DestBB);
+      }
 
       // If the header is also the exit, but not a latch,
       // it is visited also after the loop body

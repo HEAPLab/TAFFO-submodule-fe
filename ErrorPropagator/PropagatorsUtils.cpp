@@ -52,7 +52,7 @@ InstructionPropagator::getConstantRangeError(Instruction &I, ConstantInt *VInt,
   }
   else {
     VRange.Min = VRange.Max = VInt->getSExtValue();
-    DEBUG(dbgs() << "(WARNING: interpreting ConstantInt " << *VInt
+    LLVM_DEBUG(dbgs() << "(WARNING: interpreting ConstantInt " << *VInt
 	  << " as integer.)");
   }
 
@@ -101,7 +101,7 @@ updateArgumentRE(Value *Pointer,
     if (PointerRE == nullptr || !PointerRE->second.hasValue()
 	|| PointerRE->second->noiseTermsAbsSum() < NewRE->second->noiseTermsAbsSum()) {
       RMap.setRangeError(Pointer, *NewRE);
-      DEBUG(dbgs() << "(Error of pointer ("<< *Pointer << ") updated.) ");
+      LLVM_DEBUG(dbgs() << "(Error of pointer ("<< *Pointer << ") updated.) ");
     }
   }
 }
@@ -111,7 +111,7 @@ bool InstructionPropagator::unOpErrorPassThrough(Instruction &I) {
 
   auto *OpRE = getOperandRangeError(I, 0U);
   if (OpRE == nullptr || !OpRE->second.hasValue()) {
-    DEBUG(dbgs() << "no data.\n");
+    LLVM_DEBUG(dbgs() << "no data.\n");
     return false;
   }
 
@@ -125,7 +125,7 @@ bool InstructionPropagator::unOpErrorPassThrough(Instruction &I) {
     RMap.setError(&I, *OpRE->second);
   }
 
-  DEBUG(dbgs() << static_cast<double>(OpRE->second->noiseTermsAbsSum()) << ".\n");
+  LLVM_DEBUG(dbgs() << static_cast<double>(OpRE->second->noiseTermsAbsSum()) << ".\n");
 
   return true;
 }

@@ -35,7 +35,7 @@ void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
     else if (TripCount != 0)
       UnrollCount = TripCount;
 
-    DEBUG(dbgs() << "Trying to unroll loop by " << UnrollCount << "... ");
+    LLVM_DEBUG(dbgs() << "Trying to unroll loop by " << UnrollCount << "... ");
 
     unsigned TripMult = SE.getSmallConstantTripMultiple(L);
     if (TripMult == 0U)
@@ -53,13 +53,13 @@ void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
     				       &AssC, &ORE, true);
     switch (URes) {
       case LoopUnrollResult::Unmodified:
-    	DEBUG(dbgs() << "unmodified.\n");
+    	LLVM_DEBUG(dbgs() << "unmodified.\n");
     	break;
       case LoopUnrollResult::PartiallyUnrolled:
-    	DEBUG(dbgs() << "unrolled partially.\n");
+    	LLVM_DEBUG(dbgs() << "unrolled partially.\n");
     	break;
       case LoopUnrollResult::FullyUnrolled:
-    	DEBUG(dbgs() << "done.\n");
+    	LLVM_DEBUG(dbgs() << "done.\n");
     	break;
     }
   }

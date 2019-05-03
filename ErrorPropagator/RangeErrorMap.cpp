@@ -114,7 +114,7 @@ void RangeErrorMap::retrieveRangeErrors(Function &F) {
 
       FPInterval FPI(II);
 
-      DEBUG(dbgs() << "Retrieving data for Argument " << Arg->getName() << "... "
+      LLVM_DEBUG(dbgs() << "Retrieving data for Argument " << Arg->getName() << "... "
 	    << "Range: [" << static_cast<double>(FPI.Min) << ", "
 	    << static_cast<double>(FPI.Max) << "], Error: ");
 
@@ -122,12 +122,12 @@ void RangeErrorMap::retrieveRangeErrors(Function &F) {
 	AffineForm<inter_t> Err(0.0, FPI.getInitialError());
 	this->setRangeError(Arg, std::make_pair(FPI, Err));
 
-	DEBUG(dbgs() << FPI.getInitialError() << ".\n");
+	LLVM_DEBUG(dbgs() << FPI.getInitialError() << ".\n");
       }
       else {
 	this->setRangeError(Arg, std::make_pair(FPI, NoneType()));
 
-	DEBUG(dbgs() << "none.\n");
+	LLVM_DEBUG(dbgs() << "none.\n");
       }
     }
     else {
@@ -152,7 +152,7 @@ void RangeErrorMap::applyArgumentErrors(Function &F,
     Value *AArgV = *AArg;
     const AffineForm<inter_t> *Err = this->getError(AArgV);
     if (Err == nullptr) {
-      DEBUG(
+      LLVM_DEBUG(
 	    dbgs() << "No pre-computed error available for formal parameter (" << *FArg << ")";
 	    if (AArgV != nullptr)
 	      dbgs() << "from actual parameter (" << *AArgV << ").\n";
@@ -164,7 +164,7 @@ void RangeErrorMap::applyArgumentErrors(Function &F,
 
     this->setError(&*FArg, *Err);
 
-    DEBUG(dbgs() << "Pre-computed error applied to formal parameter (" << *FArg
+    LLVM_DEBUG(dbgs() << "Pre-computed error applied to formal parameter (" << *FArg
 	  << ") from actual parameter (" << *AArgV
 	  << "): " << static_cast<double>(Err->noiseTermsAbsSum()) << ".\n");
   }
@@ -174,35 +174,35 @@ void RangeErrorMap::retrieveRangeError(GlobalObject &V) {
   if (V.getValueType()->isStructTy()) {
     const StructInfo *SI = MDMgr->retrieveStructInfo(V);
     if (SI == nullptr) {
-      DEBUG(dbgs() << "No struct data for Global Variable " << V.getName() << ".\n");
+      LLVM_DEBUG(dbgs() << "No struct data for Global Variable " << V.getName() << ".\n");
       return;
     }
     SEMap.createStructTreeFromMetadata(&V, SI);
     return;
   }
 
-  DEBUG(dbgs() << "Retrieving data for Global Variable " << V.getName() << "... ");
+  LLVM_DEBUG(dbgs() << "Retrieving data for Global Variable " << V.getName() << "... ");
 
   const InputInfo *II = MDMgr->retrieveInputInfo(V);
   if (II == nullptr) {
-    DEBUG(dbgs() << "ignored (no data).\n");
+    LLVM_DEBUG(dbgs() << "ignored (no data).\n");
     return;
   }
 
   FPInterval FPI(II);
 
-  DEBUG(dbgs() << "Range: [" << static_cast<double>(FPI.Min) << ", "
+  LLVM_DEBUG(dbgs() << "Range: [" << static_cast<double>(FPI.Min) << ", "
 	<< static_cast<double>(FPI.Max) << "], Error: ");
 
   if (FPI.hasInitialError()) {
     REMap[&V] = std::make_pair(FPI, AffineForm<inter_t>(0.0, FPI.getInitialError()));
 
-    DEBUG(dbgs() << FPI.getInitialError() << ".\n");
+    LLVM_DEBUG(dbgs() << FPI.getInitialError() << ".\n");
   }
   else {
     REMap[&V] = std::make_pair(FPI, NoneType());
 
-    DEBUG(dbgs() << "none.\n");
+    LLVM_DEBUG(dbgs() << "none.\n");
   }
 }
 

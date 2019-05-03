@@ -29,11 +29,11 @@ StructNode::StructNode(const StructInfo *SI, StructType *ST, StructTree *Parent)
   assert(ST != nullptr);
   Fields.resize(ST->getNumElements());
 
-  DEBUG(dbgs() << "{ ");
+  LLVM_DEBUG(dbgs() << "{ ");
   for (std::size_t Idx = 0; Idx < SI->size(); ++Idx) {
     const MDInfo *FieldMDI = SI->getField(Idx);
     if (FieldMDI == nullptr) {
-      DEBUG(dbgs() << "null ,");
+      LLVM_DEBUG(dbgs() << "null ,");
       continue;
     }
 
@@ -48,9 +48,9 @@ StructNode::StructNode(const StructInfo *SI, StructType *ST, StructTree *Parent)
     else {
       llvm_unreachable("Unhandled MDInfo kind.");
     }
-    DEBUG(dbgs() << ", ");
+    LLVM_DEBUG(dbgs() << ", ");
   }
-  DEBUG(dbgs() << "}");
+  LLVM_DEBUG(dbgs() << "}");
 }
 
 StructNode::StructNode(const StructNode &SN)
@@ -92,19 +92,19 @@ StructError::StructError(const InputInfo *II, StructTree *Parent)
   : StructTree(STK_Error, Parent), Error() {
   FPInterval FPI(II);
 
-  DEBUG(dbgs() << "{Range: [" << static_cast<double>(FPI.Min) << ", "
+  LLVM_DEBUG(dbgs() << "{Range: [" << static_cast<double>(FPI.Min) << ", "
 	<< static_cast<double>(FPI.Max) << "], Error: ");
 
   if (FPI.hasInitialError()) {
     AffineForm<inter_t> Err(0.0, FPI.getInitialError());
     Error = std::make_pair(FPI, Err);
 
-    DEBUG(dbgs() << FPI.getInitialError() << "} ");
+    LLVM_DEBUG(dbgs() << FPI.getInitialError() << "} ");
   }
   else {
     Error = std::make_pair(FPI, NoneType());
 
-    DEBUG(dbgs() << "none}");
+    LLVM_DEBUG(dbgs() << "none}");
   }
 }
 
@@ -308,7 +308,7 @@ void StructErrorMap::updateStructTree(const StructErrorMap &O, const ArrayRef<Va
 
 void StructErrorMap::createStructTreeFromMetadata(Value *V,
 						  const mdutils::MDInfo *MDI) {
-  DEBUG(dbgs() << "Retrieving data for struct [" << *V << "]: ");
+  LLVM_DEBUG(dbgs() << "Retrieving data for struct [" << *V << "]: ");
 
   StructType *ST = nullptr;
   if (GlobalValue *GV = dyn_cast<GlobalValue>(V))
@@ -320,7 +320,7 @@ void StructErrorMap::createStructTreeFromMetadata(Value *V,
   // Erase previous data
   StructMap[V].reset(RootSN);
 
-  DEBUG(dbgs() << ".\n");
+  LLVM_DEBUG(dbgs() << ".\n");
 }
 
 } // end namespace ErrorProp

@@ -55,10 +55,10 @@ bool InstructionPropagator::isSpecialFunction(Function &F) {
 }
 
 bool InstructionPropagator::propagateSqrt(Instruction &I) {
-  DEBUG(dbgs() << "(special: sqrt) ");
+  LLVM_DEBUG(dbgs() << "(special: sqrt) ");
   auto *OpRE = getOperandRangeError(I, 0U);
   if (OpRE == nullptr || !OpRE->second.hasValue()) {
-    DEBUG(dbgs() << "no data.\n");
+    LLVM_DEBUG(dbgs() << "no data.\n");
     return false;
   }
 
@@ -69,15 +69,15 @@ bool InstructionPropagator::propagateSqrt(Instruction &I) {
 
   RMap.setError(&I, NewErr);
 
-  DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
+  LLVM_DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
   return true;
 }
 
 bool InstructionPropagator::propagateLog(Instruction &I) {
-  DEBUG(dbgs() << "(special: log) ");
+  LLVM_DEBUG(dbgs() << "(special: log) ");
   auto *OpRE = getOperandRangeError(I, 0U);
   if (OpRE == nullptr || !OpRE->second.hasValue()) {
-    DEBUG(dbgs() << "no data.\n");
+    LLVM_DEBUG(dbgs() << "no data.\n");
     return false;
   }
 
@@ -88,15 +88,15 @@ bool InstructionPropagator::propagateLog(Instruction &I) {
 
   RMap.setError(&I, NewErr);
 
-  DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
+  LLVM_DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
   return true;
 }
 
 bool InstructionPropagator::propagateExp(Instruction &I) {
-  DEBUG(dbgs() << "(special: exp) ");
+  LLVM_DEBUG(dbgs() << "(special: exp) ");
   auto *OpRE = getOperandRangeError(I, 0U);
   if (OpRE == nullptr || !OpRE->second.hasValue()) {
-    DEBUG(dbgs() << "no data.\n");
+    LLVM_DEBUG(dbgs() << "no data.\n");
     return false;
   }
 
@@ -107,15 +107,15 @@ bool InstructionPropagator::propagateExp(Instruction &I) {
 
   RMap.setError(&I, NewErr);
 
-  DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
+  LLVM_DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
   return true;
 }
 
 bool InstructionPropagator::propagateAcos(Instruction &I) {
-  DEBUG(dbgs() << "(special: acos) ");
+  LLVM_DEBUG(dbgs() << "(special: acos) ");
   auto *OpRE = getOperandRangeError(I, 0U);
   if (OpRE == nullptr || !OpRE->second.hasValue()) {
-    DEBUG(dbgs() << "no data.\n");
+    LLVM_DEBUG(dbgs() << "no data.\n");
     return false;
   }
 
@@ -126,15 +126,15 @@ bool InstructionPropagator::propagateAcos(Instruction &I) {
 
   RMap.setError(&I, NewErr);
 
-  DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
+  LLVM_DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
   return true;
 }
 
 bool InstructionPropagator::propagateAsin(Instruction &I) {
-  DEBUG(dbgs() << "(special: asin) ");
+  LLVM_DEBUG(dbgs() << "(special: asin) ");
   auto *OpRE = getOperandRangeError(I, 0U);
   if (OpRE == nullptr || !OpRE->second.hasValue()) {
-    DEBUG(dbgs() << "no data.\n");
+    LLVM_DEBUG(dbgs() << "no data.\n");
     return false;
   }
 
@@ -145,7 +145,7 @@ bool InstructionPropagator::propagateAsin(Instruction &I) {
 
   RMap.setError(&I, NewErr);
 
-  DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
+  LLVM_DEBUG(dbgs() << static_cast<double>(NewErr.noiseTermsAbsSum()) << ".\n");
   return true;
 }
 
@@ -167,7 +167,7 @@ bool InstructionPropagator::propagateSpecialCall(Instruction &I, Function &Calle
     return propagateAsin(I);
   }
   else {
-    DEBUG(dbgs() << "(special pass-through) ");
+    LLVM_DEBUG(dbgs() << "(special pass-through) ");
     return unOpErrorPassThrough(I);
   }
 }

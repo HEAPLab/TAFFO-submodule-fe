@@ -1,4 +1,4 @@
-add_llvm_loadable_module(LLVMErrorPropagator
+add_llvm_library(LLVMErrorPropagator MODULE
   ErrorPropagator.cpp
   FunctionErrorPropagator.cpp
   RangeErrorMap.cpp

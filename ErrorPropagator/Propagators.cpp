@@ -236,8 +236,11 @@ bool InstructionPropagator::propagateLoad(Instruction &I) {
   if (const RangeErrorMap::RangeError *StructRE
       = RMap.getStructRangeError(LI.getPointerOperand())) {
     REs.push_back(StructRE);
-    LLVM_DEBUG(dbgs() << "(StructError: "
-	  << static_cast<double>(StructRE->second.getValue().noiseTermsAbsSum()) << ") ");
+    LLVM_DEBUG(if (StructRE->second.hasValue())
+		 dbgs() << "(StructError: "
+			<< static_cast<double>(StructRE->second.getValue().noiseTermsAbsSum()) << ") ";
+	       else
+		 dbgs() << "(Empty struct error!) ");
   }
 
   std::sort(REs.begin(), REs.end());

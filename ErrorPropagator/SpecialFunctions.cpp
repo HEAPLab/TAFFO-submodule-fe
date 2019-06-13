@@ -118,10 +118,12 @@ bool InstructionPropagator::propagateAcos(Instruction &I) {
     LLVM_DEBUG(dbgs() << "no data.\n");
     return false;
   }
+  Interval<inter_t> R(std::max(static_cast<inter_t>(-0.99), OpRE->first.Min),
+		      std::min(static_cast<inter_t>(0.99),  OpRE->first.Max));
 
   AffineForm<inter_t> NewErr =
     LinearErrorApproximationIncr([](inter_t x){ return static_cast<inter_t>(-1) / std::sqrt(1 - x*x); },
-				 OpRE->first, OpRE->second.getValue())
+				 R, OpRE->second.getValue())
     + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
 
   RMap.setError(&I, NewErr);
@@ -137,10 +139,13 @@ bool InstructionPropagator::propagateAsin(Instruction &I) {
     LLVM_DEBUG(dbgs() << "no data.\n");
     return false;
   }
+  Interval<inter_t> R(std::max(static_cast<inter_t>(-0.99), OpRE->first.Min),
+		      std::min(static_cast<inter_t>(0.99),  OpRE->first.Max));
+
 
   AffineForm<inter_t> NewErr =
     LinearErrorApproximationIncr([](inter_t x){ return static_cast<inter_t>(1) / std::sqrt(1 - x*x); },
-				 OpRE->first, OpRE->second.getValue())
+				 R, OpRE->second.getValue())
     + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
 
   RMap.setError(&I, NewErr);

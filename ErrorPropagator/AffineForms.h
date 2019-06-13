@@ -458,7 +458,7 @@ protected:
 template<typename T, typename FunDer>
 AffineForm<T>
 LinearErrorApproximationDecr(FunDer dF, const Interval<T> &R, const AffineForm<T> &E) {
-  T X = std::min(std::abs(R.Min), std::abs(R.Max));
+  T X = std::min(R.Min, R.Max);
   T dFx = dF(X);
 
   LLVM_DEBUG(llvm::dbgs() << "(R = [" << static_cast<double>(R.Min)
@@ -475,7 +475,7 @@ LinearErrorApproximationDecr(FunDer dF, const Interval<T> &R, const AffineForm<T
 template<typename T, typename FunDer>
 AffineForm<T>
 LinearErrorApproximationIncr(FunDer dF, const Interval<T> &R, const AffineForm<T> &E) {
-  T X = std::max(std::abs(R.Min), std::abs(R.Max));
+  T X = std::max(R.Min, R.Max);
   T dFx = dF(X);
 
   LLVM_DEBUG(llvm::dbgs() << "(R = [" << static_cast<double>(R.Min)

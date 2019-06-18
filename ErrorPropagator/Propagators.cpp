@@ -250,7 +250,10 @@ bool InstructionPropagator::propagateLoad(Instruction &I) {
   if (REs.size() == 1U && REs.front() != nullptr) {
     // If we found only one defining instruction, we just use its data.
     const RangeErrorMap::RangeError *RE = REs.front();
-    RMap.setRangeError(&I, *RE);
+    if (RE->second.hasValue() && RMap.getRange(&I))
+      RMap.setError(&I, *RE->second);
+    else
+      RMap.setRangeError(&I, *RE);
     LLVM_DEBUG(if (RE->second.hasValue())
 	    dbgs() << "(one value) " << static_cast<double>(RE->second->noiseTermsAbsSum()) << ".\n";
 	  else

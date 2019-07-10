@@ -23,6 +23,7 @@
 #include "Propagators.h"
 #include "MemSSAUtils.h"
 #include "Metadata.h"
+#include "TypeUtils.h"
 
 namespace ErrorProp {
 
@@ -218,7 +219,8 @@ FunctionErrorPropagator::prepareErrorsForCall(Instruction &I) {
   SmallVector<Value *, 0U> Args;
   for (Use &U : CS.args()) {
     Value *Arg = U.get();
-    if (Arg->getType()->isPointerTy()) {
+    if (Arg->getType()->isPointerTy()
+	&& !taffo::fullyUnwrapPointerOrArrayType(Arg->getType())->isStructTy()) {
       auto RE = RMap.getRangeError(Arg);
       if (RE != nullptr && RE->second.hasValue())
 	Args.push_back(Arg);

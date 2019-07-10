@@ -64,7 +64,10 @@ public:
 
   StructTree *clone() const override { return new StructNode(*this); }
   llvm::StructType *getStructType() const { return SType; }
-  StructTree *getStructElement(unsigned I) { return Fields[I].get(); }
+  StructTree *getStructElement(unsigned I) {
+    return (I < Fields.size()) ? Fields[I].get() : nullptr;
+  }
+
   void setStructElement(unsigned I, StructTree *NewEl) { Fields[I].reset(NewEl); }
 
   static bool classof(const StructTree *ST) { return ST->getKind() == STK_Node; }

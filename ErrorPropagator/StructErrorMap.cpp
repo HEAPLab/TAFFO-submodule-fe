@@ -17,12 +17,15 @@
 #include <memory>
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/GlobalVariable.h"
+#include "llvm/Support/Debug.h"
 #include "TypeUtils.h"
 
 namespace ErrorProp {
 
 using namespace llvm;
 using namespace mdutils;
+
+#define DEBUG_TYPE "errorprop"
 
 StructNode::StructNode(const StructInfo *SI, StructType *ST, StructTree *Parent)
   : StructTree(STK_Node, Parent), Fields(), SType(ST) {
@@ -207,6 +210,10 @@ StructError *StructTreeWalker::navigateStructTree(StructTree *Root, bool Create)
     while (SequentialType *STy = dyn_cast<SequentialType>(ChildType)) {
       // Just discard array indices.
       ChildType = STy->getElementType();
+      if (IndexStack.size() == 0) {
+	LLVM_DEBUG(dbgs() << "WARNING: struct tree shape mismatch.\n");
+	return nullptr;
+      }
       IndexStack.pop_back();
     }
 
@@ -271,7 +278,11 @@ void StructErrorMap::setFieldError(Value *P, const StructTree::RangeError &Err) 
   }
 
   StructError *FE = STW.getOrCreateFieldNode(RootIt->second.get());
-  FE->setError(Err);
+  if (FE) {
+    FE->setError(Err);
+  } else {
+    LLVM_DEBUG(dbgs() << "WARNING: could not retrieve struct field error.\n");
+  }
 }
 
 const StructTree::RangeError *StructErrorMap::getFieldError(Value *P) const {

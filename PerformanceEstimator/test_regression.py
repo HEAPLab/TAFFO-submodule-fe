@@ -7,82 +7,13 @@ from stats_loader import load_stats
 from profile_loader import load_profile
 import time as pytime
 import argparse
+from preprocess import *
 
 better_than = 0.2  # 1=go fixed if time is less than float, 0.5 if time is half then float, etc.
 
 
-def median(iter):
-    iter.sort()
-    if len(iter) % 2 == 1:
-        return iter[len(iter) / 2]
-    else:
-        return (iter[len(iter) / 2] + iter[len(iter) / 2 + 1]) / 2
-
-
-def preprocess_features_instfrequency(orig_feat, d3):
-    new_features = []
-    for f in orig_feat:
-        a, b = f
-        if a[0] != 'B':
-            if b == 'fix':
-                f1 = (a, 'float')
-                d3[a] = (d3[f] - d3[f1]) / d3[('*', 'float')].astype(float)
-                if d3[a].nunique() > 1:
-                    new_features.append(a)
-        else:
-            parts = a.split('_')
-            if parts[1] != 'n':
-                new_features.append(a)
-            if b == 'fix':
-                f1 = (a, 'float')
-                n = d3[(parts[0] + '_n_*', 'float')].fillna(1).replace(0, 1).astype(float)
-                d3[a] = (d3[f] - d3[f1]) / n
-                if d3[a].nunique() > 1:
-                    new_features.append(a)
-    return new_features
-
-
-def preprocess_features_noop(orig_feat, d3):
-    nblock_threshold = 2
-    new_features = []
-    for f in orig_feat:
-        a, b = f
-        parts = a.split('_')
-        if len(parts) == 3 and parts[1] == 'contain':
-            nblock2 = int(parts[2][1:])
-            if nblock2 > nblock_threshold:
-                continue
-        nblock = int(parts[0][1:])
-        if nblock > nblock_threshold:
-            continue
-        if parts[1] == 'minDist':
-            continue
-        elif parts[1] != 'n':
-            if b == 'fix':
-                new_features += [a]
-                d3[a] = d3[(a, b)]
-        else:
-            if not parts[2][0].isupper():
-                continue
-            if parts[2][0:5] == 'call(':
-                continue
-            if parts[2] == '*':
-                continue
-            new_features += [b + '_' + a]
-            d3[b + '_' + a] = d3[(a, b)] / d3[(parts[0] + '_n_*', b)].replace(0, 1).astype(float)
-    return new_features
-
-
 def load_data(path, features=None, response=None, boostfail=0):
-    d1 = load_stats(path)
-    d2 = load_profile(path)
-
-    d3 = pd.concat([d1, d2], axis=1)
-    d3 = d3.drop('durbin', axis=0, errors='ignore')
-    d3 = d3.fillna(0)
-
-    new_features = preprocess_features_instfrequency(d1.columns.values, d3)
-    #new_features = preprocess_features_noop(d1.columns.values, d3)
+    new_features, d3 = load_data_phase1(path)
 
     d3['ratio'] = d3['flo_T'] / d3['fix_T']
 

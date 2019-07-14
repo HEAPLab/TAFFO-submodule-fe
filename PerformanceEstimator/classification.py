@@ -11,8 +11,24 @@ from preprocess import *
 
 better_than = 0.2  # 1=go fixed if time is less than float, 0.5 if time is half then float, etc.
 
-def load_data(path, features=None, response=None, boostfail=0):
+
+def load_data_onlystats(path, features=None):
 	new_features, d3 = load_data_phase1(path)
+
+	if not features:
+		features = new_features
+
+	print features
+	for f in features:
+		if f not in d3.columns.values:
+			d3[f] = 0.
+
+	print d3.loc[:, features].shape
+	return d3.fillna(0), features
+
+
+def load_data(path, features=None, response=None, boostfail=0):
+	d3, features = load_data_onlystats(path, features)
 
 	d3['ratio'] = d3['flo_T'] / d3['fix_T']
 	w1 = d3['fix_T'] < (d3['flo_T'] * better_than)
@@ -38,15 +54,7 @@ def load_data(path, features=None, response=None, boostfail=0):
 
 	if not response:
 		response = ['worth']
-	if not features:
-		features = new_features
 
-	print features
-	for f in features:
-		if f not in d3.columns.values:
-			d3[f] = 0.
-
-	print d3.loc[:, features].shape
 	print d3.loc[:, response].shape
 	return d3.fillna(0), features, response
 

@@ -72,6 +72,6 @@ if __name__=='__main__' :
 			selected = filter(lambda est: est[0] == args.dump, estimators)[0]
 		fitr = selected[1](base, features, response)
 		from joblib import dump
-		k = {'model_name': selected[0], 'fitr': fitr}
+		k = {'model_name': selected[0], 'features': features, 'fitr': fitr}
 		dump(k, 'saved_model.bin')
 		print 'saved model', selected[0]

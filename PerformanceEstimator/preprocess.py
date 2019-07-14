@@ -58,12 +58,16 @@ def preprocess_features_freqandtrim(orig_feat, d3):
 	return new_features
 
 
-def load_data_phase1(path, fpreprocess=None):
-	d1=load_stats(path)
-	d2=load_profile(path)
-
-	d3=pd.concat([d1,d2],axis=1)
-	d3=d3.drop('durbin',axis=0,errors='ignore')
+def load_data_phase1(path_or_data, fpreprocess=None):
+	if isinstance(path_or_data, str):
+		d1=load_stats(path_or_data)
+		d2=load_profile(path_or_data)
+		d3=pd.concat([d1,d2],axis=1)
+		d3 = d3.drop('durbin', axis=0, errors='ignore')
+	else:
+		d1=load_stats(path_or_data)
+		d3=d1.copy()
+		d3.columns = d3.columns.to_flat_index()
 	d3=d3.fillna(0)
 
 	if not fpreprocess:

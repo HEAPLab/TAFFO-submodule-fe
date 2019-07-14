@@ -22,6 +22,7 @@ if __name__=='__main__' :
 	parser.add_argument('--ntry', '-n', type=int, help='number of retries', default=100)
 	parser.add_argument('--single', '-s', action='store_true', help='only predict one bench at a time')
 	parser.add_argument('--boostfail', '-f', type=int, help='amplify inputs in training set with low speedup by the given factor', default=5)
+	parser.add_argument('--dump', '-d', type=str, help='save the specified model to a file named saved_model.bin (specify "best" for selecting best estimator automatically)')
 	args = parser.parse_args()
 
 	#base_path='./20180911_multiconf_results/'
@@ -37,13 +38,13 @@ if __name__=='__main__' :
 	#print test
 
 	estimators = [
-		['Random Forest',              randomforest,         [], []],
-		['Extremely Randomized Trees', extree,               [], []],
-		['Bagging',                    bagging,              [], []],
-		['AdaBoost',                   adaboost,             [], []],
-		['Gradient Tree',              gradient,             [], []],
-		['Multilayer Perceptron',      multilayerperceptron, [], []],
-		['SVC',                        svc,                  [], []],
+		['Random Forest',              train_randomforest,         [], []],
+		['Extremely Randomized Trees', train_extree,               [], []],
+		['Bagging',                    train_bagging,              [], []],
+		['AdaBoost',                   train_adaboost,             [], []],
+		['Gradient Tree',              train_gradient,             [], []],
+		['Multilayer Perceptron',      train_multilayerperceptron, [], []],
+		['SVC',                        train_svc,                  [], []],
 		#['Grid Search Best Estimator', pipeline, [], []] # takes hours and hours
 	]
 	n = args.ntry
@@ -52,7 +53,8 @@ if __name__=='__main__' :
 			train, test = split_train_test(base)
 		for est in estimators:
 			print est[0]
-			rate, time = est[1](train, test, features, response, args.single)
+			fitr = est[1](train, features, response)
+			rate, time = do_test_prediction(fitr, test, features, response, args.single)
 			print 'Prediction rate', rate
 			print 'Prediction time [s]', time
 			est[2] += rate
@@ -61,3 +63,15 @@ if __name__=='__main__' :
 	for est in estimators:
 		print est[0], sum(est[2])/len(est[2])*100, min(est[2]), max(est[2]), 'time avg =', median(est[3])
 
+	if args.dump is not None:
+		if args.dump == 'best':
+			newest = list(estimators)
+			newest.sort(lambda avg1, avg2: cmp(avg1, avg2), lambda est: sum(est[2])/len(est[2]), True)
+			selected = newest[0]
+		else:
+			selected = filter(lambda est: est[0] == args.dump, estimators)[0]
+		fitr = selected[1](base, features, response)
+		from joblib import dump
+		k = {'model_name': selected[0], 'fitr': fitr}
+		dump(k, 'saved_model.bin')
+		print 'saved model', selected[0]

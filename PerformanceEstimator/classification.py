@@ -59,7 +59,7 @@ def split_train_test(d3):
 	return train, test
 
 
-def do_prediction(fitr, predictor, test, features, response, oneatatime):
+def do_test_prediction(fitr, test, features, response, oneatatime):
 	if not oneatatime:
 		benchs = [test.index]
 	else:
@@ -77,52 +77,52 @@ def do_prediction(fitr, predictor, test, features, response, oneatatime):
 	return results, times
 
 
-def adaboost(train, test, features, response, oneatatime):
+def train_adaboost(train, features, response):
 	from sklearn.ensemble import AdaBoostClassifier
 	regr = AdaBoostClassifier(n_estimators=100)
 	fitr = regr.fit(train.loc[:, features], np.ravel(train.loc[:, response]))
-	return do_prediction(fitr, regr, test, features, response, oneatatime)
+	return fitr
 
 
-def gradient(train, test, features, response, oneatatime):
+def train_gradient(train, features, response):
 	from sklearn.ensemble import GradientBoostingClassifier
 	regr = GradientBoostingClassifier(max_features=int(sqrt(len(features))))
 	fitr = regr.fit(train.loc[:, features], np.ravel(train.loc[:, response]))
-	return do_prediction(fitr, regr, test, features, response, oneatatime)
+	return fitr
 
 
-def extree(train, test, features, response, oneatatime):
+def train_extree(train, features, response):
 	from sklearn.ensemble import ExtraTreesClassifier
 	regr = ExtraTreesClassifier(max_features=int(sqrt(len(features))))
 	fitr = regr.fit(train.loc[:, features], np.ravel(train.loc[:, response]))
-	return do_prediction(fitr, regr, test, features, response, oneatatime)
+	return fitr
 
 
-def bagging(train, test, features, response, oneatatime):
+def train_bagging(train, features, response):
 	from sklearn.ensemble import BaggingClassifier
 	regr = BaggingClassifier(max_features=int(sqrt(len(features))))
 	fitr = regr.fit(train.loc[:, features], np.ravel(train.loc[:, response]))
-	return do_prediction(fitr, regr, test, features, response, oneatatime)
+	return fitr
 
 
-def randomforest(train, test, features, response, oneatatime):
+def train_randomforest(train, features, response):
 	from sklearn.ensemble import RandomForestClassifier
 	regr = RandomForestClassifier(max_features=int(sqrt(len(features))))
 	fitr = regr.fit(train.loc[:, features], np.ravel(train.loc[:, response]))
-	return do_prediction(fitr, regr, test, features, response, oneatatime)
+	return fitr
 
 
-def multilayerperceptron(train, test, features, response, oneatatime):
+def train_multilayerperceptron(train, features, response):
 	from sklearn.neural_network import MLPClassifier
 	regr = MLPClassifier(solver='lbfgs', alpha=1e-5,
 						 hidden_layer_sizes=(int(len(features) / 2), int(len(features) / 8)), random_state=1)
 	fitr = regr.fit(train.loc[:, features], np.ravel(train.loc[:, response]))
-	return do_prediction(fitr, regr, test, features, response, oneatatime)
+	return fitr
 
 
-def svc(train, test, features, response, oneatatime):
+def train_svc(train, features, response):
 	from sklearn.svm import SVC
 	regr = SVC()
 	fitr = regr.fit(train.loc[:, features], np.ravel(train.loc[:, response]))
-	return do_prediction(fitr, regr, test, features, response, oneatatime)
+	return fitr
 

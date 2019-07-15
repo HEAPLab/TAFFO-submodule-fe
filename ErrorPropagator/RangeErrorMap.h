@@ -108,6 +108,8 @@ protected:
   mdutils::MetadataManager *MDMgr;
   StructErrorMap SEMap;
   TargetErrors TErrs;
+
+  void retrieveConstRanges(const llvm::Instruction &I);
 }; // end class RangeErrorMap
 
 typedef llvm::DenseMap<llvm::Value *, mdutils::CmpErrorInfo> CmpErrorMap;

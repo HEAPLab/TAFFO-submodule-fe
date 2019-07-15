@@ -29,8 +29,13 @@ const RangeErrorMap::RangeError *
 InstructionPropagator::getConstantRangeError(Instruction &I, ConstantInt *VInt,
 					     bool DoublePP,
 					     const FPType *FallbackTy) {
+  const RangeErrorMap::RangeError* RE = RMap.getRangeError(VInt);
+  if (RE != nullptr)
+    return RE;
+
   // We interpret the value of VInt with the same
   // fractional bits and sign of the result.
+  LLVM_DEBUG(dbgs() << "(WARNING: constant with no range metadata, trying to guess type)");
   const FPInterval *RInfo = RMap.getRange(&I);
   const FPType *Ty = nullptr;
   if (RInfo != nullptr)

@@ -79,6 +79,8 @@ void RangeErrorMap::setRangeError(const Value *I,
 }
 
 bool RangeErrorMap::retrieveRangeError(Instruction &I) {
+  retrieveConstRanges(I);
+
   if (const StructInfo *SI = MDMgr->retrieveStructInfo(I)) {
     SEMap.createStructTreeFromMetadata(&I, SI);
     return false;
@@ -261,6 +263,24 @@ void TargetErrors::printTargetErrors(raw_ostream &OS) const {
   for (auto &T : Targets) {
     OS << "Computed error for target " << T.first << ": "
        << static_cast<double>(T.second) << "\n";
+  }
+}
+
+void RangeErrorMap::retrieveConstRanges(const Instruction &I) {
+  SmallVector<InputInfo *, 2U> CII;
+  MDMgr->retrieveConstInfo(I, CII);
+  if (CII.empty())
+    return;
+
+  assert(CII.size() == I.getNumOperands() && "Malformed ConstInfo metadata.");
+  for (unsigned Idx = 0; Idx < I.getNumOperands(); ++Idx) {
+    InputInfo *II = CII[Idx];
+    if (II != nullptr && isa<Constant>(I.getOperand(Idx))) {
+      AffineForm<inter_t> Error = (II->IType && cast<FPType>(II->IType.get())->getPointPos() != 0)
+	? AffineForm<inter_t>(0.0, II->IType->getRoundingError())
+	: AffineForm<inter_t>();
+      REMap[I.getOperand(Idx)] = std::make_pair(FPInterval(II), Error);
+    }
   }
 }
 

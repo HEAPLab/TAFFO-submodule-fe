@@ -5,6 +5,7 @@ from string import split, strip
 import pandas as pd
 import numpy as np
 import os
+import sys
 
 
 def load_file_stats(fname):
@@ -69,5 +70,5 @@ def load_stats(path_or_data='./'):
 if __name__=='__main__':
 	#d=load_stats('./20180911_multiconf_results/')
 	d = load_stats('./20190620_polybench/')
-	print d
+	print >> sys.stderr, d
 	d.to_csv(path_or_buf="stats.csv")

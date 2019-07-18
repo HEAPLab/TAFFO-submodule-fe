@@ -1,11 +1,12 @@
 #!/usr/bin/env python2
 import argparse
+import sys
 
 
 def load_model(fn):
 	from joblib import load
 	k = load(fn)
-	print 'loaded model', k['model_name']
+	print >> sys.stderr, 'loaded model', k['model_name']
 	return k['fitr'], k['features']
 
 
@@ -17,7 +18,6 @@ if __name__=='__main__' :
 	except:
 		mlfeatpath = None
 	parser = argparse.ArgumentParser()
-	parser.add_argument('pred', help='input set', nargs='?', default='./data/20190623_polybench_antarex/')
 	parser.add_argument('--fix', '-f', type=str, help='fixed point .ll file', required=True)
 	parser.add_argument('--flt', '-F', type=str, help='floating point .ll file', required=True)
 	parser.add_argument('--mlfeat-path', help='path to taffo-mlfeat', required=mlfeatpath is None, default=mlfeatpath)
@@ -38,7 +38,7 @@ if __name__=='__main__' :
 	test, _ = load_data_onlystats([fix_d, flt_d], features)
 
 	pred = fitr.predict(test.loc[:, features])
-	print 'Predict', pred[0]
+	print pred[0]
 
 
 

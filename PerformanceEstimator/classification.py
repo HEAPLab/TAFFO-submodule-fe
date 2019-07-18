@@ -7,6 +7,7 @@ from profile_loader import load_profile
 import time as pytime
 import argparse
 from preprocess import *
+import sys
 
 
 better_than = 0.2  # 1=go fixed if time is less than float, 0.5 if time is half then float, etc.
@@ -18,12 +19,12 @@ def load_data_onlystats(path, features=None):
 	if not features:
 		features = new_features
 
-	print features
+	print >> sys.stderr, features
 	for f in features:
 		if f not in d3.columns.values:
 			d3[f] = 0.
 
-	print d3.loc[:, features].shape
+	print >> sys.stderr, d3.loc[:, features].shape
 	return d3.fillna(0), features
 
 
@@ -55,7 +56,7 @@ def load_data(path, features=None, response=None, boostfail=0):
 	if not response:
 		response = ['worth']
 
-	print d3.loc[:, response].shape
+	print >> sys.stderr, d3.loc[:, response].shape
 	return d3.fillna(0), features, response
 
 

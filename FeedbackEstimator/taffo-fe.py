@@ -21,7 +21,7 @@ def parse_errorprop(fpath):
             errors.append(float(parts[-1]))
         except:
             pass
-    return max(errors)
+    return 0 if len(errors) == 0 else max(errors)
 
 
 class FeedbackEstimatorState:

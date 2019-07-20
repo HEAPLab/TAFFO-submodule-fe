@@ -104,7 +104,10 @@ FixedPointValue::createFromConstantInt(int SPrec,
 			   CIMin->getZExtValue(),
 			   CIMax->getZExtValue()));
     }
-    llvm_unreachable("Types wider than 64 bits not supported.");
+    return std::unique_ptr<FixedPointValue>
+      (new FixedPointGeneric(SPrec, IT->getBitWidth(), false,
+			     CIMin->getValue(),
+			     CIMax->getValue()));
   }
   else {
     SPrec = -SPrec;
@@ -120,7 +123,10 @@ FixedPointValue::createFromConstantInt(int SPrec,
 			   CIMin->getSExtValue(),
 			   CIMax->getSExtValue()));
     }
-    llvm_unreachable("Types wider than 64 bits not supported.");
+    return std::unique_ptr<FixedPointValue>
+      (new FixedPointGeneric(SPrec, IT->getBitWidth(), true,
+			     CIMin->getValue(),
+			     CIMax->getValue()));
   }
 }
 
@@ -253,5 +259,32 @@ MDNode *SFixedPoint64::toMetadata(LLVMContext &C) const {
 
   return MDNode::get(C, MDs);
 }
+
+FixedPointGeneric::FixedPointGeneric(const unsigned PointPos, const unsigned Precision,
+				     const bool Signed)
+  : FixedPointValue(PointPos), Min(Precision, 0, Signed), Max(Precision, 0, Signed),
+    Precision(Precision), Signed(Signed) {
+  assert(PointPos <= Precision && "Fractional bits cannot be more that total width.");
+}
+
+FixedPointGeneric::FixedPointGeneric(const unsigned PointPos, const unsigned Precision,
+				     const bool Signed, const APInt &Min, const APInt &Max)
+  : FixedPointValue(PointPos), Min(Min), Max(Max),
+    Precision(Precision), Signed(Signed) {
+  assert(PointPos <= Precision && "Fractional bits cannot be more that total width.");
+  assert(((Signed) ? Min.sle(Max) : Min.ule(Max)) && "Inconsistent bounds.");
+}
+
+FPInterval FixedPointGeneric::getInterval() const {
+  inter_t Exp = std::ldexp(static_cast<inter_t>(1.0), -this->getPointPos());
+  return FPInterval(Interval<inter_t>(Min.roundToDouble(this->isSigned()) * Exp,
+				      Max.roundToDouble(this->isSigned()) * Exp));
+}
+
+MDNode *FixedPointGeneric::toMetadata(LLVMContext &C) const {
+  llvm_unreachable("Not implemented yet.");
+}
+
+
 
 } // end namespace ErrorProp

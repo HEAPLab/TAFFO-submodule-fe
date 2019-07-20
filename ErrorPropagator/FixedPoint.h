@@ -24,6 +24,7 @@
 #include "llvm/IR/Metadata.h"
 #include "InputInfo.h"
 #include "AffineForms.h"
+#include "llvm/ADT/APInt.h"
 
 namespace ErrorProp {
 
@@ -226,6 +227,31 @@ public:
 protected:
   int64_t Min;
   int64_t Max;
+};
+
+class FixedPointGeneric : public FixedPointValue {
+public:
+  FixedPointGeneric(const unsigned PointPos, const unsigned Precision, const bool Signed);
+  FixedPointGeneric(const unsigned PointPos, const unsigned Precision, const bool Signed,
+		    const llvm::APInt &Min, const llvm::APInt &Max);
+
+  unsigned getPrecision() const override {
+    return Precision;
+  }
+
+  bool isSigned() const override {
+    return Signed;
+  }
+
+  FPInterval getInterval() const override;
+
+  llvm::MDNode *toMetadata(llvm::LLVMContext &) const override;
+
+protected:
+  llvm::APInt Min;
+  llvm::APInt Max;
+  unsigned Precision;
+  bool Signed;
 };
 
 } // end namespace ErrorProp

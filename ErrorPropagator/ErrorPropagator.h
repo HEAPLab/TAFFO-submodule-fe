@@ -45,6 +45,9 @@ llvm::cl::opt<unsigned> MaxRecursionCount("recur",
 llvm::cl::opt<bool> StartOnly("startonly",
 			      llvm::cl::desc("Propagate only functions with start metadata."),
 			      llvm::cl::init(false));
+llvm::cl::opt<bool> Absolute("abserror",
+			      llvm::cl::desc("Output absolute errors instead of relative errors."),
+			      llvm::cl::init(false));
 
 class ErrorPropagator : public llvm::ModulePass {
 public:

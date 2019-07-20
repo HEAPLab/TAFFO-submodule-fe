@@ -67,15 +67,20 @@ void RangeErrorMap::setError(const Value *I, const AffineForm<inter_t> &E) {
   else
     RE->second.second = E;
 
-  TErrs.updateTarget(I, E.noiseTermsAbsSum());
+  double OutError = getOutputError(I);
+  if (!std::isnan(OutError))
+    TErrs.updateTarget(I, OutError);
 }
 
 void RangeErrorMap::setRangeError(const Value *I,
 				  const RangeError &RE) {
   REMap[I] = RE;
 
-  if (RE.second.hasValue())
-    TErrs.updateTarget(I, RE.second.getValue().noiseTermsAbsSum());
+  if (RE.second.hasValue()) {
+    double OutError = getOutputError(RE);
+    if (!std::isnan(OutError))
+      TErrs.updateTarget(I, OutError);
+  }
 }
 
 bool RangeErrorMap::retrieveRangeError(Instruction &I) {
@@ -219,6 +224,27 @@ void RangeErrorMap::setStructRangeError(Value *V, const RangeError &RE) {
 
 void RangeErrorMap::updateTargets(const RangeErrorMap &Other) {
   this->TErrs.updateAllTargets(Other.TErrs);
+}
+
+double RangeErrorMap::computeRelativeError(const RangeError &RE) {
+  double divisor = std::max(std::abs(RE.first.Min), std::abs(RE.first.Max));
+  if (divisor != 0)
+    return RE.second->noiseTermsAbsSum() / divisor;
+  else
+    return std::numeric_limits<double>::quiet_NaN();
+}
+
+double RangeErrorMap::getOutputError(const llvm::Value *V) const {
+  const RangeError *RE = getRangeError(V);
+  if (RE && RE->second.hasValue()) {
+    return getOutputError(*RE);
+  } else {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+}
+
+double RangeErrorMap::getOutputError(const RangeError &RE) const {
+  return (OutputAbsolute) ? RE.second->noiseTermsAbsSum() : computeRelativeError(RE);
 }
 
 void TargetErrors::updateTarget(const Value *V, const inter_t &Error) {

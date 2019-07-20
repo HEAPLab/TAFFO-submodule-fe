@@ -49,8 +49,8 @@ class RangeErrorMap {
 public:
   typedef std::pair<FPInterval, llvm::Optional<AffineForm<inter_t> > > RangeError;
 
-  RangeErrorMap(mdutils::MetadataManager &MDManager)
-    : REMap(), MDMgr(&MDManager) {}
+  RangeErrorMap(mdutils::MetadataManager &MDManager, bool Absolute = true)
+    : REMap(), MDMgr(&MDManager), SEMap(), TErrs(), OutputAbsolute(Absolute) {}
 
   const FPInterval *getRange(const llvm::Value *) const;
 
@@ -103,13 +103,17 @@ public:
   void updateTargets(const RangeErrorMap &Other);
   void printTargetErrors(llvm::raw_ostream &OS) const { TErrs.printTargetErrors(OS); }
 
+  double getOutputError(const llvm::Value *V) const;
+  double getOutputError(const RangeError &RE) const;
 protected:
   std::map<const llvm::Value *, RangeError> REMap;
   mdutils::MetadataManager *MDMgr;
   StructErrorMap SEMap;
   TargetErrors TErrs;
+  bool OutputAbsolute;
 
   void retrieveConstRanges(const llvm::Instruction &I);
+  static double computeRelativeError(const RangeError &RE);
 }; // end class RangeErrorMap
 
 typedef llvm::DenseMap<llvm::Value *, mdutils::CmpErrorInfo> CmpErrorMap;

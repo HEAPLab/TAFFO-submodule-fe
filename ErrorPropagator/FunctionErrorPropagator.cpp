@@ -299,9 +299,10 @@ FunctionErrorPropagator::attachErrorMetadata() {
     if (InstCopy == nullptr)
       continue;
 
-    const AffineForm<inter_t> *Error = RMap.getError(InstCopy);
-    if (Error != nullptr)
-      MetadataManager::setErrorMetadata(*I, Error->noiseTermsAbsSum());
+    double Error = RMap.getOutputError(InstCopy);
+    if (!std::isnan(Error)) {
+      MetadataManager::setErrorMetadata(*I, Error);
+    }
 
     CmpErrorMap::const_iterator CmpErr = CmpMap.find(InstCopy);
     if (CmpErr != CmpMap.end())

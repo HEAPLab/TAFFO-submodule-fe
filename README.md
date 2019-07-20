@@ -41,8 +41,8 @@ Further documentation about the format of metadata and the APIs for setting and 
 Note that when a range or an initial error are attached to arrays or pointers to arrays, they are considered valid and equal for each element of the array
 (one may still inspect the absolute errors attached to intermediate instructions in case elements of an array are not used homogeneously).
 
-The absolute error computed for each instruction is attached to it as metadata.
-Moreover, it is possible to mark some instructions or global variables as targets: TAFFO-EP will keep track of their absolute errors, and display it at the end of the pass (see `Metadata.md`).
+The relative error computed for each instruction is attached to it as metadata.
+Moreover, it is possible to mark some instructions or global variables as targets: TAFFO-EP will keep track of their relative errors, and display it at the end of the pass (see `Metadata.md`).
 
 An important caveat: TAFFO-EP uses Alias Analysis to retrieve errors associated to the values loaded by `load` instructions.
 For it to function properly, the input LLVM IR file must be in proper SSA form.
@@ -63,6 +63,7 @@ Therefore, the `-mem2reg` pass should be scheduled before this pass.
   The default value of `<perc>` is 0 (i.e. a comparison error is signaled every time it is deemed possible).
 - `-dunroll <trip>`: default loop unroll count.
 - `-nounroll`: never unroll loops.
+- `-abserr`: output absolute errors instead of relative errors.
 
 ### Loop Unrolling
 
@@ -90,4 +91,4 @@ When `-debug-only=errorprop` is specified on `opt`'s command line, messages of t
 - whether a fixed point instruction may cause an overflow according to the range and bit width specified in metadata;
 - the number of times a loop has been unrolled, or whether loop unrolling failed for that loop (tip: use `-debug-only=loop-unroll` to know why a loop could not be unrolled);
 - for each `struct`, the maximum error computed for each field;
-- the maximum absolute error computed for each target variable.
+- the maximum relative error computed for each target variable.

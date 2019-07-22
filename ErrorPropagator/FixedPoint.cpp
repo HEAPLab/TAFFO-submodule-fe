@@ -277,8 +277,10 @@ FixedPointGeneric::FixedPointGeneric(const unsigned PointPos, const unsigned Pre
 
 FPInterval FixedPointGeneric::getInterval() const {
   inter_t Exp = std::ldexp(static_cast<inter_t>(1.0), -this->getPointPos());
-  return FPInterval(Interval<inter_t>(Min.roundToDouble(this->isSigned()) * Exp,
-				      Max.roundToDouble(this->isSigned()) * Exp));
+  // crappy workaround for a bug in APInt::roundToDouble for signed values with > 64 bits
+  std::string minstr = Min.toString(10, this->isSigned());
+  std::string maxstr = Max.toString(10, this->isSigned());
+  return FPInterval(Interval<inter_t>(std::atof(minstr.c_str()) * Exp, std::atof(maxstr.c_str()) * Exp));
 }
 
 MDNode *FixedPointGeneric::toMetadata(LLVMContext &C) const {

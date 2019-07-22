@@ -37,7 +37,7 @@ FunctionErrorPropagator::computeErrorsWithCopy(RangeErrorMap &GlobRMap,
 					       SmallVectorImpl<Value *> *Args,
 					       bool GenMetadata) {
   if (F.empty() || FCopy == nullptr) {
-    LLVM_DEBUG(dbgs() << "Function " << F.getName() << " could not be processed.\n");
+    LLVM_DEBUG(dbgs() << "[taffo-err] Function " << F.getName() << " could not be processed.\n");
     return;
   }
 
@@ -46,7 +46,7 @@ FunctionErrorPropagator::computeErrorsWithCopy(RangeErrorMap &GlobRMap,
 
   Function &CF = *FCopy;
 
-  LLVM_DEBUG(dbgs() << "\n*** Processing function " << CF.getName()
+  LLVM_DEBUG(dbgs() << "\n[taffo-err] *** Processing function " << CF.getName()
 	<< " (iteration " << OldRecCount + 1 << ")... ***\n");
 
   CmpMap.clear();
@@ -89,7 +89,7 @@ FunctionErrorPropagator::computeErrorsWithCopy(RangeErrorMap &GlobRMap,
   // Restore original recursion count.
   FCMap.setRecursionCount(&F, OldRecCount);
 
-  LLVM_DEBUG(dbgs() << "Finished processing function " << CF.getName() << ".\n\n");
+  LLVM_DEBUG(dbgs() << "[taffo-err] Finished processing function " << CF.getName() << ".\n\n");
 }
 
 void
@@ -144,16 +144,16 @@ FunctionErrorPropagator::computeInstructionErrors(Instruction &I) {
   // }
 
   if (!ComputedError && HasInitialError) {
-    LLVM_DEBUG(dbgs() << "WARNING: metadata error "
-	  << InitialError << " attached to instruction "
-	  << I.getName() << ".\n");
+    LLVM_DEBUG(dbgs() << "[taffo-err] WARNING: metadata error "
+	  << InitialError << " attached to instruction ("
+	  << I << ").\n");
     RMap.setError(&I, AffineForm<inter_t>(0.0, InitialError));
   }
 
   LLVM_DEBUG(
 	if(checkOverflow(I))
-	  dbgs() << "Possible overflow detected for instruction "
-		 << I.getName() << ".\n";
+	  dbgs() << "[taffo-err] Possible overflow detected for instruction ("
+		 << I << ").\n";
 	);
 }
 
@@ -205,8 +205,8 @@ FunctionErrorPropagator::dispatchInstruction(Instruction &I) {
     case Instruction::FPToSI:
       return IP.propagateFPToI(I);
     default:
-      LLVM_DEBUG(dbgs() << "Unhandled " << I.getOpcodeName()
-	    << " instruction: " << I.getName() << "\n");
+      LLVM_DEBUG(InstructionPropagator::logInstruction(I);
+		 InstructionPropagator::logInfoln("unhandled."));
       return false;
   }
   llvm_unreachable("No return statement.");
@@ -238,7 +238,7 @@ FunctionErrorPropagator::prepareErrorsForCall(Instruction &I) {
       || InstructionPropagator::isSpecialFunction(*CalledF))
     return;
 
-  LLVM_DEBUG(dbgs() << "Preparing errors for function call/invoke "
+  LLVM_DEBUG(dbgs() << "[taffo-err] Preparing errors for function call/invoke "
 	<< I.getName() << "...\n");
 
   // Stop if we have reached the maximum recursion count.
@@ -280,7 +280,7 @@ FunctionErrorPropagator::applyActualParametersErrors(RangeErrorMap &GlobRMap,
 	continue;
     }
 
-    LLVM_DEBUG(dbgs() << "Setting actual parameter (" << **AArg
+    LLVM_DEBUG(dbgs() << "[taffo-err] Setting actual parameter (" << **AArg
 	  << ") error " << static_cast<double>(Err->noiseTermsAbsSum()) << "\n");
     GlobRMap.setError(*AArg, *Err);
   }
@@ -328,7 +328,7 @@ void BBScheduler::enqueueChildren(BasicBlock *BB) {
   if (Set.count(BB))
     return;
 
-  LLVM_DEBUG(dbgs() << "Scheduling " << BB->getName() << ".\n");
+  LLVM_DEBUG(dbgs() << "[taffo-err] Scheduling " << BB->getName() << ".\n");
 
   Set.insert(BB);
 

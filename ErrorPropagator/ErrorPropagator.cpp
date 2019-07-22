@@ -52,15 +52,20 @@ bool ErrorPropagator::runOnModule(Module &M) {
   FunctionCopyManager FCMap(*this, MaxRecursionCount, DefaultUnrollCount,
 			    NoLoopUnroll);
 
+  bool NoFunctions = true;
   // Iterate over all functions in this Module,
   // and propagate errors for pending input intervals for all of them.
   for (Function *F : Functions) {
     if (StartOnly && !MetadataManager::isStartingPoint(*F))
       continue;
 
+    NoFunctions = false;
     FunctionErrorPropagator FEP(*this, *F, FCMap, MDManager);
     FEP.computeErrorsWithCopy(GlobalRMap, nullptr, true);
   }
+
+  if (NoFunctions)
+    dbgs() << "[taffo-err] WARNING: no starting-point functions found. Try running taffo-err without -startonly.\n";
 
   dbgs() << "\n*** Target Errors: ***\n";
   GlobalRMap.printTargetErrors(dbgs());

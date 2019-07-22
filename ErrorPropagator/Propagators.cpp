@@ -103,8 +103,7 @@ propagateShr(const AffineForm<inter_t> &E1, const FPInterval &ResR) {
 bool InstructionPropagator::propagateBinaryOp(Instruction &I) {
   BinaryOperator &BI = cast<BinaryOperator>(I);
 
-  LLVM_DEBUG(dbgs() << "Computing error for " << BI.getOpcodeName()
-	<< " instruction " << I.getName() << "... ");
+  LLVM_DEBUG(logInstruction(I));
 
   // if (RMap.getRangeError(&I) == nullptr) {
   //   LLVM_DEBUG(dbgs() << "ignored (no range data).\n");
@@ -117,7 +116,7 @@ bool InstructionPropagator::propagateBinaryOp(Instruction &I) {
   auto *O2 = getOperandRangeError(BI, 1U);
   if (O1 == nullptr || !O1->second.hasValue()
       || O2 == nullptr || !O2->second.hasValue()) {
-    LLVM_DEBUG(dbgs() << "no data.\n");
+    LLVM_DEBUG(logInfo("no data.\n"));
     return false;
   }
 
@@ -159,21 +158,21 @@ bool InstructionPropagator::propagateBinaryOp(Instruction &I) {
     case Instruction::AShr: {
       const FPInterval *ResR = RMap.getRange(&I);
       if (ResR == nullptr) {
-	LLVM_DEBUG(dbgs() << "no data.");
+	LLVM_DEBUG(logInfoln("no data."));
 	return false;
       }
       ERes = propagateShr(*O1->second, *ResR);
       break;
     }
     default:
-      LLVM_DEBUG(dbgs() << "not supported.\n");
+      LLVM_DEBUG(logInfoln("not supported.\n"));
       return false;
   }
 
   // Add error to RMap.
   RMap.setError(&BI, ERes);
 
-  LLVM_DEBUG(dbgs() << static_cast<double>(ERes.noiseTermsAbsSum()) << ".\n");
+  LLVM_DEBUG(logErrorln(ERes));
 
   return true;
 }
@@ -182,18 +181,18 @@ bool InstructionPropagator::propagateStore(Instruction &I) {
   assert(I.getOpcode() == Instruction::Store && "Must be Store.");
   StoreInst &SI = cast<StoreInst>(I);
 
-  LLVM_DEBUG(dbgs() << "Propagating error for Store instruction " << I.getName() << "... ");
+  LLVM_DEBUG(logInstruction(I));
 
   Value *IDest = SI.getPointerOperand();
-  assert(IDest != nullptr && "Store with null Pointer Operand.\n");
+  assert(IDest != nullptr && "Store with null Pointer Operand.");
   auto *PointerRE = RMap.getRangeError(IDest);
 
   auto *SrcRE = getOperandRangeError(I, 0U);
   if (SrcRE == nullptr || !SrcRE->second.hasValue()) {
-    LLVM_DEBUG(dbgs() << "(no data, looking up pointer) ");
+    LLVM_DEBUG(logInfo("(no data, looking up pointer)"));
     SrcRE = PointerRE;
     if (SrcRE == nullptr || !SrcRE->second.hasValue()) {
-      LLVM_DEBUG(dbgs() << " ignored (no data).\n");
+      LLVM_DEBUG(logInfoln("ignored (no data)."));
       return false;
     }
   }
@@ -204,7 +203,7 @@ bool InstructionPropagator::propagateStore(Instruction &I) {
   // and to the pointer, if greater, and if it is a function Argument.
   updateArgumentRE(IDest, SrcRE);
 
-  LLVM_DEBUG(dbgs() << static_cast<double>(SrcRE->second->noiseTermsAbsSum()) << ".\n");
+  LLVM_DEBUG(logErrorln(*SrcRE));
 
   // Update struct errors.
   RMap.setStructRangeError(SI.getPointerOperand(), *SrcRE);
@@ -217,12 +216,12 @@ bool InstructionPropagator::propagateLoad(Instruction &I) {
   assert(I.getOpcode() == Instruction::Load && "Must be Load.");
   LoadInst &LI = cast<LoadInst>(I);
 
+  LLVM_DEBUG(logInstruction(I));
+
   if (isa<PointerType>(LI.getType())) {
-    LLVM_DEBUG(dbgs() << "Pointer load " << I.getName() << " ignored.\n");
+    LLVM_DEBUG(logInfoln("Pointer load ignored."));
     return false;
   }
-
-  LLVM_DEBUG(dbgs() << "Propagating error for Load instruction " << I.getName() << "... ");
 
   // Look for range and error in the defining instructions with MemorySSA
   MemSSAUtils MemUtils(RMap, MemSSA);
@@ -236,11 +235,9 @@ bool InstructionPropagator::propagateLoad(Instruction &I) {
   if (const RangeErrorMap::RangeError *StructRE
       = RMap.getStructRangeError(LI.getPointerOperand())) {
     REs.push_back(StructRE);
-    LLVM_DEBUG(if (StructRE->second.hasValue())
-		 dbgs() << "(StructError: "
-			<< static_cast<double>(StructRE->second.getValue().noiseTermsAbsSum()) << ") ";
-	       else
-		 dbgs() << "(Empty struct error!) ");
+    LLVM_DEBUG(logInfo("(StructError: ");
+	       logError(*StructRE);
+	       logInfo(")"));
   }
 
   std::sort(REs.begin(), REs.end());
@@ -254,10 +251,8 @@ bool InstructionPropagator::propagateLoad(Instruction &I) {
       RMap.setError(&I, *RE->second);
     else
       RMap.setRangeError(&I, *RE);
-    LLVM_DEBUG(if (RE->second.hasValue())
-	    dbgs() << "(one value) " << static_cast<double>(RE->second->noiseTermsAbsSum()) << ".\n";
-	  else
-	    dbgs() << "no data.\n");
+    LLVM_DEBUG(logInfo("(one value) ");
+	       logErrorln(*RE));
     return true;
   }
 
@@ -271,7 +266,7 @@ bool InstructionPropagator::propagateLoad(Instruction &I) {
   // We also take the range from metadata attached to LI (if any).
   const FPInterval *SrcR = RMap.getRange(&I);
   if (SrcR == nullptr) {
-    LLVM_DEBUG(dbgs() << "ignored (no data).\n");
+    LLVM_DEBUG(logInfoln("ignored (no data)."));
     return false;
   }
 
@@ -279,15 +274,15 @@ bool InstructionPropagator::propagateLoad(Instruction &I) {
     AffineForm<inter_t> Error(0, MaxAbsErr);
     RMap.setRangeError(&I, std::make_pair(*SrcR, Error));
 
-    LLVM_DEBUG(dbgs() << static_cast<double>(Error.noiseTermsAbsSum()) << ".\n");
+    LLVM_DEBUG(logErrorln(Error));
     return true;
   }
 
   // If we have no other error info, we take the rounding error.
   AffineForm<inter_t> Error(0, SrcR->getRoundingError());
   RMap.setRangeError(&I, std::make_pair(*SrcR, Error));
-  LLVM_DEBUG(dbgs() << "(no data, falling back to rounding error) "
-	<< static_cast<double>(Error.noiseTermsAbsSum()) << ".\n");
+  LLVM_DEBUG(logInfo("(no data, falling back to rounding error)");
+	     logErrorln(Error));
 
   return true;
 }
@@ -298,7 +293,7 @@ bool InstructionPropagator::propagateExt(Instruction &I) {
 	  || I.getOpcode() == Instruction::FPExt)
 	 && "Must be SExt, ZExt or FExt.");
 
-  LLVM_DEBUG(dbgs() << "Propagating error for Extend instruction " << I.getName() << "... ");
+  LLVM_DEBUG(logInstruction(I));
 
   // No further error is introduced with signed/unsigned extension.
   return unOpErrorPassThrough(I);
@@ -309,7 +304,7 @@ bool InstructionPropagator::propagateTrunc(Instruction &I) {
 	  || I.getOpcode() == Instruction::FPTrunc)
 	 && "Must be Trunc.");
 
-  LLVM_DEBUG(dbgs() << "Propagating error for Trunc instruction " << I.getName() << "... ");
+  LLVM_DEBUG(logInstruction(I));
 
   // No further error is introduced with truncation if no overflow occurs
   // (in which case it is useless to propagate other errors).
@@ -319,7 +314,7 @@ bool InstructionPropagator::propagateTrunc(Instruction &I) {
 bool InstructionPropagator::propagateIToFP(Instruction &I) {
   assert((isa<SIToFPInst>(I) || isa<UIToFPInst>(I)) && "Must be IToFP.");
 
-  LLVM_DEBUG(dbgs() << "Propagating error for IToFP instruction " << I.getName() << "... ");
+  LLVM_DEBUG(logInstruction(I));
 
   return unOpErrorPassThrough(I);
 }
@@ -327,34 +322,34 @@ bool InstructionPropagator::propagateIToFP(Instruction &I) {
 bool InstructionPropagator::propagateFPToI(Instruction &I) {
   assert((isa<FPToSIInst>(I) || isa<FPToUIInst>(I)) && "Must be FPToI.");
 
-  LLVM_DEBUG(dbgs() << "Propagating error for FPToI instruction " << I.getName() << "... ");
+  LLVM_DEBUG(logInstruction(I));
 
   const AffineForm<inter_t> *Error = RMap.getError(I.getOperand(0U));
   if (Error == nullptr) {
-    LLVM_DEBUG(dbgs() << "ignored (no error data).\n");
+    LLVM_DEBUG(logInfoln("ignored (no error data)."));
     return false;
   }
 
   const FPInterval *Range = RMap.getRange(&I);
   if (Range == nullptr || Range->isUninitialized()) {
-    LLVM_DEBUG(dbgs() << "ignored (no range data).\n");
+    LLVM_DEBUG(logInfo("ignored (no range data)."));
     return false;
   }
 
   AffineForm<inter_t> NewError = *Error + AffineForm<inter_t>(0.0, Range->getRoundingError());
   RMap.setError(&I, NewError);
 
-  LLVM_DEBUG(dbgs() << static_cast<double>(NewError.noiseTermsAbsSum()) << ".\n");
+  LLVM_DEBUG(logErrorln(NewError.noiseTermsAbsSum()));
   return true;
 }
 
 bool InstructionPropagator::propagateSelect(Instruction &I) {
   SelectInst &SI = cast<SelectInst>(I);
 
-  LLVM_DEBUG(dbgs() << "Propagating error for Select instruction " << I.getName() << "... ");
+  LLVM_DEBUG(logInstruction(I));
 
   if (RMap.getRangeError(&I) == nullptr) {
-    LLVM_DEBUG(dbgs() << "ignored (no range data).\n");
+    LLVM_DEBUG(logInfoln("ignored (no range data)."));
     return false;
   }
 
@@ -362,7 +357,7 @@ bool InstructionPropagator::propagateSelect(Instruction &I) {
   auto *FV = getOperandRangeError(I, SI.getFalseValue());
   if (TV == nullptr || !TV->second.hasValue()
       || FV == nullptr || !FV->second.hasValue()) {
-    LLVM_DEBUG(dbgs() << "(no data).\n");
+    LLVM_DEBUG(logInfoln("(no data)."));
     return false;
   }
 
@@ -379,7 +374,7 @@ bool InstructionPropagator::propagateSelect(Instruction &I) {
   // Add computed error metadata to the instruction.
   // setErrorMetadata(I, ERes);
 
-  LLVM_DEBUG(dbgs() << static_cast<double>(ERes.noiseTermsAbsSum()) << ".\n");
+  LLVM_DEBUG(logErrorln(ERes));
 
   return true;
 }
@@ -387,7 +382,7 @@ bool InstructionPropagator::propagateSelect(Instruction &I) {
 bool InstructionPropagator::propagatePhi(Instruction &I) {
   PHINode &PHI = cast<PHINode>(I);
 
-  LLVM_DEBUG(dbgs() << "Propagating error for PHI node " << I.getName() << "... ");
+  LLVM_DEBUG(logInstruction(I));
 
   const FPType *ConstFallbackTy = nullptr;
   if (RMap.getRangeError(&I) == nullptr) {
@@ -422,7 +417,7 @@ bool InstructionPropagator::propagatePhi(Instruction &I) {
 
   if (AbsErr < 0.0) {
     // If no incoming value has an error, skip this instruction.
-    LLVM_DEBUG(dbgs() << "ignored (no error data).\n");
+    LLVM_DEBUG(logInfoln("ignored (no error data)."));
     return false;
   }
 
@@ -436,7 +431,7 @@ bool InstructionPropagator::propagatePhi(Instruction &I) {
   else
     RMap.setError(&I, ERes);
 
-  LLVM_DEBUG(dbgs() << static_cast<double>(AbsErr) << ".\n");
+  LLVM_DEBUG(logErrorln(ERes));
 
   return true;
 }
@@ -446,15 +441,13 @@ extern cl::opt<unsigned> CmpErrorThreshold;
 bool InstructionPropagator::checkCmp(CmpErrorMap &CmpMap, Instruction &I) {
   CmpInst &CI = cast<CmpInst>(I);
 
-  LLVM_DEBUG(dbgs() << "Checking comparison error for ICmp/FCmp "
-	<< CmpInst::getPredicateName(CI.getPredicate())
-	<< " instruction " << I.getName() << "... ");
+  LLVM_DEBUG(logInstruction(I));
 
   auto *Op1 = getOperandRangeError(I, 0U);
   auto *Op2 = getOperandRangeError(I, 1U);
   if (Op1 == nullptr || Op1->first.isUninitialized() || !Op1->second.hasValue()
       || Op2 == nullptr || Op2->first.isUninitialized() || !Op2->second.hasValue()) {
-    LLVM_DEBUG(dbgs() << "(no data).\n");
+    LLVM_DEBUG(logInfoln("(no data)."));
     return false;
   }
 
@@ -483,9 +476,9 @@ bool InstructionPropagator::checkCmp(CmpErrorMap &CmpMap, Instruction &I) {
   CmpMap.insert(std::make_pair(&I, CmpInfo));
 
   if (CmpInfo.MayBeWrong)
-    LLVM_DEBUG(dbgs() << "might be wrong!\n");
+    LLVM_DEBUG(logInfoln("might be wrong!"));
   else
-    LLVM_DEBUG(dbgs() << "no possible error.\n");
+    LLVM_DEBUG(logInfoln("no possible error."));
 
   return true;
 }
@@ -493,14 +486,13 @@ bool InstructionPropagator::checkCmp(CmpErrorMap &CmpMap, Instruction &I) {
 bool InstructionPropagator::propagateRet(Instruction &I) {
   ReturnInst &RI = cast<ReturnInst>(I);
 
-  LLVM_DEBUG(dbgs() << "Propagating error for Return instruction "
-	<< RI.getName() << "... ");
+  LLVM_DEBUG(logInstruction(I));
 
   // Get error of the returned value
   Value *Ret = RI.getReturnValue();
   const AffineForm<inter_t> *RetErr = RMap.getError(Ret);
   if (Ret == nullptr || RetErr == nullptr) {
-    LLVM_DEBUG(dbgs() << "unchanged (no data).\n");
+    LLVM_DEBUG(logInfoln("unchanged (no data)."));
     return false;
   }
 
@@ -517,27 +509,25 @@ bool InstructionPropagator::propagateRet(Instruction &I) {
     // or if RetErr is larger than the previous one, associate RetErr to it.
     RMap.setError(F, RetErr->flattenNoiseTerms());
 
-    LLVM_DEBUG(dbgs() << static_cast<double>(RetErr->noiseTermsAbsSum()) << ".\n");
+    LLVM_DEBUG(logErrorln(*RetErr));
     return true;
   }
   else {
-    LLVM_DEBUG(dbgs() << "unchanged (smaller than previous).\n");
+    LLVM_DEBUG(logInfoln("unchanged (smaller than previous)."));
     return true;
   }
 }
 
 bool InstructionPropagator::propagateCall(Instruction &I) {
+  LLVM_DEBUG(logInstruction(I));
+
   Function *F = nullptr;
   if (isa<CallInst>(I)) {
     F = cast<CallInst>(I).getCalledFunction();
-    LLVM_DEBUG(dbgs() << "Propagating error for Call instruction "
-	  << I.getName() << "... ");
   }
   else {
     assert(isa<InvokeInst>(I));
     F = cast<InvokeInst>(I).getCalledFunction();
-    LLVM_DEBUG(dbgs() << "Propagating error for Invoke instruction "
-	  << I.getName() << "... ");
   }
 
   if (F != nullptr && isSpecialFunction(*F)) {
@@ -545,19 +535,19 @@ bool InstructionPropagator::propagateCall(Instruction &I) {
   }
 
   if (RMap.getRangeError(&I) == nullptr) {
-    LLVM_DEBUG(dbgs() << "ignored (no range data).\n");
+    LLVM_DEBUG(logInfoln("ignored (no range data)."));
     return false;
   }
 
   const AffineForm<inter_t> *Error = RMap.getError(F);
   if (Error == nullptr) {
-    LLVM_DEBUG(dbgs() << "ignored (no error data).\n");
+    LLVM_DEBUG(logInfoln("ignored (no error data)."));
     return false;
   }
 
   RMap.setError(&I, *Error);
 
-  LLVM_DEBUG(dbgs() << static_cast<double>(Error->noiseTermsAbsSum()) << ".\n");
+  LLVM_DEBUG(logErrorln(*Error));
 
   return true;
 }
@@ -565,19 +555,18 @@ bool InstructionPropagator::propagateCall(Instruction &I) {
 bool InstructionPropagator::propagateGetElementPtr(Instruction &I) {
   GetElementPtrInst &GEPI = cast<GetElementPtrInst>(I);
 
-  LLVM_DEBUG(dbgs() << "Propagating error for GetElementPtr instruction "
-	<< GEPI.getName() << "... ");
+  LLVM_DEBUG(logInstruction(I));
 
   const RangeErrorMap::RangeError *RE =
     RMap.getRangeError(GEPI.getPointerOperand());
   if (RE == nullptr || !RE->second.hasValue()) {
-    LLVM_DEBUG(dbgs() << "ignored (no data).\n");
+    LLVM_DEBUG(logInfoln("ignored (no data)."));
     return false;
   }
 
   RMap.setRangeError(&GEPI, *RE);
 
-  LLVM_DEBUG(dbgs() << static_cast<double>(RE->second->noiseTermsAbsSum()) << ".\n");
+  LLVM_DEBUG(logErrorln(*RE));
 
   return true;
 }
@@ -585,18 +574,17 @@ bool InstructionPropagator::propagateGetElementPtr(Instruction &I) {
 bool InstructionPropagator::propagateExtractValue(Instruction &I) {
   ExtractValueInst &EVI = cast<ExtractValueInst>(I);
 
-  LLVM_DEBUG(dbgs() << "Propagating error for ExtractValue instruction "
-	<< I.getName() << "... ");
+  LLVM_DEBUG(logInstruction(I));
 
   const RangeErrorMap::RangeError *RE = RMap.getStructRangeError(&EVI);
   if (RE == nullptr || !RE->second.hasValue()) {
-    LLVM_DEBUG(dbgs() << "ignored (no data).\n");
+    LLVM_DEBUG(logInfoln("ignored (no data)."));
     return false;
   }
 
   RMap.setRangeError(&EVI, *RE);
 
-  LLVM_DEBUG(dbgs() << static_cast<double>(RE->second->noiseTermsAbsSum()) << ".\n");
+  LLVM_DEBUG(logErrorln(*RE));
 
   return true;
 }
@@ -604,20 +592,18 @@ bool InstructionPropagator::propagateExtractValue(Instruction &I) {
 bool InstructionPropagator::propagateInsertValue(Instruction &I) {
   InsertValueInst &IVI = cast<InsertValueInst>(I);
 
-  LLVM_DEBUG(dbgs() << "Propagating error for ExtractValue instruction "
-	<< I.getName() << "... ");
-
+  LLVM_DEBUG(logInstruction(I));
 
   const RangeErrorMap::RangeError *RE =
     RMap.getStructRangeError(IVI.getInsertedValueOperand());
   if (RE == nullptr || !RE->second.hasValue()) {
-    LLVM_DEBUG(dbgs() << "ignored (no data).\n");
+    LLVM_DEBUG(logInfoln("ignored (no data)."));
     return false;
   }
 
   RMap.setStructRangeError(&IVI, *RE);
 
-  LLVM_DEBUG(dbgs() << static_cast<double>(RE->second->noiseTermsAbsSum()) << ".\n");
+  LLVM_DEBUG(logErrorln(*RE));
 
   return false;
 }

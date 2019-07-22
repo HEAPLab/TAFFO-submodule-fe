@@ -120,6 +120,15 @@ private:
   bool propagateSpecialCall(llvm::Instruction &I, llvm::Function &Called);
 
   inter_t computeMinRangeDiff(const FPInterval &R1, const FPInterval &R2);
+
+public:
+  static void logInstruction(const llvm::Value &I);
+  static void logInfo(const llvm::StringRef Msg);
+  static void logInfoln(const llvm::StringRef Msg);
+  static void logError(const AffineForm<inter_t> &Err);
+  static void logError(const RangeErrorMap::RangeError &RE);
+  static void logErrorln(const AffineForm<inter_t> &Err);
+  static void logErrorln(const RangeErrorMap::RangeError &RE);
 };
 
 } // end of namespace ErrorProp

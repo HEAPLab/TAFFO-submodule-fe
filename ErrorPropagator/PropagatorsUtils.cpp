@@ -35,7 +35,7 @@ InstructionPropagator::getConstantRangeError(Instruction &I, ConstantInt *VInt,
 
   // We interpret the value of VInt with the same
   // fractional bits and sign of the result.
-  LLVM_DEBUG(dbgs() << "(WARNING: constant with no range metadata, trying to guess type)");
+  LLVM_DEBUG(logInfo("(WARNING: constant with no range metadata, trying to guess type)"));
   const FPInterval *RInfo = RMap.getRange(&I);
   const FPType *Ty = nullptr;
   if (RInfo != nullptr)
@@ -116,7 +116,7 @@ bool InstructionPropagator::unOpErrorPassThrough(Instruction &I) {
 
   auto *OpRE = getOperandRangeError(I, 0U);
   if (OpRE == nullptr || !OpRE->second.hasValue()) {
-    LLVM_DEBUG(dbgs() << "no data.\n");
+    LLVM_DEBUG(logInfoln("no data."));
     return false;
   }
 
@@ -130,7 +130,7 @@ bool InstructionPropagator::unOpErrorPassThrough(Instruction &I) {
     RMap.setError(&I, *OpRE->second);
   }
 
-  LLVM_DEBUG(dbgs() << static_cast<double>(OpRE->second->noiseTermsAbsSum()) << ".\n");
+  LLVM_DEBUG(logErrorln(*OpRE));
 
   return true;
 }
@@ -151,6 +151,40 @@ inter_t InstructionPropagator::computeMinRangeDiff(const FPInterval &R1,
   // Else R2 < R1
   assert(R2.Max < R1.Min);
   return R1.Min - R2.Max;
+}
+
+void InstructionPropagator::logInstruction(const llvm::Value &I) {
+  dbgs() << "[taffo-err] " << I << ": ";
+}
+
+void InstructionPropagator::logInfo(const llvm::StringRef Msg) {
+  dbgs() << Msg << " ";
+}
+
+void InstructionPropagator::logInfoln(const llvm::StringRef Msg) {
+  dbgs() << Msg << "\n";
+}
+
+void InstructionPropagator::logError(const AffineForm<inter_t> &Err) {
+  dbgs() << static_cast<double>(Err.noiseTermsAbsSum());
+}
+
+void InstructionPropagator::logError(const RangeErrorMap::RangeError &RE) {
+  if (RE.second.hasValue())
+    logError(RE.second.getValue());
+  else
+    dbgs() << "null";
+}
+
+void InstructionPropagator::logErrorln(const AffineForm<inter_t> &Err) {
+  logError(Err);
+  dbgs() << "\n";
+}
+
+void InstructionPropagator::logErrorln(const RangeErrorMap::RangeError &RE) {
+  logError(RE);
+  dbgs() << "\n";
+
 }
 
 } // end of namespace ErrorProp

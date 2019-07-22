@@ -160,7 +160,7 @@ void RangeErrorMap::applyArgumentErrors(Function &F,
     const AffineForm<inter_t> *Err = this->getError(AArgV);
     if (Err == nullptr) {
       LLVM_DEBUG(
-	    dbgs() << "No pre-computed error available for formal parameter (" << *FArg << ")";
+	    dbgs() << "[taffo-err] No pre-computed error available for formal parameter (" << *FArg << ")";
 	    if (AArgV != nullptr)
 	      dbgs() << "from actual parameter (" << *AArgV << ").\n";
 	    else
@@ -171,7 +171,7 @@ void RangeErrorMap::applyArgumentErrors(Function &F,
 
     this->setError(&*FArg, *Err);
 
-    LLVM_DEBUG(dbgs() << "Pre-computed error applied to formal parameter (" << *FArg
+    LLVM_DEBUG(dbgs() << "[taffo-err] Pre-computed error applied to formal parameter (" << *FArg
 	  << ") from actual parameter (" << *AArgV
 	  << "): " << static_cast<double>(Err->noiseTermsAbsSum()) << ".\n");
   }
@@ -181,14 +181,14 @@ void RangeErrorMap::retrieveRangeError(GlobalObject &V) {
   if (V.getValueType()->isStructTy()) {
     const StructInfo *SI = MDMgr->retrieveStructInfo(V);
     if (SI == nullptr) {
-      LLVM_DEBUG(dbgs() << "No struct data for Global Variable " << V.getName() << ".\n");
+      LLVM_DEBUG(dbgs() << "[taffo-err] No struct data for Global Variable " << V << ".\n");
       return;
     }
     SEMap.createStructTreeFromMetadata(&V, SI);
     return;
   }
 
-  LLVM_DEBUG(dbgs() << "Retrieving data for Global Variable " << V.getName() << "... ");
+  LLVM_DEBUG(dbgs() << "[taffo-err] Retrieving data for Global Variable " << V << "... ");
 
   const InputInfo *II = MDMgr->retrieveInputInfo(V);
   if (II == nullptr) {

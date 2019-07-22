@@ -319,7 +319,7 @@ void StructErrorMap::updateStructTree(const StructErrorMap &O, const ArrayRef<Va
 
 void StructErrorMap::createStructTreeFromMetadata(Value *V,
 						  const mdutils::MDInfo *MDI) {
-  LLVM_DEBUG(dbgs() << "Retrieving data for struct [" << *V << "]: ");
+  LLVM_DEBUG(dbgs() << "[taffo-err] Retrieving data for struct [" << *V << "]: ");
 
   StructType *ST = nullptr;
   if (GlobalValue *GV = dyn_cast<GlobalValue>(V))

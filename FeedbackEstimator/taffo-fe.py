@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 import argparse
 import pickle
+import sys
 from copy import copy
 from pathlib import Path
+
+
+def nullfunc(*args, **kwargs):
+    pass
+vprint = nullfunc
 
 
 def parse_perfest(fpath):
@@ -89,11 +95,13 @@ class FeedbackEstimatorState:
 
         if pe > 0 and ep <= self.max_err:
             self.stop = True
+            vprint('stopping; conditions fulfilled', file=sys.stderr)
             return
 
         num_options = len(self.allowed_n_bits()) * len(self.allowed_max_merge_dist())
         if len(self.tried_combinations()) == num_options:
             self.stop = True
+            vprint('stopping; search space exhausted', file=sys.stderr)
             return
 
         option = self.cur_option_num()
@@ -103,9 +111,9 @@ class FeedbackEstimatorState:
         if ep > self.max_err and pe == 1:
             direction = +1
         elif ep > self.max_err and pe == 0:
-            direction = +1
+            direction = -1
         elif ep > self.max_err and pe == -1:
-            direction = +1
+            direction = -1
         elif ep <= self.max_err and pe == 1:
             pass
         elif ep <= self.max_err and pe == 0:
@@ -115,7 +123,9 @@ class FeedbackEstimatorState:
 
         if direction == 0:
             self.stop = True
+            vprint('stopping; direction = 0', file=sys.stderr)
             return
+        vprint('moving with direction', direction, file=sys.stderr)
         self.set_next_untried_combination_with_direction(direction)
 
 
@@ -134,7 +144,11 @@ if __name__ == "__main__":
     parser.add_argument('--init', '-i', action='store_true', help='initialize the state for a new compilation')
     parser.add_argument('--max-err', '-E', type=float, help='error threshold', default=0.01)
     parser.add_argument('--state', '-s', type=str, help='state file which will carry over across multiple compilations', default='fe-state.bin')
+    parser.add_argument('--verbose', '-v', action='store_true')
     args = parser.parse_args()
+
+    if args.verbose:
+        vprint = print
 
     if args.init:
         state = FeedbackEstimatorState()

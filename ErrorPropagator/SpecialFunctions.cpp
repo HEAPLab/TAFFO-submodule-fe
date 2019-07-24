@@ -62,10 +62,12 @@ bool InstructionPropagator::propagateSqrt(Instruction &I) {
     return false;
   }
 
+  const FPInterval *IRange = RMap.getRange(&I);
   AffineForm<inter_t> NewErr =
     LinearErrorApproximationDecr([](inter_t x){ return static_cast<inter_t>(0.5) / std::sqrt(x); },
 				 OpRE->first, OpRE->second.getValue())
-    + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
+    + ((IRange) ? AffineForm<inter_t>(0.0, IRange->getRoundingError()) :
+    AffineForm<inter_t>(0.0, OpRE->first.getRoundingError()));
 
   RMap.setError(&I, NewErr);
 
@@ -81,10 +83,12 @@ bool InstructionPropagator::propagateLog(Instruction &I) {
     return false;
   }
 
+  const FPInterval *IRange = RMap.getRange(&I);
   AffineForm<inter_t> NewErr =
     LinearErrorApproximationDecr([](inter_t x){ return static_cast<inter_t>(1) / x; },
 				 OpRE->first, OpRE->second.getValue())
-    + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
+    + ((IRange) ? AffineForm<inter_t>(0.0, IRange->getRoundingError()) :
+    AffineForm<inter_t>(0.0, OpRE->first.getRoundingError()));
 
   RMap.setError(&I, NewErr);
 
@@ -100,10 +104,12 @@ bool InstructionPropagator::propagateExp(Instruction &I) {
     return false;
   }
 
+  const FPInterval *IRange = RMap.getRange(&I);
   AffineForm<inter_t> NewErr =
     LinearErrorApproximationIncr([](inter_t x){ return std::exp(x); },
 				 OpRE->first, OpRE->second.getValue())
-    + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
+    + ((IRange) ? AffineForm<inter_t>(0.0, IRange->getRoundingError()) :
+    AffineForm<inter_t>(0.0, OpRE->first.getRoundingError()));
 
   RMap.setError(&I, NewErr);
 
@@ -121,10 +127,12 @@ bool InstructionPropagator::propagateAcos(Instruction &I) {
   Interval<inter_t> R(std::max(static_cast<inter_t>(-0.99), OpRE->first.Min),
 		      std::min(static_cast<inter_t>(0.99),  OpRE->first.Max));
 
+  const FPInterval *IRange = RMap.getRange(&I);
   AffineForm<inter_t> NewErr =
     LinearErrorApproximationIncr([](inter_t x){ return static_cast<inter_t>(-1) / std::sqrt(1 - x*x); },
 				 R, OpRE->second.getValue())
-    + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
+    + ((IRange) ? AffineForm<inter_t>(0.0, IRange->getRoundingError()) :
+    AffineForm<inter_t>(0.0, OpRE->first.getRoundingError()));
 
   RMap.setError(&I, NewErr);
 
@@ -142,11 +150,12 @@ bool InstructionPropagator::propagateAsin(Instruction &I) {
   Interval<inter_t> R(std::max(static_cast<inter_t>(-0.99), OpRE->first.Min),
 		      std::min(static_cast<inter_t>(0.99),  OpRE->first.Max));
 
-
+  const FPInterval *IRange = RMap.getRange(&I);
   AffineForm<inter_t> NewErr =
     LinearErrorApproximationIncr([](inter_t x){ return static_cast<inter_t>(1) / std::sqrt(1 - x*x); },
 				 R, OpRE->second.getValue())
-    + AffineForm<inter_t>(0.0, OpRE->first.getRoundingError());
+    + ((IRange) ? AffineForm<inter_t>(0.0, IRange->getRoundingError()) :
+    AffineForm<inter_t>(0.0, OpRE->first.getRoundingError()));
 
   RMap.setError(&I, NewErr);
 

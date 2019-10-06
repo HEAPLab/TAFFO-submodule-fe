@@ -339,7 +339,7 @@ bool InstructionPropagator::propagateFPToI(Instruction &I) {
   AffineForm<inter_t> NewError = *Error + AffineForm<inter_t>(0.0, Range->getRoundingError());
   RMap.setError(&I, NewError);
 
-  LLVM_DEBUG(logErrorln(NewError.noiseTermsAbsSum()));
+  LLVM_DEBUG(logErrorln(NewError));
   return true;
 }
 

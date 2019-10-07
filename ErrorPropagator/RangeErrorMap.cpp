@@ -302,7 +302,7 @@ void RangeErrorMap::retrieveConstRanges(const Instruction &I) {
   for (unsigned Idx = 0; Idx < I.getNumOperands(); ++Idx) {
     InputInfo *II = CII[Idx];
     if (II != nullptr && isa<Constant>(I.getOperand(Idx))) {
-      AffineForm<inter_t> Error = (II->IType && cast<FPType>(II->IType.get())->getPointPos() != 0)
+      AffineForm<inter_t> Error = (!ExactConst && II->IType && cast<FPType>(II->IType.get())->getPointPos() != 0)
 	? AffineForm<inter_t>(0.0, II->IType->getRoundingError())
 	: AffineForm<inter_t>();
       REMap[I.getOperand(Idx)] = std::make_pair(FPInterval(II), Error);

@@ -64,6 +64,7 @@ Therefore, the `-mem2reg` pass should be scheduled before this pass.
 - `-dunroll <trip>`: default loop unroll count.
 - `-nounroll`: never unroll loops.
 - `-abserr`: output absolute errors instead of relative errors.
+- `-exactconst`: treat all constants as exact (do not add rounding error).
 
 ### Loop Unrolling
 

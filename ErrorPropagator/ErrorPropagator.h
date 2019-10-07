@@ -48,6 +48,9 @@ llvm::cl::opt<bool> StartOnly("startonly",
 llvm::cl::opt<bool> Absolute("abserror",
 			      llvm::cl::desc("Output absolute errors instead of relative errors."),
 			      llvm::cl::init(false));
+llvm::cl::opt<bool> ExactConst("exactconst",
+			       llvm::cl::desc("Treat all constants as exact."),
+			       llvm::cl::init(false));
 
 class ErrorPropagator : public llvm::ModulePass {
 public:

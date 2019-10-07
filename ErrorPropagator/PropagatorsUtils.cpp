@@ -53,7 +53,8 @@ InstructionPropagator::getConstantRangeError(Instruction &I, ConstantInt *VInt,
       FixedPointValue::createFromConstantInt(SPointPos, nullptr, VInt, VInt);
     VRange = VFPRange->getInterval();
     // We use the rounding error of this format as the only error.
-    Error = AffineForm<inter_t>(0, Ty->getRoundingError());
+    Error = (RMap.isExactConst())
+      ? AffineForm<inter_t>(0) : AffineForm<inter_t>(0, Ty->getRoundingError());
   }
   else {
     VRange.Min = VRange.Max = VInt->getSExtValue();

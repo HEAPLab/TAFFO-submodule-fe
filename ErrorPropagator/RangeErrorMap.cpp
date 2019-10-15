@@ -270,6 +270,8 @@ void TargetErrors::updateTarget(const GlobalVariable *V, const inter_t &Error) {
 
 void TargetErrors::updateTarget(StringRef T, const inter_t &Error) {
   Targets[T] = std::max(Targets[T], Error);
+  LLVM_DEBUG(dbgs() << "(Target " << T << " updated with "
+	     << static_cast<double>(Error) << ") ");
 }
 
 void TargetErrors::updateAllTargets(const TargetErrors &Other) {

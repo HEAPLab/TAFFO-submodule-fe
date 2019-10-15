@@ -45,8 +45,8 @@ llvm::cl::opt<unsigned> MaxRecursionCount("recur",
 llvm::cl::opt<bool> StartOnly("startonly",
 			      llvm::cl::desc("Propagate only functions with start metadata."),
 			      llvm::cl::init(false));
-llvm::cl::opt<bool> Absolute("abserror",
-			      llvm::cl::desc("Output absolute errors instead of relative errors."),
+llvm::cl::opt<bool> Relative("relerror",
+			      llvm::cl::desc("Output relative errors instead of absolute errors (experimental)."),
 			      llvm::cl::init(false));
 llvm::cl::opt<bool> ExactConst("exactconst",
 			       llvm::cl::desc("Treat all constants as exact."),

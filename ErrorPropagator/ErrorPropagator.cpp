@@ -37,7 +37,7 @@ bool ErrorPropagator::runOnModule(Module &M) {
 
   MetadataManager &MDManager = MetadataManager::getMetadataManager();
 
-  RangeErrorMap GlobalRMap(MDManager, Absolute, ExactConst);
+  RangeErrorMap GlobalRMap(MDManager, !Relative, ExactConst);
 
   // Get Ranges and initial Errors for global variables.
   retrieveGlobalVariablesRangeError(M, GlobalRMap);

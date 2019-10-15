@@ -63,7 +63,7 @@ Therefore, the `-mem2reg` pass should be scheduled before this pass.
   The default value of `<perc>` is 0 (i.e. a comparison error is signaled every time it is deemed possible).
 - `-dunroll <trip>`: default loop unroll count.
 - `-nounroll`: never unroll loops.
-- `-abserr`: output absolute errors instead of relative errors.
+- `-relerror`: output relative errors instead of absolute errors (experimental).
 - `-exactconst`: treat all constants as exact (do not add rounding error).
 
 ### Loop Unrolling

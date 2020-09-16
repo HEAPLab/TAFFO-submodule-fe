@@ -45,12 +45,23 @@ void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
     DominatorTree &DomTree = P.getAnalysis<DominatorTreeWrapperPass>(F).getDomTree();
     AssumptionCache &AssC = P.getAnalysis<AssumptionCacheTracker>().getAssumptionCache(F);
     OptimizationRemarkEmitter &ORE = P.getAnalysis<OptimizationRemarkEmitterWrapperPass>(F).getORE();
+    UnrollLoopOptions ULO = {
+      .Count = UnrollCount,
+      .TripCount = TripCount,
+      .Force = true,
+      .AllowRuntime = false,
+      .AllowExpensiveTripCount = true,
+      .PreserveCondBr = false,
+      .PreserveOnlyFirst = false,
+      .TripMultiple = TripMult,
+      .PeelCount = 0U,
+      .UnrollRemainder = false,
+      .ForgetAllSCEV = false
+    };
 
-    LoopUnrollResult URes = UnrollLoop(L, UnrollCount, TripCount,
-    				       true, false, true, false, false,
-    				       TripMult, 0U,
-    				       false, &LInfo, &SE, &DomTree,
-    				       &AssC, &ORE, true);
+    LoopUnrollResult URes = UnrollLoop(L, ULO, &LInfo, &SE, &DomTree, &AssC,
+        &ORE, true);
+        
     switch (URes) {
       case LoopUnrollResult::Unmodified:
     	LLVM_DEBUG(dbgs() << "unmodified.\n");

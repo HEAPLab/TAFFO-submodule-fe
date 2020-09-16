@@ -12,6 +12,4 @@ add_llvm_library(LLVMErrorPropagator OBJECT BUILDTREE_ONLY
   FixedPoint.cpp
 )
 
-set_property(TARGET obj.LLVMErrorPropagator PROPERTY CXX_STANDARD 11)
-set_property(TARGET obj.LLVMErrorPropagator PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET obj.LLVMErrorPropagator PROPERTY POSITION_INDEPENDENT_CODE ON)

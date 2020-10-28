@@ -317,8 +317,8 @@ bool FunctionErrorPropagator::checkOverflow(Instruction &I) {
       || (Type = Range->getTType()) == nullptr)
     return false;
 
-  return Range->Min < Type->getMinValueBound()
-    || Range->Max > Type->getMaxValueBound();
+  return Range->Min < (Type->getMinValueBound()).convertToDouble()
+    || Range->Max > (Type->getMaxValueBound()).convertToDouble();
 }
 
 void BBScheduler::enqueueChildren(BasicBlock *BB) {

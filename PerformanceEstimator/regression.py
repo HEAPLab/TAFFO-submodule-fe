@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 __doc__ = '''Use RandomForestClassifier to classify whether Fix is faster'''
 import pandas as pd
 import numpy as np
@@ -26,20 +26,20 @@ def load_data(path, features=None, response=None, boostfail=0):
                     cprow.name = (cprow.name[0] + '_c' + str(repi), cprow.name[1])
                     d3 = d3.append(cprow)
 
-    print d3['ratio']
+    print(d3['ratio'])
 
     if not response:
         response = ['ratio']
     if not features:
         features = new_features
 
-    print features
+    print(features)
     for f in features:
         if f not in d3.columns.values:
             d3[f] = 0.
 
-    print d3.loc[:, features].shape
-    print d3.loc[:, response].shape
+    print(d3.loc[:, features].shape)
+    print(d3.loc[:, response].shape)
     return d3.fillna(0), features, response
 
 
@@ -59,15 +59,15 @@ def do_prediction_2(fitr, test_feat, test_resp, oneatatime):
     if not oneatatime:
         benchs = [test_feat.index]
     else:
-        benchs = map(lambda x: [x], test_feat.index)
+        benchs = [[x] for x in test_feat.index]
     results, times = [], []
     for bench in benchs:
         res = fitr.score(test_feat.loc[bench], np.ravel(test_resp.loc[bench]))
         t0 = pytime.time()
         pred = fitr.predict(test_feat.loc[bench])
         t1 = pytime.time()
-        print 'Predict', bench, pred
-        print 'Actual', np.ravel(test_resp.loc[bench])
+        print('Predict', bench, pred)
+        print('Actual', np.ravel(test_resp.loc[bench]))
         results += [res]
         times += [t1 - t0]
     return results, times

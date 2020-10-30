@@ -1,7 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 __doc__ = '''Load the profile data from multiple files, dump as CSV (standalone) or return Dataframe (as library)'''
-from commands import getoutput as cmd
-from string import split, strip
+from subprocess import getoutput as cmd
 import pandas as pd
 import numpy as np
 import os
@@ -41,7 +40,7 @@ def f(*x):
 	for i in x :
 		try :
 			res+=float(i)
-		except Exception, e :
+		except Exception as e :
 			return 'drop'
 	return res
 
@@ -73,5 +72,5 @@ def load_profile(path='./', boostfail=False):
 if __name__=='__main__':
 	d=load_profile('./20190620_polybench/')
 	#d = load_profile('./20180911_multiconf_results/')
-	print d
+	print(d)
 	d.to_csv(path_or_buf="data.csv")

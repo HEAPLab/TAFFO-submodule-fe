@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import pandas as pd
 import numpy as np
 from math import sqrt
@@ -19,12 +19,12 @@ def load_data_onlystats(path, features=None):
 	if not features:
 		features = new_features
 
-	print >> sys.stderr, features
+	print(features, file=sys.stderr)
 	for f in features:
 		if f not in d3.columns.values:
 			d3[f] = 0.
 
-	print >> sys.stderr, d3.loc[:, features].shape
+	print(d3.loc[:, features].shape, file=sys.stderr)
 	return d3.fillna(0), features
 
 
@@ -49,14 +49,14 @@ def load_data(path, features=None, response=None, boostfail=0):
 					d3 = d3.append(cprow)
 
 	# print d3['ratio'], d3['worth']
-	print '<20%', sum(w1), 'of', len(d3['worth'])
-	print '<100%', sum(w2) - sum(w1), 'of', len(d3['worth'])
-	print '>100%', len(d3['worth']) - sum(w2), 'of', len(d3['worth'])
+	print('<20%', sum(w1), 'of', len(d3['worth']))
+	print('<100%', sum(w2) - sum(w1), 'of', len(d3['worth']))
+	print('>100%', len(d3['worth']) - sum(w2), 'of', len(d3['worth']))
 
 	if not response:
 		response = ['worth']
 
-	print >> sys.stderr, d3.loc[:, response].shape
+	print(d3.loc[:, response].shape, file=sys.stderr)
 	return d3.fillna(0), features, response
 
 
@@ -72,15 +72,15 @@ def do_test_prediction(fitr, test, features, response, oneatatime):
 	if not oneatatime:
 		benchs = [test.index]
 	else:
-		benchs = map(lambda x: [x], test.index)
+		benchs = [[x] for x in test.index]
 	results, times = [], []
 	for bench in benchs:
 		res = fitr.score(test.loc[bench, features], np.ravel(test.loc[bench, response]))
 		t0 = pytime.time()
 		pred = fitr.predict(test.loc[bench, features])
 		t1 = pytime.time()
-		print 'Predict', bench, pred
-		print 'Actual', np.ravel(test.loc[bench, response])
+		print('Predict', bench, pred)
+		print('Actual', np.ravel(test.loc[bench, response]))
 		results += [res]
 		times += [t1 - t0]
 	return results, times

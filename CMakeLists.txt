@@ -42,4 +42,5 @@ endfunction(find_python3_module)
 
 add_subdirectory(ErrorPropagator)
 add_subdirectory(FeedbackEstimator)
+add_subdirectory(PerformanceEstimator)
 add_subdirectory(test)

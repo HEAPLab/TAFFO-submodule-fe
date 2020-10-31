@@ -1,9 +1,27 @@
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 find_python3_module(zipapp REQUIRED)
 
+set(PE_SOURCES
+  classification.py
+  main_pe_train_class.py
+  main_pe_train_regr.py
+  main_pe.py
+  pe_utils.py
+  preprocess.py
+  profile_loader.py
+  regression.py
+  stats_loader.py
+  taffo-pe-train-class.py
+  taffo-pe-train-regr.py
+  taffo-pe.py
+  )
+
 add_custom_command(
   OUTPUT
   taffo-pe
+  
+  DEPENDS
+  ${PE_SOURCES}
   
   COMMAND 
   "${Python3_EXECUTABLE}" "-m" "zipapp"
@@ -13,6 +31,9 @@ add_custom_command(
   OUTPUT
   taffo-pe-train-class
   
+  DEPENDS
+  ${PE_SOURCES}
+  
   COMMAND 
   "${Python3_EXECUTABLE}" "-m" "zipapp"
   "${CMAKE_CURRENT_SOURCE_DIR}" "-p" "${Python3_EXECUTABLE}" "-m" "main_pe_train_class:main" "-o" "taffo-pe-train-class" 
@@ -20,6 +41,9 @@ add_custom_command(
 add_custom_command(
   OUTPUT
   taffo-pe-train-regr
+  
+  DEPENDS
+  ${PE_SOURCES}
   
   COMMAND 
   "${Python3_EXECUTABLE}" "-m" "zipapp"

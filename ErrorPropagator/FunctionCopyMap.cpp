@@ -7,6 +7,7 @@
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
 #include "llvm/Transforms/Utils/UnrollLoop.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/ADT/SmallVector.h"
 #include "Metadata.h"
 
 namespace ErrorProp {
@@ -18,9 +19,10 @@ using namespace llvm;
 void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
   // Prepare required analyses
   LoopInfo &LInfo = P.getAnalysis<LoopInfoWrapperPass>(F).getLoopInfo();
+  SmallVector<Loop *, 4U> Loops(LInfo.begin(), LInfo.end());
 
   // Now try to unroll all loops
-  for (Loop *L : LInfo) {
+  for (Loop *L : Loops) {
     ScalarEvolution &SE = P.getAnalysis<ScalarEvolutionWrapperPass>(F).getSE();
     // Compute loop trip count
     unsigned TripCount = SE.getSmallConstantTripCount(L);

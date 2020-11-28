@@ -29,8 +29,14 @@ llvm::cl::opt<unsigned> DefaultUnrollCount("dunroll",
 					   llvm::cl::desc("Default loop unroll count"),
 					   llvm::cl::value_desc("count"),
 					   llvm::cl::init(1U));
+llvm::cl::opt<unsigned> MaxUnroll("maxunroll",
+                                  llvm::cl::desc("Max loop unroll count. "
+                                                 "Setting this to 0 disables loop unrolling. "
+                                                 "(Default: 256)"),
+                                  llvm::cl::value_desc("count"),
+                                  llvm::cl::init(256U));
 llvm::cl::opt<bool> NoLoopUnroll("nounroll",
-				 llvm::cl::desc("Never unroll loops"),
+				 llvm::cl::desc("Never unroll loops (legacy, use -max-unroll=0)"),
 				 llvm::cl::init(false));
 llvm::cl::opt<unsigned> CmpErrorThreshold("cmpthresh",
 					  llvm::cl::desc("CMP errors are signaled"

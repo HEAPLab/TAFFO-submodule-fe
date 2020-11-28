@@ -16,7 +16,7 @@ using namespace llvm;
 
 #define DEBUG_TYPE "errorprop"
 
-void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
+void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount, unsigned MaxUnroll) {
   // Prepare required analyses
   LoopInfo &LInfo = P.getAnalysis<LoopInfoWrapperPass>(F).getLoopInfo();
   SmallVector<Loop *, 4U> Loops(LInfo.begin(), LInfo.end());
@@ -36,6 +36,9 @@ void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
 	UnrollCount = OUC.getValue();
     else if (TripCount != 0)
       UnrollCount = TripCount;
+
+    if (UnrollCount > MaxUnroll)
+      UnrollCount = MaxUnroll;
 
     LLVM_DEBUG(dbgs() << "Trying to unroll loop by " << UnrollCount << "... ");
 
@@ -91,14 +94,14 @@ FunctionCopyCount *FunctionCopyManager::prepareFunctionData(Function *F) {
       FCC.MaxRecCount = MaxRecursionCount;
 
     // Check if we really need to clone the function
-    if (!NoLoopUnroll && !F->empty()) {
+    if (MaxUnroll > 0U && !F->empty()) {
       LoopInfo &LInfo =
 	P.getAnalysis<LoopInfoWrapperPass>(*F).getLoopInfo();
       if (!LInfo.empty()) {
 	FCC.Copy = CloneFunction(F, FCC.VMap);
 
 	if (FCC.Copy != nullptr)
-	  UnrollLoops(P, *FCC.Copy, DefaultUnrollCount);
+	  UnrollLoops(P, *FCC.Copy, DefaultUnrollCount, MaxUnroll);
       }
     }
     return &FCC;

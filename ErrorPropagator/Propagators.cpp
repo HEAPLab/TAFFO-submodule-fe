@@ -226,10 +226,13 @@ bool InstructionPropagator::propagateLoad(Instruction &I) {
   // Look for range and error in the defining instructions with MemorySSA
   MemSSAUtils MemUtils(RMap, MemSSA);
   MemUtils.findMemSSAError(&I, MemSSA.getMemoryAccess(&I));
-  MemSSAUtils::REVector &REs = MemUtils.getRangeErrors();
 
   // Kludje for when AliasAnalysis fails (i.e. almost always).
-  // findLOEError(RMap, &I, REs);
+  if (SloppyAA) {
+    MemUtils.findLOEError(&I);
+  }
+
+  MemSSAUtils::REVector &REs = MemUtils.getRangeErrors();
 
   // If this is a load of a struct element, lookup in the struct errors.
   if (const RangeErrorMap::RangeError *StructRE

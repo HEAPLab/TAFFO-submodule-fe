@@ -60,7 +60,7 @@ bool ErrorPropagator::runOnModule(Module &M) {
       continue;
 
     NoFunctions = false;
-    FunctionErrorPropagator FEP(*this, *F, FCMap, MDManager);
+    FunctionErrorPropagator FEP(*this, *F, FCMap, MDManager, SloppyAA);
     FEP.computeErrorsWithCopy(GlobalRMap, nullptr, true);
   }
 

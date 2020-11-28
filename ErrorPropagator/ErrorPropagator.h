@@ -51,6 +51,9 @@ llvm::cl::opt<bool> Relative("relerror",
 llvm::cl::opt<bool> ExactConst("exactconst",
 			       llvm::cl::desc("Treat all constants as exact."),
 			       llvm::cl::init(false));
+llvm::cl::opt<bool> SloppyAA("sloppyaa",
+                             llvm::cl::desc("Enable sloppy Alias Analysis, for when LLVM AA fails."),
+                             llvm::cl::init(false));
 
 class ErrorPropagator : public llvm::ModulePass {
 public:

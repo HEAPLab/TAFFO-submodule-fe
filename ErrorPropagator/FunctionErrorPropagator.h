@@ -35,11 +35,12 @@ public:
   FunctionErrorPropagator(llvm::Pass &EPPass,
 			  llvm::Function &F,
 			  FunctionCopyManager &FCMap,
-			  mdutils::MetadataManager &MDManager)
+			  mdutils::MetadataManager &MDManager,
+                          bool SloppyAA)
     : EPPass(EPPass), F(F), FCMap(FCMap),
       FCopy(FCMap.getFunctionCopy(&F)), RMap(MDManager),
       CmpMap(CMPERRORMAP_NUMINITBUCKETS), MemSSA(nullptr),
-      Cloned(true) {
+      Cloned(true), SloppyAA(SloppyAA) {
     if (FCopy == nullptr) {
       FCopy = &F;
       Cloned = false;
@@ -92,6 +93,7 @@ protected:
   CmpErrorMap CmpMap;
   llvm::MemorySSA *MemSSA;
   bool Cloned;
+  bool SloppyAA;
 };
 
 /// Schedules basic blocks of a function so that all BBs

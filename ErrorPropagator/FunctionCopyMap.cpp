@@ -64,9 +64,8 @@ void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount, unsigned Max
       .ForgetAllSCEV = false
     };
 
-    LoopUnrollResult URes = UnrollLoop(L, ULO, &LInfo, &SE, &DomTree, &AssC,
-        &ORE, true);
-        
+    LoopUnrollResult URes = UnrollLoop(L, ULO, &LInfo, &SE, &DomTree, &AssC, &ORE, false);
+
     switch (URes) {
       case LoopUnrollResult::Unmodified:
     	LLVM_DEBUG(dbgs() << "unmodified.\n");

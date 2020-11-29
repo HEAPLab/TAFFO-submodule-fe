@@ -314,6 +314,15 @@ bool InstructionPropagator::propagateTrunc(Instruction &I) {
   return unOpErrorPassThrough(I);
 }
 
+bool InstructionPropagator::propagateFNeg(Instruction &I) {
+  assert(I.getOpcode() == Instruction::FNeg && "Must be FNeg.");
+
+  LLVM_DEBUG(logInstruction(I));
+
+  // No further error is introduced by flipping sign.
+  return unOpErrorPassThrough(I);
+}
+
 bool InstructionPropagator::propagateIToFP(Instruction &I) {
   assert((isa<SIToFPInst>(I) || isa<UIToFPInst>(I)) && "Must be IToFP.");
 

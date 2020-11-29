@@ -181,6 +181,8 @@ FunctionErrorPropagator::dispatchInstruction(Instruction &I) {
       // Fall-through.
     case Instruction::Trunc:
       return IP.propagateTrunc(I);
+    case Instruction::FNeg:
+      return IP.propagateFNeg(I);
     case Instruction::Select:
       return IP.propagateSelect(I);
     case Instruction::PHI:

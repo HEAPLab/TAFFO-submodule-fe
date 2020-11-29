@@ -46,6 +46,10 @@ public:
   /// by associating the errors of the source to it.
   bool propagateTrunc(llvm::Instruction &);
 
+  /// Propagate the errors for a FNeg instruction
+  /// by associating the errors of the source to it.
+  bool propagateFNeg(llvm::Instruction &I);
+
   /// Propagate errors for a SIToFP or UIToFP instruction
   /// by associating the errors of the source to it.
   bool propagateIToFP(llvm::Instruction &);

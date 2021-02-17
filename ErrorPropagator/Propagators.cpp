@@ -418,8 +418,8 @@ bool InstructionPropagator::propagatePhi(Instruction &I) {
     if (RE == nullptr)
       continue;
 
-    Min = std::min(Min, RE->first.Min);
-    Max = std::max(Max, RE->first.Max);
+    Min = std::isnan(RE->first.Min) ? RE->first.Min : std::min(Min, RE->first.Min);
+    Max = std::isnan(RE->first.Max) ? RE->first.Max : std::max(Max, RE->first.Max);
 
     if (!RE->second.hasValue())
       continue;

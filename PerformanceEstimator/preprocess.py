@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 import pandas as pd
 from stats_loader import load_stats
 from profile_loader import load_profile

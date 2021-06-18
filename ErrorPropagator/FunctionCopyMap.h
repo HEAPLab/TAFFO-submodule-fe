@@ -29,7 +29,7 @@ struct FunctionCopyCount {
   unsigned MaxRecCount = 1U;
 };
 
-void UnrollLoops(llvm::Pass &P, llvm::Function &F, unsigned DefaultUnrollCount);
+void UnrollLoops(llvm::Pass &P, llvm::Function &F, unsigned DefaultUnrollCount, unsigned MaxUnroll);
 
 class FunctionCopyManager {
 public:
@@ -37,10 +37,10 @@ public:
   FunctionCopyManager(llvm::Pass &P,
 		      unsigned MaxRecursionCount,
 		      unsigned DefaultUnrollCount,
-		      bool NoLoopUnroll)
+		      unsigned MaxUnroll)
     : P(P),
       MaxRecursionCount(MaxRecursionCount),
-      NoLoopUnroll(NoLoopUnroll),
+      MaxUnroll(MaxUnroll),
       DefaultUnrollCount(DefaultUnrollCount) {}
 
   llvm::Function *getFunctionCopy(llvm::Function *F) {
@@ -109,7 +109,7 @@ protected:
   llvm::Pass &P;
   unsigned MaxRecursionCount;
   unsigned DefaultUnrollCount;
-  bool NoLoopUnroll;
+  unsigned MaxUnroll;
 
   FunctionCopyCount *prepareFunctionData(llvm::Function *F);
 };

@@ -1,4 +1,6 @@
-add_llvm_library(LLVMErrorPropagator OBJECT BUILDTREE_ONLY
+set(SELF LLVMErrorPropagator)
+
+add_llvm_library(${SELF} OBJECT BUILDTREE_ONLY
   ErrorPropagator.cpp
   FunctionErrorPropagator.cpp
   RangeErrorMap.cpp
@@ -11,5 +13,7 @@ add_llvm_library(LLVMErrorPropagator OBJECT BUILDTREE_ONLY
   AffineForms.cpp
   FixedPoint.cpp
 )
-
-set_property(TARGET obj.LLVMErrorPropagator PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(obj.${SELF} PUBLIC
+  TaffoUtils
+  )
+set_property(TARGET obj.${SELF} PROPERTY POSITION_INDEPENDENT_CODE ON)

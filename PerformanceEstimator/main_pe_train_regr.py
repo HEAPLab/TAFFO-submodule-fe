@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 __doc__ = '''Use RandomForestClassifier to classify whether Fix is faster'''
 import pandas as pd
 import numpy as np
@@ -12,7 +12,7 @@ from regression import *
 from pe_utils import *
 
 
-if __name__ == '__main__':
+def main():
     from sys import argv
 
     parser = argparse.ArgumentParser()
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     path = args.pred
     base, features, response = load_data(base_path, boostfail=args.boostfail)
     train = base
-    print path
+    print(path)
 
     # import warnings
     # warnings.simplefilter("error")
@@ -48,13 +48,15 @@ if __name__ == '__main__':
         if args.test:
             train, test = split_train_test(base)
         for est in estimators:
-            print est[0]
+            print(est[0])
             rate, time = est[1](train, test, features, response, args.single)
-            print 'Prediction rate', rate
-            print 'Prediction time [s]', time
+            print('Prediction rate', rate)
+            print('Prediction time [s]', time)
             est[2] += rate
             est[3] += time
 
     for est in estimators:
-        print est[0], sum(est[2]) / len(est[2]) * 100, min(est[2]), max(est[2]), 'time avg =', median(est[3])
+        print(est[0], sum(est[2]) / len(est[2]) * 100, min(est[2]), max(est[2]), 'time avg =', median(est[3]))
 
+if __name__=='__main__':
+  main()

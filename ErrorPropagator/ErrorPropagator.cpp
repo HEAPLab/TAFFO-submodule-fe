@@ -51,7 +51,7 @@ bool ErrorPropagator::runOnModule(Module &M) {
   }
 
   FunctionCopyManager FCMap(*this, MaxRecursionCount, DefaultUnrollCount,
-			    NoLoopUnroll);
+			    MaxUnroll);
 
   bool NoFunctions = true;
   // Iterate over all functions in this Module,
@@ -61,7 +61,7 @@ bool ErrorPropagator::runOnModule(Module &M) {
       continue;
 
     NoFunctions = false;
-    FunctionErrorPropagator FEP(*this, *F, FCMap, MDManager);
+    FunctionErrorPropagator FEP(*this, *F, FCMap, MDManager, SloppyAA);
     FEP.computeErrorsWithCopy(GlobalRMap, nullptr, true);
   }
 
@@ -95,6 +95,9 @@ void ErrorPropagator::getAnalysisUsage(AnalysisUsage &AU) const {
 void ErrorPropagator::checkCommandLine() {
   if (CmpErrorThreshold > 100U)
     CmpErrorThreshold = 100U;
+
+  if (NoLoopUnroll)
+    MaxUnroll = 0U;
 }
 
 }  // end of namespace ErrorProp

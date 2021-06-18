@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 __doc__ = '''Use RandomForestClassifier to classify whether Fix is faster'''
 import pandas as pd
 import numpy as np
@@ -12,7 +12,7 @@ from classification import *
 from pe_utils import *
 
 
-if __name__=='__main__' :
+def main():
 	from sys import argv
 
 	parser = argparse.ArgumentParser()
@@ -30,7 +30,7 @@ if __name__=='__main__' :
 	path = args.pred
 	base, features, response = load_data(base_path, boostfail=args.boostfail)
 	train=base
-	print path
+	print(path)
 	
 	#import warnings
 	#warnings.simplefilter("error")
@@ -52,16 +52,16 @@ if __name__=='__main__' :
 		if args.test:
 			train, test = split_train_test(base)
 		for est in estimators:
-			print est[0]
+			print(est[0])
 			fitr = est[1](train, features, response)
 			rate, time = do_test_prediction(fitr, test, features, response, args.single)
-			print 'Prediction rate', rate
-			print 'Prediction time [s]', time
+			print('Prediction rate', rate)
+			print('Prediction time [s]', time)
 			est[2] += rate
 			est[3] += time
 
 	for est in estimators:
-		print est[0], sum(est[2])/len(est[2])*100, min(est[2]), max(est[2]), 'time avg =', median(est[3])
+		print(est[0], sum(est[2])/len(est[2])*100, min(est[2]), max(est[2]), 'time avg =', median(est[3]))
 
 	if args.dump is not None:
 		if args.dump == 'best':
@@ -69,9 +69,13 @@ if __name__=='__main__' :
 			newest.sort(lambda avg1, avg2: cmp(avg1, avg2), lambda est: sum(est[2])/len(est[2]), True)
 			selected = newest[0]
 		else:
-			selected = filter(lambda est: est[0] == args.dump, estimators)[0]
+			selected = [est for est in estimators if est[0] == args.dump][0]
 		fitr = selected[1](base, features, response)
 		from joblib import dump
 		k = {'model_name': selected[0], 'features': features, 'fitr': fitr}
 		dump(k, 'saved_model.bin')
-		print 'saved model', selected[0]
+		print('saved model', selected[0])
+
+
+if __name__=='__main__':
+  main()

@@ -32,6 +32,7 @@ public:
     : RMap(RMap), MemSSA(MemSSA) {}
 
   void findMemSSAError(llvm::Instruction *I, llvm::MemoryAccess *MA);
+  void findLOEError(llvm::Instruction *I);
 
   REVector &getRangeErrors() { return Res; }
 
@@ -43,7 +44,6 @@ private:
   llvm::SmallSet<llvm::MemoryAccess *, DEFAULT_RE_COUNT> Visited;
   REVector Res;
 
-  void findLOEError(llvm::Instruction *I);
   void findMemDefError(llvm::Instruction *I, const llvm::MemoryDef *MD);
   void findMemPhiError(llvm::Instruction *I, llvm::MemoryPhi *MPhi);
 };

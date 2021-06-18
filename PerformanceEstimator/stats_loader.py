@@ -1,7 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 __doc__ = '''Load the compiler stats data from multiple files, dump as CSV (standalone) or return Dataframe (as library)'''
-from commands import getoutput as cmd
-from string import split, strip
+from subprocess import getoutput as cmd
 import pandas as pd
 import numpy as np
 import os
@@ -70,5 +69,5 @@ def load_stats(path_or_data='./'):
 if __name__=='__main__':
 	#d=load_stats('./20180911_multiconf_results/')
 	d = load_stats('./20190620_polybench/')
-	print >> sys.stderr, d
+	print(d, file=sys.stderr)
 	d.to_csv(path_or_buf="stats.csv")

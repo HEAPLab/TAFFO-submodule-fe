@@ -226,10 +226,13 @@ bool InstructionPropagator::propagateLoad(Instruction &I) {
   // Look for range and error in the defining instructions with MemorySSA
   MemSSAUtils MemUtils(RMap, MemSSA);
   MemUtils.findMemSSAError(&I, MemSSA.getMemoryAccess(&I));
-  MemSSAUtils::REVector &REs = MemUtils.getRangeErrors();
 
   // Kludje for when AliasAnalysis fails (i.e. almost always).
-  // findLOEError(RMap, &I, REs);
+  if (SloppyAA) {
+    MemUtils.findLOEError(&I);
+  }
+
+  MemSSAUtils::REVector &REs = MemUtils.getRangeErrors();
 
   // If this is a load of a struct element, lookup in the struct errors.
   if (const RangeErrorMap::RangeError *StructRE
@@ -308,6 +311,15 @@ bool InstructionPropagator::propagateTrunc(Instruction &I) {
 
   // No further error is introduced with truncation if no overflow occurs
   // (in which case it is useless to propagate other errors).
+  return unOpErrorPassThrough(I);
+}
+
+bool InstructionPropagator::propagateFNeg(Instruction &I) {
+  assert(I.getOpcode() == Instruction::FNeg && "Must be FNeg.");
+
+  LLVM_DEBUG(logInstruction(I));
+
+  // No further error is introduced by flipping sign.
   return unOpErrorPassThrough(I);
 }
 
@@ -406,8 +418,8 @@ bool InstructionPropagator::propagatePhi(Instruction &I) {
     if (RE == nullptr)
       continue;
 
-    Min = std::min(Min, RE->first.Min);
-    Max = std::max(Max, RE->first.Max);
+    Min = std::isnan(RE->first.Min) ? RE->first.Min : std::min(Min, RE->first.Min);
+    Max = std::isnan(RE->first.Max) ? RE->first.Max : std::max(Max, RE->first.Max);
 
     if (!RE->second.hasValue())
       continue;

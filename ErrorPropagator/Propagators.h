@@ -24,8 +24,8 @@ namespace ErrorProp {
 
 class InstructionPropagator {
 public:
-  InstructionPropagator(RangeErrorMap &RMap, llvm::MemorySSA &MemSSA)
-    : RMap(RMap), MemSSA(MemSSA) {}
+  InstructionPropagator(RangeErrorMap &RMap, llvm::MemorySSA &MemSSA, bool SloppyAA)
+    : RMap(RMap), MemSSA(MemSSA), SloppyAA(SloppyAA) {}
 
   /// Propagate errors for a Binary Operator instruction.
   bool propagateBinaryOp(llvm::Instruction &);
@@ -45,6 +45,10 @@ public:
   /// Propagate the errors for a Trunc instruction
   /// by associating the errors of the source to it.
   bool propagateTrunc(llvm::Instruction &);
+
+  /// Propagate the errors for a FNeg instruction
+  /// by associating the errors of the source to it.
+  bool propagateFNeg(llvm::Instruction &I);
 
   /// Propagate errors for a SIToFP or UIToFP instruction
   /// by associating the errors of the source to it.
@@ -85,6 +89,7 @@ public:
 private:
   RangeErrorMap &RMap;
   llvm::MemorySSA &MemSSA;
+  bool SloppyAA;
 
   const RangeErrorMap::RangeError *getConstantFPRangeError(llvm::ConstantFP *VFP);
 

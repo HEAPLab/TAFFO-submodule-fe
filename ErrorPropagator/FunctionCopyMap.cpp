@@ -7,6 +7,7 @@
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
 #include "llvm/Transforms/Utils/UnrollLoop.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/ADT/SmallVector.h"
 #include "Metadata.h"
 
 namespace ErrorProp {
@@ -15,12 +16,13 @@ using namespace llvm;
 
 #define DEBUG_TYPE "errorprop"
 
-void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
+void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount, unsigned MaxUnroll) {
   // Prepare required analyses
   LoopInfo &LInfo = P.getAnalysis<LoopInfoWrapperPass>(F).getLoopInfo();
+  SmallVector<Loop *, 4U> Loops(LInfo.begin(), LInfo.end());
 
   // Now try to unroll all loops
-  for (Loop *L : LInfo) {
+  for (Loop *L : Loops) {
     ScalarEvolution &SE = P.getAnalysis<ScalarEvolutionWrapperPass>(F).getSE();
     // Compute loop trip count
     unsigned TripCount = SE.getSmallConstantTripCount(L);
@@ -34,6 +36,9 @@ void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
 	UnrollCount = OUC.getValue();
     else if (TripCount != 0)
       UnrollCount = TripCount;
+
+    if (UnrollCount > MaxUnroll)
+      UnrollCount = MaxUnroll;
 
     LLVM_DEBUG(dbgs() << "Trying to unroll loop by " << UnrollCount << "... ");
 
@@ -60,9 +65,8 @@ void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount) {
       .ForgetAllSCEV = false
     };
 
-    LoopUnrollResult URes = UnrollLoop(L, ULO, &LInfo, &SE, &DomTree, &AssC,
-        &TTI, &ORE, true);
-        
+    LoopUnrollResult URes = UnrollLoop(L, ULO, &LInfo, &SE, &DomTree, &AssC, &ORE, false);
+
     switch (URes) {
       case LoopUnrollResult::Unmodified:
     	LLVM_DEBUG(dbgs() << "unmodified.\n");
@@ -90,14 +94,14 @@ FunctionCopyCount *FunctionCopyManager::prepareFunctionData(Function *F) {
       FCC.MaxRecCount = MaxRecursionCount;
 
     // Check if we really need to clone the function
-    if (!NoLoopUnroll && !F->empty()) {
+    if (MaxUnroll > 0U && !F->empty()) {
       LoopInfo &LInfo =
 	P.getAnalysis<LoopInfoWrapperPass>(*F).getLoopInfo();
       if (!LInfo.empty()) {
 	FCC.Copy = CloneFunction(F, FCC.VMap);
 
 	if (FCC.Copy != nullptr)
-	  UnrollLoops(P, *FCC.Copy, DefaultUnrollCount);
+	  UnrollLoops(P, *FCC.Copy, DefaultUnrollCount, MaxUnroll);
       }
     }
     return &FCC;

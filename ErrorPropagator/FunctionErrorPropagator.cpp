@@ -161,7 +161,7 @@ bool
 FunctionErrorPropagator::dispatchInstruction(Instruction &I) {
   assert(MemSSA != nullptr);
 
-  InstructionPropagator IP(RMap, *MemSSA);
+  InstructionPropagator IP(RMap, *MemSSA, SloppyAA);
 
   if (I.isBinaryOp())
     return IP.propagateBinaryOp(I);
@@ -181,6 +181,8 @@ FunctionErrorPropagator::dispatchInstruction(Instruction &I) {
       // Fall-through.
     case Instruction::Trunc:
       return IP.propagateTrunc(I);
+    case Instruction::FNeg:
+      return IP.propagateFNeg(I);
     case Instruction::Select:
       return IP.propagateSelect(I);
     case Instruction::PHI:
@@ -247,7 +249,7 @@ FunctionErrorPropagator::prepareErrorsForCall(Instruction &I) {
 
   // Now propagate the errors for this call.
   FunctionErrorPropagator CFEP(EPPass, *CalledF,
-			       FCMap, RMap.getMetadataManager());
+			       FCMap, RMap.getMetadataManager(), SloppyAA);
   CFEP.computeErrorsWithCopy(RMap, &Args, false);
 
   // Restore MemorySSA

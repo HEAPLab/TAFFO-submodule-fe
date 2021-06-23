@@ -65,7 +65,7 @@ void UnrollLoops(Pass &P, Function &F, unsigned DefaultUnrollCount, unsigned Max
       .ForgetAllSCEV = false
     };
 
-    LoopUnrollResult URes = UnrollLoop(L, ULO, &LInfo, &SE, &DomTree, &AssC, &ORE, false);
+    LoopUnrollResult URes = UnrollLoop(L, ULO, &LInfo, &SE, &DomTree, &AssC,&TTI, &ORE, false);
 
     switch (URes) {
       case LoopUnrollResult::Unmodified:

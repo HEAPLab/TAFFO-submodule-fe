@@ -15,7 +15,7 @@
 #include "FunctionErrorPropagator.h"
 
 #include "llvm/IR/InstIterator.h"
-#include "llvm/IR/CallSite.h"
+#include "CallSiteVersions.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 #include "llvm/Analysis/LoopInfo.h"
@@ -216,10 +216,12 @@ FunctionErrorPropagator::dispatchInstruction(Instruction &I) {
 
 void
 FunctionErrorPropagator::prepareErrorsForCall(Instruction &I) {
-  CallSite CS(&I);
-  Function *CalledF = CS.getCalledFunction();
+
+   auto CS(CallSite(I.operands().begin()).getInstruction());
+  Function *CalledF = CS->getCalledFunction();
   SmallVector<Value *, 0U> Args;
-  for (Use &U : CS.args()) {
+
+  for (Use &U : CS->args()) {
     Value *Arg = U.get();
     if (Arg->getType()->isPointerTy()
 	&& !taffo::fullyUnwrapPointerOrArrayType(Arg->getType())->isStructTy()) {

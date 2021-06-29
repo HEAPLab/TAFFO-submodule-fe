@@ -16,9 +16,11 @@
 
 #include "llvm/IR/InstIterator.h"
 #include "CallSiteVersions.h"
+#include "llvm/Support/Casting.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 #include "llvm/Analysis/LoopInfo.h"
+#include <llvm/IR/InstrTypes.h>
 
 #include "Propagators.h"
 #include "MemSSAUtils.h"
@@ -217,7 +219,7 @@ FunctionErrorPropagator::dispatchInstruction(Instruction &I) {
 void
 FunctionErrorPropagator::prepareErrorsForCall(Instruction &I) {
 
-   auto CS(CallSite(I.operands().begin()).getInstruction());
+  auto CS = dyn_cast<CallBase>(&I);
   Function *CalledF = CS->getCalledFunction();
   SmallVector<Value *, 0U> Args;
 
